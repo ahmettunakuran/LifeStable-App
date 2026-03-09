@@ -1,0 +1,62 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "lifestable-project",
+          "appId": "1:919019903604:android:43d6d009c61fba336a0f21",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "lifestable-project",
+          "appId": "1:919019903604:ios:b61c582612cbd0976a0f21",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "lifestable-project",
+          "appId": "1:919019903604:ios:b61c582612cbd0976a0f21",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "lifestable-project",
+          "configurations": {
+            "android": "1:919019903604:android:43d6d009c61fba336a0f21",
+            "ios": "1:919019903604:ios:b61c582612cbd0976a0f21",
+            "macos": "1:919019903604:ios:b61c582612cbd0976a0f21",
+            "web": "1:919019903604:web:53715a789cb82dec6a0f21",
+            "windows": "1:919019903604:web:8f8d3f78e7ba34ec6a0f21"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": []
+    }
+  ],
+  "firestore": {
+    "database": "(default)",
+    "location": "eur3",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
