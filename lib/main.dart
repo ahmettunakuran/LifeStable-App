@@ -1,24 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart'; // flutterfire'ın oluşturduğu dosya
+import 'app/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // BAĞLANTI KONTROLÜ İÇİN EKLE:
-  try {
-    await FirebaseFirestore.instance.collection('test').add({
-      'status': 'Setup is done!',
-      'date': DateTime.now().toString(),
-    });
-    print(" Firebase Connection is Succesfull");
-  } catch (e) {
-    print("Connection is NOT succesfull: $e");
-  }
-
-  runApp(const MyApp());
+  runApp(const LifeStableApp());
 }
 
 class MyApp extends StatelessWidget {
