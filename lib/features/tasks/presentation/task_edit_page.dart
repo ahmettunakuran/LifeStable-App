@@ -20,12 +20,22 @@ class _TaskEditPageState extends State<TaskEditPage> {
   TaskStatus _status = TaskStatus.todo;
   TaskPriority _priority = TaskPriority.medium;
   DateTime? _dueDate;
+  String? _domainId;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null) {
+      _domainId = args['domainId'] as String?;
+    }
   }
 
   @override
@@ -92,7 +102,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<TaskStatus>(
-                initialValue: _status,
+                value: _status,
                 decoration: const InputDecoration(
                   labelText: 'Status',
                   border: OutlineInputBorder(),
@@ -109,7 +119,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<TaskPriority>(
-                initialValue: _priority,
+                value: _priority,
                 decoration: const InputDecoration(
                   labelText: 'Priority',
                   border: OutlineInputBorder(),
@@ -147,8 +157,16 @@ class _TaskEditPageState extends State<TaskEditPage> {
 
   void _saveTask() {
     if (_formKey.currentState!.validate()) {
+      if (_domainId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: No domain selected for this task.')),
+        );
+        return;
+      }
+
       final task = TaskEntity(
         id: const Uuid().v4(),
+        domainId: _domainId!,
         title: _titleController.text,
         description: _descriptionController.text,
         status: _status,

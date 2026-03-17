@@ -6,8 +6,10 @@ import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/calendar/presentation/calendar_page.dart';
+import '../../features/dashboard/domain/entities/domain_entity.dart';
 import '../../features/dashboard/presentation/home_dashboard_page.dart';
 import '../../features/dashboard/presentation/domain_dashboard_page.dart';
+import '../../features/dashboard/presentation/domain_edit_page.dart';
 import '../../features/habits/presentation/habit_tracker_page.dart';
 import '../../features/map/presentation/map_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
@@ -38,6 +40,9 @@ class AppRouter {
         return _buildRoute(const HomeDashboardPage(), settings);
       case AppRoutes.domainDashboard:
         return _buildRoute(const DomainDashboardPage(), settings);
+      case AppRoutes.domainEdit:
+        final domain = settings.arguments as DomainEntity?;
+        return _buildRoute(DomainEditPage(domain: domain), settings);
       case AppRoutes.tasksKanban:
         return _buildRoute(const TasksKanbanPage(), settings);
       case AppRoutes.taskDetails:
@@ -73,4 +78,3 @@ class AppRouter {
     );
   }
 }
-

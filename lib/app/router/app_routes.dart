@@ -9,6 +9,7 @@ class AppRoutes {
 
   static const String homeDashboard = '/home';
   static const String domainDashboard = '/domains';
+  static const String domainEdit = '/domains/edit';
 
   static const String tasksKanban = '/tasks';
   static const String taskDetails = '/tasks/detail';
@@ -22,4 +23,3 @@ class AppRoutes {
   static const String aiAssistant = '/assistant';
   static const String settings = '/settings';
 }
-

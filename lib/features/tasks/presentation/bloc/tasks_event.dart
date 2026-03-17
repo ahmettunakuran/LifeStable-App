@@ -19,3 +19,8 @@ class DeleteTask extends TasksEvent {
   DeleteTask(this.taskId);
   final String taskId;
 }
+
+class TasksUpdated extends TasksEvent {
+  TasksUpdated(this.tasks);
+  final List<TaskEntity> tasks;
+}
