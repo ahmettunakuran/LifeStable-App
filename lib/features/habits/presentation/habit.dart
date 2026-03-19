@@ -70,12 +70,11 @@ class Habit {
         lastCompleted!.day == now.day;
   }
 
-  // Checks if the streak should be reset
-  // Reset logic: if more than 2 days passed since last completion, reset to 0
+  // Checks if the streak should be reset after missing at least one day.
   bool get shouldResetStreak {
     if (lastCompleted == null) return false;
     final now = DateTime.now();
     final difference = now.difference(lastCompleted!).inDays;
-    return difference > 2;
+    return difference > 1;
   }
 }

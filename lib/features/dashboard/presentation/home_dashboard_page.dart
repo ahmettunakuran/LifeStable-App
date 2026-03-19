@@ -47,6 +47,10 @@ class HomeDashboardPage extends StatelessWidget {
                   routeName: AppRoutes.habitTracker,
                 ),
                 _NavChip(
+                  label: 'Notes',
+                  routeName: AppRoutes.notes,
+                ),
+                _NavChip(
                   label: 'Teams',
                   routeName: AppRoutes.teamDashboard,
                 ),

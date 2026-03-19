@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../app/router/app_routes.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -21,6 +22,44 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _isLoading = false;
+  Future<void> _register() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all required fields.')),
+      );
+      return;
+    }
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(AppRoutes.homeDashboard);
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Account creation failed')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
 
   @override
   void initState() {
@@ -215,7 +254,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
                       // Create Account button
                       GestureDetector(
-                        onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.homeDashboard),
+                        onTap: _isLoading ? null : _register,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 18),
@@ -232,11 +271,17 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
                               ),
                             ],
                           ),
-                          child: const Center(
-                            child: Text(
-                              'Create Account',
-                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
-                            ),
+                          child: Center(
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Text(
+                                    'Create Account',
+                                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                                  ),
                           ),
                         ),
                       ),

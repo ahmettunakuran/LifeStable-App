@@ -9,9 +9,7 @@ class DomainRepositoryImpl implements DomainRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
-  // Geçici olarak test kullanıcısı kimliği kullanılıyor.
-  // Gerçek uygulamada: _auth.currentUser?.uid
-  String? get _userId => 'test_kullanicisi_tuna';
+  String? get _userId => _auth.currentUser?.uid;
 
   CollectionReference<Map<String, dynamic>>? get _domainCollection {
     final uid = _userId;

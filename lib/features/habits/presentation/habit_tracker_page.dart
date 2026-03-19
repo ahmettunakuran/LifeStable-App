@@ -13,6 +13,7 @@ class HabitTrackerPage extends StatefulWidget {
 class _HabitTrackerPageState extends State<HabitTrackerPage> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final Set<String> _resettingHabitIds = <String>{};
 
   // Returns Firestore reference to current user's habits collection
   CollectionReference get _habitsRef {
@@ -20,13 +21,10 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
     return _db.collection('users').doc(uid).collection('habits');
   }
 
-  final List<Map<String, String>> _domainOptions = [
-    {'id': 'health',   'name': 'Health'},
-    {'id': 'school',   'name': 'School'},
-    {'id': 'work',     'name': 'Work'},
-    {'id': 'sport',    'name': 'Sport'},
-    {'id': 'personal', 'name': 'Personal'},
-  ];
+  Stream<QuerySnapshot<Map<String, dynamic>>> get _domainsStream {
+    final uid = _auth.currentUser?.uid ?? 'guest_user';
+    return _db.collection('users').doc(uid).collection('domains').snapshots();
+  }
 
   String _selectedDomainId   = 'health';
   String _selectedDomainName = 'Health';
@@ -74,8 +72,8 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
       if (daysDifference == 1) {
         // Completed yesterday → increment streak
         newStreak = habit.streak + 1;
-      } else if (daysDifference > 2) {
-        // Missed more than 2 days → reset streak to 1
+      } else if (daysDifference > 1) {
+        // Missed at least one day -> restart streak.
         newStreak = 1;
       } else {
         // Same calendar day → no change
@@ -101,20 +99,31 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
     await _habitsRef.doc(habitId).delete();
   }
 
-  // Checks and resets streak if inactive for more than 2 days
-  Future<void> _checkAndResetStreak(Habit habit) async {
-    if (habit.isPaused) return;
-    if (habit.lastCompleted == null) return;
-    if (!habit.shouldResetStreak) return;
-
-    await _habitsRef.doc(habit.id).update({'streak': 0});
+  Future<void> _checkAndResetStreaks(List<Habit> habits) async {
+    for (final habit in habits) {
+      if (habit.isPaused || habit.lastCompleted == null || !habit.shouldResetStreak) {
+        continue;
+      }
+      if (_resettingHabitIds.contains(habit.id)) {
+        continue;
+      }
+      _resettingHabitIds.add(habit.id);
+      try {
+        await _habitsRef.doc(habit.id).update({'streak': 0});
+      } finally {
+        _resettingHabitIds.remove(habit.id);
+      }
+    }
   }
 
   // ADD HABIT DIALOG
-  void _showAddDialog() {
+  void _showAddDialog(List<Map<String, String>> domainOptions) {
+    if (domainOptions.isEmpty) {
+      return;
+    }
     final nameController = TextEditingController();
-    _selectedDomainId   = 'health';
-    _selectedDomainName = 'Health';
+    _selectedDomainId   = domainOptions.first['id']!;
+    _selectedDomainName = domainOptions.first['name']!;
 
     showDialog(
       context: context,
@@ -154,7 +163,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
               DropdownButton<String>(
                 isExpanded: true,
                 value: _selectedDomainId,
-                items: _domainOptions.map((d) {
+                items: domainOptions.map((d) {
                   return DropdownMenuItem(
                     value: d['id'],
                     child: Text(d['name']!),
@@ -163,7 +172,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                 onChanged: (value) {
                   setStateDialog(() {
                     _selectedDomainId   = value!;
-                    _selectedDomainName = _domainOptions
+                    _selectedDomainName = domainOptions
                         .firstWhere((d) => d['id'] == value)['name']!;
                   });
                 },
@@ -258,59 +267,81 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddDialog,
-        child: const Icon(Icons.add),
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _habitsRef
-            .orderBy('created_at', descending: false)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _domainsStream,
+        builder: (context, domainsSnapshot) {
+          final domainOptions = (domainsSnapshot.data?.docs ?? [])
+              .map(
+                (doc) => <String, String>{
+                  'id': doc.id,
+                  'name': (doc.data()['name'] as String?) ?? 'Unnamed',
+                },
+              )
+              .toList(growable: false);
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text('No habits yet. Tap + to add one!'),
-            );
-          }
+          return Stack(
+            children: [
+              StreamBuilder<QuerySnapshot>(
+                stream: _habitsRef.orderBy('created_at', descending: false).snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-          final habits = snapshot.data!.docs
-              .map((doc) => Habit.fromFirestore(doc))
-              .toList();
-
-          final Map<String, List<Habit>> groupedHabits = {};
-          for (final habit in habits) {
-            _checkAndResetStreak(habit);
-            groupedHabits
-                .putIfAbsent(habit.domainName, () => [])
-                .add(habit);
-          }
-
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: groupedHabits.entries.map((entry) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      entry.key,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple,
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Text(
+                        domainOptions.isEmpty
+                            ? 'Create a domain first, then add habits.'
+                            : 'No habits yet. Tap + to add one!',
                       ),
-                    ),
-                  ),
-                  ...entry.value.map((habit) => _buildHabitCard(habit)),
-                  const Divider(),
-                ],
-              );
-            }).toList(),
+                    );
+                  }
+
+                  final habits = snapshot.data!.docs
+                      .map((doc) => Habit.fromFirestore(doc))
+                      .toList();
+                  _checkAndResetStreaks(habits);
+
+                  final Map<String, List<Habit>> groupedHabits = {};
+                  for (final habit in habits) {
+                    groupedHabits.putIfAbsent(habit.domainName, () => []).add(habit);
+                  }
+
+                  return ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: groupedHabits.entries.map((entry) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              entry.key,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepPurple,
+                              ),
+                            ),
+                          ),
+                          ...entry.value.map((habit) => _buildHabitCard(habit)),
+                          const Divider(),
+                        ],
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: FloatingActionButton(
+                  onPressed: domainOptions.isEmpty ? null : () => _showAddDialog(domainOptions),
+                  child: const Icon(Icons.add),
+                ),
+              ),
+            ],
           );
         },
       ),

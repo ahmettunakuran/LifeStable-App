@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../domain/entities/task_entity.dart';
 import 'bloc/tasks_bloc.dart';
@@ -21,6 +23,8 @@ class _TaskEditPageState extends State<TaskEditPage> {
   TaskPriority _priority = TaskPriority.medium;
   DateTime? _dueDate;
   String? _domainId;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -101,6 +105,37 @@ class _TaskEditPageState extends State<TaskEditPage> {
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: _db
+                    .collection('users')
+                    .doc(_auth.currentUser?.uid)
+                    .collection('domains')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final docs = snapshot.data?.docs ?? [];
+                  final hasCurrent = docs.any((doc) => doc.id == _domainId);
+                  final selectedValue = hasCurrent ? _domainId : null;
+                  return DropdownButtonFormField<String>(
+                    value: selectedValue,
+                    decoration: const InputDecoration(
+                      labelText: 'Domain',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: docs
+                        .map(
+                          (doc) => DropdownMenuItem<String>(
+                            value: doc.id,
+                            child: Text((doc.data()['name'] as String?) ?? 'Unnamed'),
+                          ),
+                        )
+                        .toList(),
+                    validator: (value) =>
+                        value == null ? 'Please select a domain' : null,
+                    onChanged: (value) => setState(() => _domainId = value),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
               DropdownButtonFormField<TaskStatus>(
                 value: _status,
                 decoration: const InputDecoration(
@@ -157,13 +192,6 @@ class _TaskEditPageState extends State<TaskEditPage> {
 
   void _saveTask() {
     if (_formKey.currentState!.validate()) {
-      if (_domainId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: No domain selected for this task.')),
-        );
-        return;
-      }
-
       final task = TaskEntity(
         id: const Uuid().v4(),
         domainId: _domainId!,

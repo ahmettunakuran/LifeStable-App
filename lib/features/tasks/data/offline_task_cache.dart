@@ -33,8 +33,12 @@ class CachedTask {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': task.id,
+      'domainId': task.domainId,
       'title': task.title,
       'description': task.description,
+      'status': task.status.name,
+      'priority': task.priority.name,
+      'dueDate': task.dueDate?.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'isDirty': isDirty,
     };
@@ -44,8 +48,20 @@ class CachedTask {
     return CachedTask(
       task: TaskEntity(
         id: json['id'] as String,
+        domainId: json['domainId'] as String? ?? '',
         title: json['title'] as String,
-        description: json['description'] as String?, domainId: '',
+        description: json['description'] as String?,
+        status: TaskStatus.values.firstWhere(
+          (e) => e.name == (json['status'] as String? ?? TaskStatus.todo.name),
+          orElse: () => TaskStatus.todo,
+        ),
+        priority: TaskPriority.values.firstWhere(
+          (e) => e.name == (json['priority'] as String? ?? TaskPriority.medium.name),
+          orElse: () => TaskPriority.medium,
+        ),
+        dueDate: json['dueDate'] != null
+            ? DateTime.tryParse(json['dueDate'] as String)
+            : null,
       ),
       updatedAt: DateTime.parse(json['updatedAt'] as String).toUtc(),
       isDirty: json['isDirty'] as bool? ?? false,
@@ -128,6 +144,11 @@ class OfflineTaskCache {
       updatedAt: syncedAt.toUtc(),
     );
     _lruCache.put(taskId, updated);
+    await _persist();
+  }
+
+  Future<void> removeTask(String taskId) async {
+    _lruCache.remove(taskId);
     await _persist();
   }
 

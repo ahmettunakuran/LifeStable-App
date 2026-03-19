@@ -35,6 +35,8 @@ class LruCache<K, V> {
 
   bool containsKey(K key) => _entries.containsKey(key);
 
+  V? remove(K key) => _entries.remove(key);
+
   Iterable<V> values() => _entries.values;
 
   Iterable<K> keys() => _entries.keys;

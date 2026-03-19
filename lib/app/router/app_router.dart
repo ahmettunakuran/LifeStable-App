@@ -12,6 +12,7 @@ import '../../features/dashboard/presentation/domain_dashboard_page.dart';
 import '../../features/dashboard/presentation/domain_edit_page.dart';
 import '../../features/habits/presentation/habit_tracker_page.dart';
 import '../../features/map/presentation/map_page.dart';
+import '../../features/notes/presentation/notes_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/splash/presentation/splash_page.dart';
@@ -49,6 +50,8 @@ class AppRouter {
         return _buildRoute(const TaskDetailPage(), settings);
       case AppRoutes.taskEdit:
         return _buildRoute(const TaskEditPage(), settings);
+      case AppRoutes.notes:
+        return _buildRoute(const NotesPage(), settings);
       case AppRoutes.habitTracker:
         return _buildRoute(const HabitTrackerPage(), settings);
       case AppRoutes.teamDashboard:

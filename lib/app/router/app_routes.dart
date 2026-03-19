@@ -14,6 +14,7 @@ class AppRoutes {
   static const String tasksKanban = '/tasks';
   static const String taskDetails = '/tasks/detail';
   static const String taskEdit = '/tasks/edit';
+  static const String notes = '/notes';
 
   static const String habitTracker = '/habits';
   static const String teamDashboard = '/teams';

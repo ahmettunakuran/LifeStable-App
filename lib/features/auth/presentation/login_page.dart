@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../app/router/app_routes.dart';
 
 class LoginPage extends StatefulWidget {
@@ -18,6 +19,37 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  Future<void> _signIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email and password are required.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(AppRoutes.homeDashboard);
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Sign in failed')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
 
   @override
   void initState() {
@@ -174,7 +206,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
                       // Sign In button
                       GestureDetector(
-                        onTap: () => Navigator.of(context).pushReplacementNamed(AppRoutes.homeDashboard),
+                        onTap: _isLoading ? null : _signIn,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 18),
@@ -191,11 +223,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               ),
                             ],
                           ),
-                          child: const Center(
-                            child: Text(
-                              'Sign In',
-                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
-                            ),
+                          child: Center(
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Text(
+                                    'Sign In',
+                                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                                  ),
                           ),
                         ),
                       ),
