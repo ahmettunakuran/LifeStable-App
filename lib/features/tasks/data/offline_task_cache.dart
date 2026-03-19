@@ -45,7 +45,7 @@ class CachedTask {
       task: TaskEntity(
         id: json['id'] as String,
         title: json['title'] as String,
-        description: json['description'] as String?,
+        description: json['description'] as String?, domainId: '',
       ),
       updatedAt: DateTime.parse(json['updatedAt'] as String).toUtc(),
       isDirty: json['isDirty'] as bool? ?? false,
