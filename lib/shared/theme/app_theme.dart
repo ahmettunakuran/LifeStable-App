@@ -9,7 +9,7 @@ class AppTheme {
   static ThemeData get light {
     final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         brightness: Brightness.light,
         primary: AppColors.primary,
         secondary: AppColors.accent,
@@ -18,6 +18,11 @@ class AppTheme {
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: Colors.white,
+        labelStyle: const TextStyle(color: Colors.black87),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

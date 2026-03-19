@@ -20,6 +20,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  String _mapAuthError(FirebaseAuthException e) {
+    final raw = (e.message ?? '').toUpperCase();
+    if (raw.contains('CONFIGURATION_NOT_FOUND')) {
+      return 'Firebase Auth configuration not found. Enable Email/Password in Firebase Console and verify app config files.';
+    }
+
+    switch (e.code) {
+      case 'invalid-credential':
+      case 'wrong-password':
+      case 'user-not-found':
+        return 'Invalid email or password.';
+      case 'invalid-email':
+        return 'Invalid email address.';
+      case 'operation-not-allowed':
+        return 'Email/Password sign-in is not enabled in Firebase.';
+      default:
+        return e.message ?? 'Sign in failed.';
+    }
+  }
   Future<void> _signIn() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -41,7 +61,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Sign in failed')),
+        SnackBar(content: Text(_mapAuthError(e))),
       );
     } finally {
       if (mounted) {

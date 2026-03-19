@@ -23,6 +23,26 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+
+  String _mapAuthError(FirebaseAuthException e) {
+    final raw = (e.message ?? '').toUpperCase();
+    if (raw.contains('CONFIGURATION_NOT_FOUND')) {
+      return 'Firebase Auth configuration not found. Enable Email/Password in Firebase Console and verify app config files.';
+    }
+
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'This email is already in use.';
+      case 'invalid-email':
+        return 'Invalid email address.';
+      case 'weak-password':
+        return 'Password is too weak.';
+      case 'operation-not-allowed':
+        return 'Email/Password sign-in is not enabled in Firebase.';
+      default:
+        return e.message ?? 'Account creation failed.';
+    }
+  }
   Future<void> _register() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -51,7 +71,7 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Account creation failed')),
+        SnackBar(content: Text(_mapAuthError(e))),
       );
     } finally {
       if (mounted) {
