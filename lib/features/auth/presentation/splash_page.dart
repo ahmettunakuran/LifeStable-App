@@ -74,7 +74,7 @@ class _SplashPageState extends State<SplashPage>
                   height: 280,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.gold.withOpacity(0.06),
+                    color: AppColors.gold.withOpacity(0.07),
                   ),
                 ),
               ),
@@ -86,7 +86,7 @@ class _SplashPageState extends State<SplashPage>
                   height: 320,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.gold.withOpacity(0.04),
+                    color: AppColors.gold.withOpacity(0.05),
                   ),
                 ),
               ),
@@ -100,71 +100,33 @@ class _SplashPageState extends State<SplashPage>
                       child: child,
                     ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 130,
-                        height: 130,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.gold.withOpacity(0.4),
-                              blurRadius: 40,
-                              spreadRadius: 8,
-                            ),
-                          ],
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.gold.withOpacity(0.3),
+                          blurRadius: 40,
+                          spreadRadius: 8,
                         ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: AppColors.cardBg,
-                              child: const Icon(
-                                Icons.balance,
-                                color: AppColors.gold,
-                                size: 60,
-                              ),
-                            ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: AppColors.cardBg,
+                          child: const Icon(
+                            Icons.balance,
+                            color: AppColors.gold,
+                            size: 60,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [AppColors.goldLight, AppColors.gold],
-                        ).createShader(bounds),
-                        child: const Text(
-                          'LifeStable',
-                          style: TextStyle(
-                            fontSize: 38,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Balance your life.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.4),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 48),
-                      SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.gold.withOpacity(0.5),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
