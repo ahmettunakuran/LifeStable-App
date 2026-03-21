@@ -18,6 +18,8 @@ class AppRoutes {
 
   static const String habitTracker = '/habits';
   static const String teamDashboard = '/teams';
+  static const String teamJoin = '/teams/join';
+  static const String teamDetail = '/teams/detail';
   static const String alerts = '/alerts';
   static const String map = '/map';
   static const String calendar = '/calendar';

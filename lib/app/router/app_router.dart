@@ -20,6 +20,8 @@ import '../../features/tasks/presentation/task_detail_page.dart';
 import '../../features/tasks/presentation/task_edit_page.dart';
 import '../../features/tasks/presentation/tasks_kanban_page.dart';
 import '../../features/teams/presentation/team_dashboard_page.dart';
+import '../../features/teams/presentation/join_team_screen.dart';
+import '../../features/teams/presentation/team_detail_screen.dart';
 import 'app_routes.dart';
 
 class AppRouter {
@@ -56,6 +58,17 @@ class AppRouter {
         return _buildRoute(const HabitTrackerPage(), settings);
       case AppRoutes.teamDashboard:
         return _buildRoute(const TeamDashboardPage(), settings);
+      case AppRoutes.teamJoin:
+        return _buildRoute(const JoinTeamScreen(), settings);
+      case AppRoutes.teamDetail:
+        final args = settings.arguments as Map<String, String>;
+        return _buildRoute(
+          TeamDetailScreen(
+            teamId: args['teamId']!,
+            teamName: args['teamName']!,
+          ),
+          settings,
+        );
       case AppRoutes.alerts:
         return _buildRoute(const AlertsPage(), settings);
       case AppRoutes.map:
@@ -72,9 +85,9 @@ class AppRouter {
   }
 
   static MaterialPageRoute<T> _buildRoute<T>(
-    Widget child,
-    RouteSettings settings,
-  ) {
+      Widget child,
+      RouteSettings settings,
+      ) {
     return MaterialPageRoute<T>(
       builder: (_) => child,
       settings: settings,

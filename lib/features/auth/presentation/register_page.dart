@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../app/router/app_routes.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -9,10 +11,9 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMixin {
-  late AnimationController _bgController;
+class _RegisterPageState extends State<RegisterPage>
+    with TickerProviderStateMixin {
   late AnimationController _contentController;
-  late Animation<double> _bgAnimation;
   late Animation<double> _fadeIn;
   late Animation<Offset> _slideUp;
 
@@ -25,11 +26,6 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
   bool _isLoading = false;
 
   String _mapAuthError(FirebaseAuthException e) {
-    final raw = (e.message ?? '').toUpperCase();
-    if (raw.contains('CONFIGURATION_NOT_FOUND')) {
-      return 'Firebase Auth configuration not found. Enable Email/Password in Firebase Console and verify app config files.';
-    }
-
     switch (e.code) {
       case 'email-already-in-use':
         return 'This email is already in use.';
@@ -37,87 +33,82 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
         return 'Invalid email address.';
       case 'weak-password':
         return 'Password is too weak.';
-      case 'operation-not-allowed':
-        return 'Email/Password sign-in is not enabled in Firebase.';
       default:
         return e.message ?? 'Account creation failed.';
     }
   }
+
   Future<void> _register() async {
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
+
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields.')),
+        SnackBar(content: Text(S.of('fill_all_fields'))),
       );
       return;
     }
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match.')),
+        SnackBar(content: Text(S.of('passwords_no_match'))),
       );
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      if (name.isNotEmpty) {
+        await credential.user?.updateDisplayName(name);
+      }
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .set({
+        'uid': credential.user!.uid,
+        'displayName': name.isNotEmpty ? name : email.split('@').first,
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(AppRoutes.homeDashboard);
+      Navigator.of(context).pushReplacementNamed(AppRoutes.login);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_mapAuthError(e))),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_mapAuthError(e))));
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
-
 
   @override
   void initState() {
     super.initState();
-
-    _bgController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-
-    _bgAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _bgController, curve: Curves.easeInOut),
-    );
-
     _contentController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-
     _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _contentController, curve: Curves.easeIn),
     );
-
     _slideUp = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: _contentController, curve: Curves.easeOut),
     );
-
-    Future.delayed(const Duration(milliseconds: 150), () {
-      _contentController.forward();
-    });
+    Future.delayed(
+        const Duration(milliseconds: 150), () => _contentController.forward());
   }
 
   @override
   void dispose() {
-    _bgController.dispose();
     _contentController.dispose();
     _nameController.dispose();
     _emailController.dispose();
@@ -128,225 +119,213 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AnimatedBuilder(
-        animation: _bgAnimation,
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, _, __) {
+        return Scaffold(
+          backgroundColor: AppColors.black,
+          body: Container(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color.lerp(const Color(0xFF1A1A2E), const Color(0xFF16213E), _bgAnimation.value)!,
-                  Color.lerp(const Color(0xFF0F3460), const Color(0xFF533483), _bgAnimation.value)!,
-                  Color.lerp(const Color(0xFF533483), const Color(0xFF0F3460), _bgAnimation.value)!,
+                  Color(0xFF0D0D0D),
+                  Color(0xFF1A1200),
+                  Color(0xFF0D0D0D),
                 ],
               ),
             ),
-            child: child,
-          );
-        },
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Positioned(
-                top: -60,
-                right: -80,
-                child: _GlowCircle(size: 260, color: const Color(0xFF7B2FBE).withOpacity(0.22)),
-              ),
-              Positioned(
-                bottom: -80,
-                left: -60,
-                child: _GlowCircle(size: 300, color: const Color(0xFF00D4FF).withOpacity(0.13)),
-              ),
-              SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: AnimatedBuilder(
-                  animation: _contentController,
-                  builder: (context, child) {
-                    return SlideTransition(
-                      position: _slideUp,
-                      child: Opacity(opacity: _fadeIn.value, child: child),
-                    );
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 48),
-
-                      // Back button
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Colors.white.withOpacity(0.08),
-                            border: Border.all(color: Colors.white.withOpacity(0.12)),
-                          ),
-                          child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-                        ),
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFF00D4FF), Color(0xFFFFFFFF), Color(0xFFB57BFF)],
-                        ).createShader(bounds),
-                        child: const Text(
-                          'Create\naccount.',
-                          style: TextStyle(
-                            fontSize: 44,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -1.5,
-                            height: 1.15,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Start building a stable life today.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.55),
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-
-                      _buildLabel('Full Name'),
-                      const SizedBox(height: 8),
-                      _buildTextField(
-                        controller: _nameController,
-                        hint: 'John Doe',
-                        icon: Icons.person_outline_rounded,
-                        keyboardType: TextInputType.name,
-                      ),
-                      const SizedBox(height: 20),
-
-                      _buildLabel('Email'),
-                      const SizedBox(height: 8),
-                      _buildTextField(
-                        controller: _emailController,
-                        hint: 'you@example.com',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 20),
-
-                      _buildLabel('Password'),
-                      const SizedBox(height: 8),
-                      _buildTextField(
-                        controller: _passwordController,
-                        hint: '••••••••',
-                        icon: Icons.lock_outline_rounded,
-                        obscureText: _obscurePassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                            color: Colors.white38,
-                            size: 20,
-                          ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      _buildLabel('Confirm Password'),
-                      const SizedBox(height: 8),
-                      _buildTextField(
-                        controller: _confirmPasswordController,
-                        hint: '••••••••',
-                        icon: Icons.lock_outline_rounded,
-                        obscureText: _obscureConfirm,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                            color: Colors.white38,
-                            size: 20,
-                          ),
-                          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                        ),
-                      ),
-                      const SizedBox(height: 36),
-
-                      // Create Account button
-                      GestureDetector(
-                        onTap: _isLoading ? null : _register,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF00D4FF), Color(0xFF7B2FBE)],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF7B2FBE).withOpacity(0.4),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Text(
-                                    'Create Account',
-                                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
-                                  ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 28),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: RichText(
-                            text: TextSpan(
-                              text: 'Already have an account? ',
-                              style: TextStyle(color: Colors.white.withOpacity(0.45), fontSize: 14),
-                              children: const [
-                                TextSpan(
-                                  text: 'Sign in',
-                                  style: TextStyle(color: Color(0xFF00D4FF), fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+            child: SafeArea(
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: -80,
+                    right: -80,
+                    child: _GlowCircle(
+                      size: 280,
+                      color: AppColors.gold.withOpacity(0.07),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    bottom: -100,
+                    left: -60,
+                    child: _GlowCircle(
+                      size: 320,
+                      color: AppColors.gold.withOpacity(0.05),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: const LanguageSwitcher(),
+                  ),
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: AnimatedBuilder(
+                      animation: _contentController,
+                      builder: (context, child) => SlideTransition(
+                        position: _slideUp,
+                        child: Opacity(opacity: _fadeIn.value, child: child),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 48),
+                          GestureDetector(
+                            onTap: () => Navigator.of(context)
+                                .pushReplacementNamed(AppRoutes.login),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white.withOpacity(0.05),
+                                border: Border.all(
+                                  color: AppColors.gold.withOpacity(0.2),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: AppColors.gold,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                          ShaderMask(
+                            shaderCallback: (bounds) => const LinearGradient(
+                              colors: [AppColors.goldLight, AppColors.gold],
+                            ).createShader(bounds),
+                            child: Text(
+                              S.of('create_account_title'),
+                              style: const TextStyle(
+                                fontSize: 44,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -1.5,
+                                height: 1.15,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            S.of('create_account_subtitle'),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.5),
+                            ),
+                          ),
+                          const SizedBox(height: 36),
+                          _buildLabel(S.of('full_name')),
+                          const SizedBox(height: 8),
+                          _buildTextField(
+                            controller: _nameController,
+                            hint: S.of('name_hint'),
+                            icon: Icons.person_outline_rounded,
+                            keyboardType: TextInputType.name,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildLabel(S.of('email')),
+                          const SizedBox(height: 8),
+                          _buildTextField(
+                            controller: _emailController,
+                            hint: S.of('email_hint'),
+                            icon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildLabel(S.of('password')),
+                          const SizedBox(height: 8),
+                          _buildTextField(
+                            controller: _passwordController,
+                            hint: '••••••••',
+                            icon: Icons.lock_outline_rounded,
+                            obscureText: _obscurePassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: AppColors.gold.withOpacity(0.6),
+                                size: 20,
+                              ),
+                              onPressed: () => setState(
+                                      () => _obscurePassword = !_obscurePassword),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildLabel(S.of('confirm_password')),
+                          const SizedBox(height: 8),
+                          _buildTextField(
+                            controller: _confirmPasswordController,
+                            hint: '••••••••',
+                            icon: Icons.lock_outline_rounded,
+                            obscureText: _obscureConfirm,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirm
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: AppColors.gold.withOpacity(0.6),
+                                size: 20,
+                              ),
+                              onPressed: () => setState(
+                                      () => _obscureConfirm = !_obscureConfirm),
+                            ),
+                          ),
+                          const SizedBox(height: 36),
+                          _buildGoldButton(
+                            label: S.of('create_account_btn'),
+                            isLoading: _isLoading,
+                            onTap: _isLoading ? null : _register,
+                          ),
+                          const SizedBox(height: 28),
+                          Center(
+                            child: TextButton(
+                              onPressed: () => Navigator.of(context)
+                                  .pushReplacementNamed(AppRoutes.login),
+                              child: RichText(
+                                text: TextSpan(
+                                  text: S.of('already_have_account'),
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.4),
+                                    fontSize: 14,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: S.of('sign_in_link'),
+                                      style: const TextStyle(
+                                        color: AppColors.gold,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: Colors.white.withOpacity(0.75),
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.3,
-      ),
-    );
-  }
+  Widget _buildLabel(String text) => Text(
+    text,
+    style: TextStyle(
+      color: Colors.white.withOpacity(0.7),
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -359,8 +338,8 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: Colors.white.withOpacity(0.08),
-        border: Border.all(color: Colors.white.withOpacity(0.12), width: 1.2),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: AppColors.gold.withOpacity(0.2), width: 1.2),
       ),
       child: TextField(
         controller: controller,
@@ -369,11 +348,58 @@ class _RegisterPageState extends State<RegisterPage> with TickerProviderStateMix
         style: const TextStyle(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 15),
-          prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+          hintStyle:
+          TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 15),
+          prefixIcon:
+          Icon(icon, color: AppColors.gold.withOpacity(0.5), size: 20),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          contentPadding:
+          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoldButton({
+    required String label,
+    required bool isLoading,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withOpacity(0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Center(
+          child: isLoading
+              ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+                strokeWidth: 2, color: Colors.black),
+          )
+              : Text(
+            label,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+            ),
+          ),
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../core/localization/app_localizations.dart';
 import '../features/dashboard/data/repositories/domain_repository_impl.dart';
 import '../features/dashboard/domain/repositories/domain_repository.dart';
 import '../features/dashboard/logic/domain_cubit.dart';
@@ -47,14 +48,20 @@ class LifeStableApp extends StatelessWidget {
             ),
           ),
         ],
-        child: MaterialApp(
-          title: 'LifeStable',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: ThemeMode.system,
-          initialRoute: AppRoutes.splash,
-          onGenerateRoute: AppRouter.onGenerateRoute,
+        child: ValueListenableBuilder<Locale>(
+          valueListenable: localeNotifier,
+          builder: (context, locale, _) {
+            return MaterialApp(
+              title: 'LifeStable',
+              debugShowCheckedModeBanner: false,
+              locale: locale,
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: ThemeMode.dark,
+              initialRoute: AppRoutes.splash,
+              onGenerateRoute: AppRouter.onGenerateRoute,
+            );
+          },
         ),
       ),
     );
