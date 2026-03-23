@@ -6,6 +6,66 @@ class TeamService {
   final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
+  // ── Domain Mirroring Helpers ───────────────────────────────
+
+  /// Creates a mirrored domain in the user's personal domain list for a team.
+  Future<void> _createMirrorDomain({
+    required String userId,
+    required String teamId,
+    required String teamName,
+    int? teamColor,
+  }) async {
+    final domainRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('domains')
+        .doc('team_$teamId'); // deterministic ID based on teamId
+
+    final colorHex = '#${(teamColor ?? 0xFF1A237E).toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+
+    await domainRef.set({
+      'name': teamName,
+      'description': 'Team domain – $teamName',
+      'iconCode': 0xe7ef, // Icons.group (Material Icons codepoint)
+      'colorHex': colorHex,
+      'teamId': teamId,
+    });
+  }
+
+  /// Deletes the mirrored domain for a team from a user's personal domain list.
+  Future<void> _deleteMirrorDomain({
+    required String userId,
+    required String teamId,
+  }) async {
+    final domainRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('domains')
+        .doc('team_$teamId');
+
+    await domainRef.delete();
+  }
+
+  /// Deletes mirrored domains for ALL members of a team (used on team deletion).
+  Future<void> _deleteAllMirrorDomains(String teamId) async {
+    final members = await _db
+        .collection('team_members')
+        .where('team_id', isEqualTo: teamId)
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in members.docs) {
+      final userId = doc.data()['user_id'] as String;
+      final domainRef = _db
+          .collection('users')
+          .doc(userId)
+          .collection('domains')
+          .doc('team_$teamId');
+      batch.delete(domainRef);
+    }
+    await batch.commit();
+  }
+
   Future<String> createTeam(String name, String objective, {int? color}) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not signed in.');
@@ -33,6 +93,14 @@ class TeamService {
         'joined_at': FieldValue.serverTimestamp(),
       });
     });
+
+    // Domain Mirroring: auto-create a domain for the creator
+    await _createMirrorDomain(
+      userId: user.uid,
+      teamId: teamRef.id,
+      teamName: name,
+      teamColor: color,
+    );
 
     return inviteCode;
   }
@@ -81,6 +149,15 @@ class TeamService {
     });
 
     await batch.commit();
+
+    // Domain Mirroring: auto-create a domain for the joining user
+    final teamData = teamDoc.data() as Map<String, dynamic>?;
+    await _createMirrorDomain(
+      userId: user.uid,
+      teamId: teamId,
+      teamName: teamData?['name'] as String? ?? 'Team',
+      teamColor: teamData?['color'] as int?,
+    );
   }
 
   Future<List<Map<String, dynamic>>> getUserTeams() async {
@@ -170,6 +247,9 @@ class TeamService {
       'member_count': FieldValue.increment(-1),
     });
     await batch.commit();
+
+    // Domain Mirroring: remove the mirrored domain for the removed user
+    await _deleteMirrorDomain(userId: targetUserId, teamId: teamId);
   }
 
   Future<void> leaveTeam(String teamId) async {
@@ -229,6 +309,9 @@ class TeamService {
     });
 
     await batch.commit();
+
+    // Domain Mirroring: remove the mirrored domain for the leaving user
+    await _deleteMirrorDomain(userId: user.uid, teamId: teamId);
   }
 
   Future<void> deleteTeam(String teamId) async {
@@ -246,6 +329,19 @@ class TeamService {
         .collection('team_members')
         .where('team_id', isEqualTo: teamId)
         .get();
+
+    // Domain Mirroring: remove mirrored domains for ALL team members
+    final mirrorBatch = _db.batch();
+    for (final doc in members.docs) {
+      final memberId = doc.data()['user_id'] as String;
+      final domainRef = _db
+          .collection('users')
+          .doc(memberId)
+          .collection('domains')
+          .doc('team_$teamId');
+      mirrorBatch.delete(domainRef);
+    }
+    await mirrorBatch.commit();
 
     final batch = _db.batch();
     for (final doc in members.docs) {

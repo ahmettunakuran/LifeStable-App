@@ -5,6 +5,7 @@ class DomainEntity {
     this.description,
     required this.iconCode,
     required this.colorHex,
+    this.teamId,
   });
 
   final String id;
@@ -12,6 +13,10 @@ class DomainEntity {
   final String? description;
   final int iconCode; // Store IconData.codePoint
   final String colorHex; // Store as #RRGGBB
+  final String? teamId; // Non-null when this domain mirrors a team
+
+  /// Whether this domain was auto-created from a team membership.
+  bool get isTeamMirror => teamId != null;
 
   DomainEntity copyWith({
     String? id,
@@ -19,6 +24,7 @@ class DomainEntity {
     String? description,
     int? iconCode,
     String? colorHex,
+    String? teamId,
   }) {
     return DomainEntity(
       id: id ?? this.id,
@@ -26,6 +32,7 @@ class DomainEntity {
       description: description ?? this.description,
       iconCode: iconCode ?? this.iconCode,
       colorHex: colorHex ?? this.colorHex,
+      teamId: teamId ?? this.teamId,
     );
   }
 
@@ -35,6 +42,7 @@ class DomainEntity {
       'description': description,
       'iconCode': iconCode,
       'colorHex': colorHex,
+      if (teamId != null) 'teamId': teamId,
     };
   }
 
@@ -45,6 +53,7 @@ class DomainEntity {
       description: data['description'] as String?,
       iconCode: data['iconCode'] as int? ?? 0xe1af, // Default icon
       colorHex: data['colorHex'] as String? ?? '#7C4DFF',
+      teamId: data['teamId'] as String?,
     );
   }
 }

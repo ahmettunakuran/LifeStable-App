@@ -13,7 +13,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, create: if isOwner(userId);
       allow update: if isOwner(userId)
-        && !request.resource.data.diff(resource.data).affectedKeys()
+          && !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['role', 'points', 'createdAt', 'level', 'habitStreak']);
       allow delete: if false;
 
@@ -36,6 +36,19 @@ service cloud.firestore {
       match /teams/{teamId} {
         allow read, write: if isOwner(userId);
       }
+    }
+
+    // ── Top-level team collections ───────────────────────
+    match /teams/{teamId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn();
+    }
+
+    match /team_members/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn();
     }
 
     match /{document=**} {
