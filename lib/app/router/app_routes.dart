@@ -9,17 +9,20 @@ class AppRoutes {
 
   static const String homeDashboard = '/home';
   static const String domainDashboard = '/domains';
+  static const String domainEdit = '/domains/edit';
 
   static const String tasksKanban = '/tasks';
   static const String taskDetails = '/tasks/detail';
   static const String taskEdit = '/tasks/edit';
+  static const String notes = '/notes';
 
   static const String habitTracker = '/habits';
   static const String teamDashboard = '/teams';
+  static const String teamJoin = '/teams/join';
+  static const String teamDetail = '/teams/detail';
   static const String alerts = '/alerts';
   static const String map = '/map';
   static const String calendar = '/calendar';
   static const String aiAssistant = '/assistant';
   static const String settings = '/settings';
 }
-
