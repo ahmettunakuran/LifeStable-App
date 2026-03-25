@@ -5,7 +5,7 @@ import '../../features/assistant/presentation/assistant_page.dart';
 import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
-import '../../features/calendar/presentation/calendar_page.dart';
+import '../../features/calendar/presentation/calender_page.dart';
 import '../../features/dashboard/domain/entities/domain_entity.dart';
 import '../../features/dashboard/presentation/home_dashboard_page.dart';
 import '../../features/dashboard/presentation/domain_dashboard_page.dart';
