@@ -14,6 +14,14 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>NSMicrophoneUsageDescription</key>
+    <string>LifeStable, AI asistanına sesli komut verebilmek için mikrofon erişimi istiyor.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>LifeStable, sesini metne dönüştürmek için konuşma tanıma kullanıyor.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>LifeStable, program veya belge taramak için kamera erişimi istiyor.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>LifeStable, takvime aktarmak için fotoğraf seçebilmeni istiyor.</string>
 	<key>CFBundleName</key>
 	<string>project_lifestable</string>
 	<key>CFBundlePackageType</key>
