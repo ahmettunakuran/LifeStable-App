@@ -11,6 +11,8 @@ class TaskEntity {
     this.status = TaskStatus.todo,
     this.priority = TaskPriority.medium,
     this.dueDate,
+    this.teamId,
+    this.assignedTo,
   });
 
   final String id;
@@ -20,6 +22,8 @@ class TaskEntity {
   final TaskStatus status;
   final TaskPriority priority;
   final DateTime? dueDate;
+  final String? teamId; // Non-null if this is a shared team task
+  final String? assignedTo; // UID of the user this task is assigned to
 
   TaskEntity copyWith({
     String? id,
@@ -29,6 +33,8 @@ class TaskEntity {
     TaskStatus? status,
     TaskPriority? priority,
     DateTime? dueDate,
+    String? teamId,
+    String? assignedTo,
   }) {
     return TaskEntity(
       id: id ?? this.id,
@@ -38,6 +44,8 @@ class TaskEntity {
       status: status ?? this.status,
       priority: priority ?? this.priority,
       dueDate: dueDate ?? this.dueDate,
+      teamId: teamId ?? this.teamId,
+      assignedTo: assignedTo ?? this.assignedTo,
     );
   }
 
@@ -49,6 +57,8 @@ class TaskEntity {
       'status': status.name,
       'priority': priority.name,
       'dueDate': dueDate?.toIso8601String(),
+      if (teamId != null) 'teamId': teamId,
+      if (assignedTo != null) 'assignedTo': assignedTo,
     };
   }
 
@@ -67,6 +77,8 @@ class TaskEntity {
         orElse: () => TaskPriority.medium,
       ),
       dueDate: data['dueDate'] != null ? DateTime.parse(data['dueDate'] as String) : null,
+      teamId: data['teamId'] as String?,
+      assignedTo: data['assignedTo'] as String?,
     );
   }
 }
