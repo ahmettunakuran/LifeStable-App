@@ -19,6 +19,7 @@ dependencies:
   intl: ^0.19.0
   uuid: ^4.4.0
   firebase_auth: ^6.2.0
+  rxdart: ^0.28.0
   table_calendar: ^3.1.2
   speech_to_text: ^6.6.2
   image_picker: ^1.1.2

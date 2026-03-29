@@ -80,7 +80,7 @@ class _NotesPageState extends State<NotesPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: selectedDomainId,
+                  initialValue: selectedDomainId,
                   isExpanded: true,
                   items: domains
                       .map(
