@@ -51,21 +51,25 @@ class TaskRepositoryImpl implements TaskRepository {
 
   @override
   Future<void> createOrUpdateTask(TaskEntity task) async {
-    final cache = await _offlineCache;
-    await cache.upsertTask(task);
-
     final uid = _userId;
+    final taskToPersist = (task.teamId != null && uid != null)
+        ? task.copyWith(lastUpdatedBy: uid)
+        : task;
+
+    final cache = await _offlineCache;
+    await cache.upsertTask(taskToPersist);
+
     if (uid == null) return;
 
-    if (task.teamId != null) {
-      await _teamTaskCollection(task.teamId!).doc(task.id).set(task.toFirestore());
+    if (taskToPersist.teamId != null) {
+      await _teamTaskCollection(taskToPersist.teamId!).doc(taskToPersist.id).set(taskToPersist.toFirestore());
     } else {
       final collection = _personalTaskCollection;
       if (collection != null) {
-        await collection.doc(task.id).set(task.toFirestore());
+        await collection.doc(taskToPersist.id).set(taskToPersist.toFirestore());
       }
     }
-    await cache.markTaskSynced(task.id, DateTime.now().toUtc());
+    await cache.markTaskSynced(taskToPersist.id, DateTime.now().toUtc());
   }
 
   @override

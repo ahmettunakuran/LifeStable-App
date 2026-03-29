@@ -41,6 +41,7 @@ class CachedTask {
       'dueDate': task.dueDate?.toIso8601String(),
       'teamId': task.teamId,
       'assignedTo': task.assignedTo,
+      'lastUpdatedBy': task.lastUpdatedBy,
       'updatedAt': updatedAt.toIso8601String(),
       'isDirty': isDirty,
     };
@@ -64,6 +65,7 @@ class CachedTask {
         dueDate: json['dueDate'] != null ? DateTime.tryParse(json['dueDate'] as String) : null,
         teamId: json['teamId'] as String?,
         assignedTo: json['assignedTo'] as String?,
+        lastUpdatedBy: json['lastUpdatedBy'] as String?,
       ),
       updatedAt: DateTime.parse(json['updatedAt'] as String).toUtc(),
       isDirty: json['isDirty'] as bool? ?? false,

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../tasks/domain/entities/task_entity.dart';
+import '../../tasks/domain/task_sort.dart';
 import '../../tasks/presentation/bloc/tasks_bloc.dart';
 import '../../tasks/presentation/bloc/tasks_event.dart';
 import '../../tasks/presentation/bloc/tasks_state.dart';
@@ -53,6 +54,7 @@ class DomainKanbanView extends StatelessWidget {
 
   Widget _buildKanbanColumn(BuildContext context, String title, TaskStatus status, List<TaskEntity> tasks) {
     final columnTasks = tasks.where((t) => t.status == status).toList();
+    sortTasksByPriorityHighFirst(columnTasks);
 
     return Container(
       width: 300,

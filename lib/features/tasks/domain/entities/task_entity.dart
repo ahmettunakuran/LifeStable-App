@@ -13,6 +13,7 @@ class TaskEntity {
     this.dueDate,
     this.teamId,
     this.assignedTo,
+    this.lastUpdatedBy,
   });
 
   final String id;
@@ -24,6 +25,8 @@ class TaskEntity {
   final DateTime? dueDate;
   final String? teamId; // Non-null if this is a shared team task
   final String? assignedTo; // UID of the user this task is assigned to
+  /// Set on team-task writes so Cloud Functions can skip notifying this user.
+  final String? lastUpdatedBy;
 
   TaskEntity copyWith({
     String? id,
@@ -35,6 +38,7 @@ class TaskEntity {
     DateTime? dueDate,
     String? teamId,
     String? assignedTo,
+    String? lastUpdatedBy,
   }) {
     return TaskEntity(
       id: id ?? this.id,
@@ -46,6 +50,7 @@ class TaskEntity {
       dueDate: dueDate ?? this.dueDate,
       teamId: teamId ?? this.teamId,
       assignedTo: assignedTo ?? this.assignedTo,
+      lastUpdatedBy: lastUpdatedBy ?? this.lastUpdatedBy,
     );
   }
 
@@ -59,6 +64,7 @@ class TaskEntity {
       'dueDate': dueDate?.toIso8601String(),
       if (teamId != null) 'teamId': teamId,
       if (assignedTo != null) 'assignedTo': assignedTo,
+      if (lastUpdatedBy != null) 'lastUpdatedBy': lastUpdatedBy,
     };
   }
 
@@ -79,6 +85,7 @@ class TaskEntity {
       dueDate: data['dueDate'] != null ? DateTime.parse(data['dueDate'] as String) : null,
       teamId: data['teamId'] as String?,
       assignedTo: data['assignedTo'] as String?,
+      lastUpdatedBy: data['lastUpdatedBy'] as String?,
     );
   }
 }

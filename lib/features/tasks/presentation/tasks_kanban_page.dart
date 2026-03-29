@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../app/router/app_routes.dart';
 import '../domain/entities/task_entity.dart';
+import '../domain/task_sort.dart';
 import 'bloc/tasks_bloc.dart';
 import 'bloc/tasks_event.dart';
 import 'bloc/tasks_state.dart';
@@ -81,6 +82,7 @@ class TasksKanbanPage extends StatelessWidget {
     List<TaskEntity> tasks,
   ) {
     final columnTasks = tasks.where((t) => t.status == status).toList();
+    sortTasksByPriorityHighFirst(columnTasks);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(

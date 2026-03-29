@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../shared/constants/app_colors.dart';
 import '../../tasks/domain/entities/task_entity.dart';
+import '../../tasks/domain/task_sort.dart';
 import '../domain/entities/calendar_event_entity.dart';
 import '../logic/calender_cubit.dart';
 
@@ -105,7 +106,8 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           .get();
 
       final tasks =
-      snap.docs.map((d) => TaskEntity.fromFirestore(d.id, d.data())).toList();
+          snap.docs.map((d) => TaskEntity.fromFirestore(d.id, d.data())).toList();
+      sortTasksByPriorityHighFirst(tasks);
 
       TaskEntity? linked;
       if (widget.existingEvent?.linkedTaskId != null) {

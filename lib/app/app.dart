@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/localization/app_localizations.dart';
+import '../core/notifications/team_push_notifications.dart';
 import '../features/dashboard/data/repositories/domain_repository_impl.dart';
 import '../features/dashboard/domain/repositories/domain_repository.dart';
 import '../features/dashboard/logic/domain_cubit.dart';
@@ -20,48 +21,50 @@ class LifeStableApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider<DomainRepository>(
-          create: (context) => DomainRepositoryImpl(
-            FirebaseFirestore.instance,
-            FirebaseAuth.instance,
-          ),
-        ),
-        RepositoryProvider<TaskRepository>(
-          create: (context) => TaskRepositoryImpl(
-            FirebaseFirestore.instance,
-            FirebaseAuth.instance,
-          ),
-        ),
-      ],
-      child: MultiBlocProvider(
+    return TeamPushBootstrap(
+      child: MultiRepositoryProvider(
         providers: [
-          BlocProvider(
-            create: (context) => TasksBloc(
-              context.read<TaskRepository>(),
-            )..add(LoadTasks()),
+          RepositoryProvider<DomainRepository>(
+            create: (context) => DomainRepositoryImpl(
+              FirebaseFirestore.instance,
+              FirebaseAuth.instance,
+            ),
           ),
-          BlocProvider(
-            create: (context) => DomainCubit(
-              context.read<DomainRepository>(),
+          RepositoryProvider<TaskRepository>(
+            create: (context) => TaskRepositoryImpl(
+              FirebaseFirestore.instance,
+              FirebaseAuth.instance,
             ),
           ),
         ],
-        child: ValueListenableBuilder<Locale>(
-          valueListenable: localeNotifier,
-          builder: (context, locale, _) {
-            return MaterialApp(
-              title: 'LifeStable',
-              debugShowCheckedModeBanner: false,
-              locale: locale,
-              theme: AppTheme.light,
-              darkTheme: AppTheme.dark,
-              themeMode: ThemeMode.dark,
-              initialRoute: AppRoutes.splash,
-              onGenerateRoute: AppRouter.onGenerateRoute,
-            );
-          },
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (context) => TasksBloc(
+                context.read<TaskRepository>(),
+              )..add(LoadTasks()),
+            ),
+            BlocProvider(
+              create: (context) => DomainCubit(
+                context.read<DomainRepository>(),
+              ),
+            ),
+          ],
+          child: ValueListenableBuilder<Locale>(
+            valueListenable: localeNotifier,
+            builder: (context, locale, _) {
+              return MaterialApp(
+                title: 'LifeStable',
+                debugShowCheckedModeBanner: false,
+                locale: locale,
+                theme: AppTheme.light,
+                darkTheme: AppTheme.dark,
+                themeMode: ThemeMode.dark,
+                initialRoute: AppRoutes.splash,
+                onGenerateRoute: AppRouter.onGenerateRoute,
+              );
+            },
+          ),
         ),
       ),
     );
