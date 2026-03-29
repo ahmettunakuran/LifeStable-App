@@ -1,40 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../../tasks/presentation/bloc/tasks_bloc.dart';
 import '../../tasks/presentation/bloc/tasks_event.dart';
 import '../../tasks/presentation/bloc/tasks_state.dart';
-import '../domain/entities/domain_entity.dart';
-import 'package:intl/intl.dart';
 
-class DomainKanbanView extends StatelessWidget {
-  const DomainKanbanView({super.key, required this.domain});
+class TeamKanbanView extends StatelessWidget {
+  const TeamKanbanView({super.key, required this.teamId});
 
-  final DomainEntity domain;
+  final String teamId;
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    
     return BlocBuilder<TasksBloc, TasksState>(
       builder: (context, state) {
         if (state is TasksLoading) {
           return const Center(child: CircularProgressIndicator(color: AppColors.gold));
         } else if (state is TasksLoaded) {
-          var domainTasks = state.tasks.where((t) => t.domainId == domain.id).toList();
-          
-          // If this is a team mirror domain, filter to show only tasks assigned to the current user
-          if (domain.isTeamMirror && currentUser != null) {
-            domainTasks = domainTasks.where((t) => t.assignedTo == currentUser.uid).toList();
-          }
-          
-          return _buildKanbanBoard(context, domainTasks);
+          final teamTasks = state.tasks.where((t) => t.teamId == teamId).toList();
+          return _buildKanbanBoard(context, teamTasks);
         } else if (state is TasksError) {
           return Center(child: Text(state.message, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))));
         }
-        return Center(child: Text('No tasks found for this domain.', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))));
+        return Center(child: Text('No tasks found for this team.', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))));
       },
     );
   }
@@ -96,11 +87,12 @@ class DomainKanbanView extends StatelessWidget {
                         elevation: 10,
                         borderRadius: BorderRadius.circular(14),
                         color: Colors.transparent,
-                        child: _TaskCard(task: task, width: 276),
+                        child: _TaskCard(task: task, width: 276, teamId: teamId),
                       ),
-                      childWhenDragging: Opacity(opacity: 0.3, child: _TaskCard(task: task)),
+                      childWhenDragging: Opacity(opacity: 0.3, child: _TaskCard(task: task, teamId: teamId)),
                       child: _TaskCard(
                         task: task,
+                        teamId: teamId,
                         onStatusChanged: (newStatus) {
                           context.read<TasksBloc>().add(UpdateTaskStatus(task.id, newStatus));
                         },
@@ -121,8 +113,9 @@ class DomainKanbanView extends StatelessWidget {
 }
 
 class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task, this.width, this.onStatusChanged, this.onDelete});
+  const _TaskCard({required this.task, required this.teamId, this.width, this.onStatusChanged, this.onDelete});
   final TaskEntity task;
+  final String teamId;
   final double? width;
   final ValueChanged<TaskStatus>? onStatusChanged;
   final VoidCallback? onDelete;
@@ -166,21 +159,56 @@ class _TaskCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _PriorityBadge(priority: task.priority),
-                      if (task.dueDate != null)
-                        Row(children: [
-                          Icon(Icons.calendar_today, size: 11, color: Colors.white.withValues(alpha: 0.3)),
-                          const SizedBox(width: 4),
-                          Text(DateFormat('MMM d').format(task.dueDate!),
-                              style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.3), fontWeight: FontWeight.w600)),
-                        ]),
+                      _AssigneeChip(userId: task.assignedTo),
                     ],
                   ),
+                  if (task.dueDate != null) ...[
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Icon(Icons.calendar_today, size: 11, color: Colors.white.withValues(alpha: 0.3)),
+                      const SizedBox(width: 4),
+                      Text(DateFormat('MMM d').format(task.dueDate!),
+                          style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.3), fontWeight: FontWeight.w600)),
+                    ]),
+                  ],
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AssigneeChip extends StatelessWidget {
+  const _AssigneeChip({this.userId});
+  final String? userId;
+
+  Future<String> _getUsername(String uid) async {
+    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    return doc.data()?['displayName'] ?? uid.substring(0, 4);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (userId == null) return const SizedBox.shrink();
+    return FutureBuilder<String>(
+      future: _getUsername(userId!),
+      builder: (context, snapshot) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(4)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.person, size: 10, color: Colors.white.withValues(alpha: 0.5)),
+              const SizedBox(width: 4),
+              Text(snapshot.data ?? '...', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10)),
+            ],
+          ),
+        );
+      },
     );
   }
 }

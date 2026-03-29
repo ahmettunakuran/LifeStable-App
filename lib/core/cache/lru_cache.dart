@@ -1,4 +1,3 @@
-import 'dart:collection';
 
 /// Simple in-memory LRU (least recently used) cache.
 ///
@@ -10,14 +9,14 @@ class LruCache<K, V> {
 
   final int capacity;
 
-  final _entries = LinkedHashMap<K, V>();
+  final _entries = <K, V>{};
 
   V? get(K key) {
     if (!_entries.containsKey(key)) {
       return null;
     }
 
-    final value = _entries.remove(key)!;
+    final value = _entries.remove(key) as V;
     _entries[key] = value;
     return value;
   }

@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:rxdart/rxdart.dart';
 import 'offline_task_cache.dart';
 import '../domain/entities/task_entity.dart';
 import '../domain/repositories/task_repository.dart';
+import 'dart:async';
 
 class TaskRepositoryImpl implements TaskRepository {
   TaskRepositoryImpl(this._firestore, this._auth);
@@ -13,19 +15,23 @@ class TaskRepositoryImpl implements TaskRepository {
 
   String? get _userId => _auth.currentUser?.uid;
 
-  CollectionReference<Map<String, dynamic>>? get _taskCollection {
+  CollectionReference<Map<String, dynamic>>? get _personalTaskCollection {
     final uid = _userId;
     if (uid == null) return null;
     return _firestore.collection('users').doc(uid).collection('tasks');
   }
 
+  CollectionReference<Map<String, dynamic>> _teamTaskCollection(String teamId) {
+    return _firestore.collection('teams').doc(teamId).collection('tasks');
+  }
+
   @override
   Future<List<TaskEntity>> fetchTasks() async {
-    final collection = _taskCollection;
     final cache = await _offlineCache;
-    if (collection == null) {
-      return cache.getAllTasks();
-    }
+    // For simplicity, we mostly rely on watchTasks for real-time sync.
+    // fetchTasks can return cached data or personal tasks.
+    final collection = _personalTaskCollection;
+    if (collection == null) return cache.getAllTasks();
 
     try {
       final snapshot = await collection.get();
@@ -45,42 +51,95 @@ class TaskRepositoryImpl implements TaskRepository {
 
   @override
   Future<void> createOrUpdateTask(TaskEntity task) async {
-    final collection = _taskCollection;
     final cache = await _offlineCache;
     await cache.upsertTask(task);
-    if (collection == null) return;
 
-    await collection.doc(task.id).set(task.toFirestore());
+    final uid = _userId;
+    if (uid == null) return;
+
+    if (task.teamId != null) {
+      await _teamTaskCollection(task.teamId!).doc(task.id).set(task.toFirestore());
+    } else {
+      final collection = _personalTaskCollection;
+      if (collection != null) {
+        await collection.doc(task.id).set(task.toFirestore());
+      }
+    }
     await cache.markTaskSynced(task.id, DateTime.now().toUtc());
   }
 
   @override
   Future<void> deleteTask(String taskId) async {
-    final collection = _taskCollection;
     final cache = await _offlineCache;
+    final task = await cache.getTask(taskId);
     await cache.removeTask(taskId);
-    if (collection == null) return;
-    await collection.doc(taskId).delete();
+
+    if (_userId == null) return;
+
+    if (task?.teamId != null) {
+      await _teamTaskCollection(task!.teamId!).doc(taskId).delete();
+    } else {
+      final collection = _personalTaskCollection;
+      if (collection != null) {
+        await collection.doc(taskId).delete();
+      }
+    }
   }
 
   @override
   Stream<List<TaskEntity>> watchTasks() {
-    final collection = _taskCollection;
-    if (collection == null) {
+    final uid = _userId;
+    if (uid == null) {
       return Stream.fromFuture(_offlineCache.then((cache) => cache.getAllTasks()));
     }
 
-    return collection.snapshots().map((snapshot) {
-      final tasks = snapshot.docs
-          .map((doc) => TaskEntity.fromFirestore(doc.id, doc.data()))
-          .toList();
-      _offlineCache.then((cache) async {
-        for (final task in tasks) {
-          await cache.upsertTask(task);
-          await cache.markTaskSynced(task.id, DateTime.now().toUtc());
-        }
+    // 1. Watch personal tasks
+    final personalStream = _personalTaskCollection?.snapshots().map((snapshot) {
+          return snapshot.docs
+              .map((doc) => TaskEntity.fromFirestore(doc.id, doc.data()))
+              .toList();
+        }) ??
+        Stream.value(<TaskEntity>[]);
+
+    // 2. Watch team tasks by first watching the user's team memberships
+    final teamsTasksStream = _firestore
+        .collection('team_members')
+        .where('user_id', isEqualTo: uid)
+        .snapshots()
+        .switchMap((membershipSnapshot) {
+      final teamIds = membershipSnapshot.docs.map((doc) => doc.data()['team_id'] as String).toList();
+      
+      if (teamIds.isEmpty) return Stream.value(<List<TaskEntity>>[]);
+
+      final teamTaskStreams = teamIds.map((teamId) {
+        return _teamTaskCollection(teamId).snapshots().map((snapshot) {
+          return snapshot.docs
+              .map((doc) => TaskEntity.fromFirestore(doc.id, doc.data()))
+              .toList();
+        });
       });
-      return tasks;
+
+      return CombineLatestStream.list<List<TaskEntity>>(teamTaskStreams);
     });
+
+    return CombineLatestStream.combine2<List<TaskEntity>, List<List<TaskEntity>>, List<TaskEntity>>(
+      personalStream,
+      teamsTasksStream,
+      (personal, allTeamsTasks) {
+        final List<TaskEntity> combined = [...personal];
+        for (final teamTasks in allTeamsTasks) {
+          combined.addAll(teamTasks);
+        }
+        
+        // Background cache update
+        _offlineCache.then((cache) async {
+          for (final task in combined) {
+            await cache.upsertTask(task);
+          }
+        });
+        
+        return combined;
+      },
+    );
   }
 }
