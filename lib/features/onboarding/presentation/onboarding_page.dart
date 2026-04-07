@@ -70,10 +70,13 @@ class _OnboardingPageState extends State<OnboardingPage>
 
   Future<void> _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
     _logoController.forward();
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
     _textController.forward();
     await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
     _buttonController.forward();
   }
 

@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
@@ -8,6 +10,7 @@ import '../../../shared/constants/app_colors.dart';
 import '../data/calender_repository_impl.dart';
 import '../domain/entities/calendar_event_entity.dart';
 import '../logic/calender_cubit.dart';
+import '../logic/ocr_service.dart';
 import 'event_create_edit_page.dart';
 
 class CalendarPage extends StatelessWidget {
@@ -133,6 +136,8 @@ class _CalendarViewState extends State<_CalendarView>
             ),
           ),
           const Spacer(),
+          _buildImportButton(context),
+          const SizedBox(width: 8),
           if (_viewIndex == 0)
             _FormatToggle(
               format: _format,
@@ -571,6 +576,166 @@ class _CalendarViewState extends State<_CalendarView>
   }
 
   // ── Navigation helpers ─────────────────────────────────────────────────────
+
+  Widget _buildImportButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showImportSourceSheet(context),
+      child: Container(
+        padding: const EdgeInsets.all(9),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.05),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
+        ),
+        child: const Icon(Icons.document_scanner_outlined,
+            color: AppColors.gold, size: 18),
+      ),
+    );
+  }
+
+  void _showImportSourceSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Import Course Schedule',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppColors.gold),
+                title: const Text('Choose from Gallery',
+                    style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickAndProcessImage(context, ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: AppColors.gold),
+                title: const Text('Take a Photo',
+                    style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickAndProcessImage(context, ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndProcessImage(BuildContext context, ImageSource source) async {
+    final picker = ImagePicker();
+    // Emülatör uyumluluğu için resmi küçültüyoruz
+    final XFile? pickedFile = await picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 80,
+    );
+    if (pickedFile == null) return;
+
+    final ocrService = OcrService();
+    final cubit = context.read<CalendarCubit>();
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? "anonymous";
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+          child: CircularProgressIndicator(color: AppColors.gold)),
+    );
+
+    try {
+      final events = await ocrService.processScheduleWithGemini(userId, pickedFile);
+      if (!context.mounted) return;
+      Navigator.pop(context); // Yükleme animasyonunu kapat.
+
+      if (events.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No courses found in image.')),
+        );
+        return;
+      }
+
+      // Kullanıcıya bulunan dersleri onayla
+      _showConfirmationDialog(context, events, (confirmedEvents) async {
+        await ocrService.saveScheduleEvents(confirmedEvents, userId);
+        cubit.init(); // Takvimi yenile.
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${confirmedEvents.length} courses added to calendar!')),
+          );
+        }
+      });
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  void _showConfirmationDialog(
+    BuildContext context,
+    List<CalendarEventEntity> events,
+    Function(List<CalendarEventEntity>) onConfirm,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBg,
+        title: const Text('Confirm Schedule', style: TextStyle(color: Colors.white)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: events.length,
+            itemBuilder: (c, i) => ListTile(
+              title: Text(events[i].title, style: const TextStyle(color: AppColors.gold)),
+              subtitle: Text(
+                '${DateFormat('EEEE HH:mm').format(events[i].startAt)}',
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold),
+            onPressed: () {
+              Navigator.pop(ctx);
+              onConfirm(events);
+            },
+            child: const Text('Add to Calendar', style: TextStyle(color: Colors.black)),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _openCreate(BuildContext context, DateTime day) {
     final cubit = context.read<CalendarCubit>();
