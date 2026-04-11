@@ -27,6 +27,8 @@ dependencies:
   google_mlkit_text_recognition: ^0.13.0
   google_generative_ai: ^0.4.7
   permission_handler: ^11.3.1
+  http: ^1.6.0
+  firebase_remote_config: ^5.5.0
 
 dev_dependencies:
   flutter_test:

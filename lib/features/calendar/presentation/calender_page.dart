@@ -664,7 +664,7 @@ class _CalendarViewState extends State<_CalendarView>
     );
 
     try {
-      final events = await ocrService.processScheduleWithGemini(userId, pickedFile);
+      final events = await ocrService.processScheduleFree(userId, pickedFile);
       if (!context.mounted) return;
       Navigator.pop(context); // Yükleme animasyonunu kapat.
 
