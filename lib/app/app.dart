@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/localization/app_localizations.dart';
+import '../features/calendar/data/calender_repository_impl.dart';
+import '../features/calendar/domain/repositories/calendar_repository.dart';
 import '../features/dashboard/data/repositories/domain_repository_impl.dart';
 import '../features/dashboard/domain/repositories/domain_repository.dart';
 import '../features/dashboard/logic/domain_cubit.dart';
@@ -20,19 +22,19 @@ class LifeStableApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final firestore = FirebaseFirestore.instance;
+    final auth = FirebaseAuth.instance;
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<DomainRepository>(
-          create: (context) => DomainRepositoryImpl(
-            FirebaseFirestore.instance,
-            FirebaseAuth.instance,
-          ),
+          create: (context) => DomainRepositoryImpl(firestore, auth),
         ),
         RepositoryProvider<TaskRepository>(
-          create: (context) => TaskRepositoryImpl(
-            FirebaseFirestore.instance,
-            FirebaseAuth.instance,
-          ),
+          create: (context) => TaskRepositoryImpl(firestore, auth),
+        ),
+        RepositoryProvider<CalendarRepository>(
+          create: (context) => CalendarRepositoryImpl(firestore: firestore, auth: auth),
         ),
       ],
       child: MultiBlocProvider(

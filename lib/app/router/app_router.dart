@@ -42,7 +42,8 @@ class AppRouter {
       case AppRoutes.homeDashboard:
         return _buildRoute(const HomeDashboardPage(), settings);
       case AppRoutes.domainDashboard:
-        return _buildRoute(const DomainDashboardPage(), settings);
+        final initialIndex = settings.arguments as int? ?? 0;
+        return _buildRoute(DomainDashboardPage(initialIndex: initialIndex), settings);
       case AppRoutes.domainEdit:
         final domain = settings.arguments as DomainEntity?;
         return _buildRoute(DomainEditPage(domain: domain), settings);

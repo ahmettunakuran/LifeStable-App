@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/router/app_routes.dart';
-import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../domain/entities/domain_entity.dart';
 import '../logic/domain_cubit.dart';
 import 'domain_kanban_view.dart';
 import 'domain_edit_page.dart';
 
 class DomainDashboardPage extends StatefulWidget {
-  const DomainDashboardPage({super.key});
+  final int initialIndex;
+  const DomainDashboardPage({super.key, this.initialIndex = 0});
 
   @override
   State<DomainDashboardPage> createState() => _DomainDashboardPageState();
 }
 
 class _DomainDashboardPageState extends State<DomainDashboardPage> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  late PageController _pageController;
+  late int _currentPage;
 
   @override
   void initState() {
     super.initState();
+    _currentPage = widget.initialIndex;
+    _pageController = PageController(initialPage: _currentPage);
     context.read<DomainCubit>().loadDomains();
   }
 
@@ -43,11 +46,17 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
           return Scaffold(
             backgroundColor: AppColors.black,
             appBar: _buildAppBar(const []),
-            body: Center(child: Text('Error: ${state.message}', style: TextStyle(color: Colors.white.withOpacity(0.5)))),
+            body: Center(child: Text('Error: ${state.message}', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
           );
         } else if (state is DomainLoaded) {
           final domains = state.domains;
           final totalPages = domains.length + 1;
+
+          // If initialIndex is out of bounds, reset (e.g. after a deletion)
+          if (_currentPage >= totalPages) {
+            _currentPage = 0;
+            _pageController = PageController(initialPage: 0);
+          }
 
           return Scaffold(
             backgroundColor: AppColors.black,
@@ -114,7 +123,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
                 if (currentDomain != null && currentDomain.isTeamMirror)
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: Icon(Icons.group, size: 16, color: AppColors.gold.withOpacity(0.7)),
+                    child: Icon(Icons.group, size: 16, color: AppColors.gold.withValues(alpha: 0.7)),
                   ),
                 Flexible(
                   child: Text(title, overflow: TextOverflow.ellipsis,
@@ -136,13 +145,13 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
       actions: [
         if (currentDomain != null && !currentDomain.isTeamMirror)
           IconButton(
-            icon: Icon(Icons.settings_outlined, color: AppColors.gold.withOpacity(0.7)),
+            icon: Icon(Icons.settings_outlined, color: AppColors.gold.withValues(alpha: 0.7)),
             onPressed: () => Navigator.pushNamed(context, AppRoutes.domainEdit, arguments: currentDomain),
           ),
         if (currentDomain != null && currentDomain.isTeamMirror)
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: Tooltip(message: 'Synced from team', child: Icon(Icons.sync, size: 18, color: AppColors.gold.withOpacity(0.5))),
+            child: Tooltip(message: 'Synced from team', child: Icon(Icons.sync, size: 18, color: AppColors.gold.withValues(alpha: 0.5))),
           ),
       ],
     );
@@ -156,7 +165,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark]),
-          boxShadow: [BoxShadow(color: AppColors.gold.withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6))],
+          boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
@@ -175,7 +184,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
-        border: Border(top: BorderSide(color: AppColors.gold.withOpacity(0.1))),
+        border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.1))),
       ),
       child: SafeArea(
         child: Row(
@@ -197,9 +206,9 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.gold.withOpacity(0.6), size: 22),
+          Icon(icon, color: AppColors.gold.withValues(alpha: 0.6), size: 22),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.45), fontSize: 10, fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 10, fontWeight: FontWeight.w600)),
         ],
       ),
     );
