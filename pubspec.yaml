@@ -21,7 +21,7 @@ dependencies:
   firebase_auth: ^6.2.0
   rxdart: ^0.28.0
   table_calendar: ^3.1.2
-  speech_to_text: ^6.6.2
+  speech_to_text: ^7.3.0
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
 
