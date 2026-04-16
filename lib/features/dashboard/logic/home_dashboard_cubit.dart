@@ -99,9 +99,26 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
 
           final completedHabitsCount = habits.where((h) => h.isCompletedToday).length;
 
+          final sortedTasks = List<TaskEntity>.from(tasks)..sort((a, b) {
+            // Priority order: high (2), medium (1), low (0)
+            final priorityA = a.priority == TaskPriority.high ? 2 : (a.priority == TaskPriority.medium ? 1 : 0);
+            final priorityB = b.priority == TaskPriority.high ? 2 : (b.priority == TaskPriority.medium ? 1 : 0);
+            
+            // Sort by priority descending (high to low)
+            if (priorityA != priorityB) {
+              return priorityB.compareTo(priorityA);
+            }
+            
+            // If priorities are same, sort by due date (closest first)
+            if (a.dueDate != null && b.dueDate != null) {
+              return a.dueDate!.compareTo(b.dueDate!);
+            }
+            return 0;
+          });
+
           return HomeDashboardLoaded(
             habits: habits,
-            tasks: tasks,
+            tasks: sortedTasks,
             todayEvents: todayEvents,
             finishedEvents: finishedEvents,
             closeEvents: closeEvents,

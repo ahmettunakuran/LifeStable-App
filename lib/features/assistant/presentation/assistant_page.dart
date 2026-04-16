@@ -11,6 +11,10 @@ import 'widgets/image_input_button.dart';
 import 'widgets/suggestion_chips.dart';
 import 'widgets/voice_input_button.dart';
 
+import '../../tasks/domain/repositories/task_repository.dart';
+import '../../calendar/domain/repositories/calendar_repository.dart';
+import '../../../core/logic/ai_pipeline_service.dart';
+
 class AssistantPage extends StatelessWidget {
   const AssistantPage({super.key});
 
@@ -19,6 +23,9 @@ class AssistantPage extends StatelessWidget {
     return BlocProvider(
       create: (_) => AssistantCubit(
         repository: AssistantRepositoryImpl(),
+        taskRepository: context.read<TaskRepository>(),
+        calendarRepository: context.read<CalendarRepository>(),
+        aiPipeline: AiPipelineService(),
       ),
       child: const _AssistantView(),
     );

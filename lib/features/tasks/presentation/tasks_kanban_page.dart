@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../calendar/domain/repositories/calendar_repository.dart';
+import '../../calendar/domain/entities/calendar_event_entity.dart';
 import '../domain/entities/task_entity.dart';
+import '../logic/prompt_to_action_service.dart';
 import 'bloc/tasks_bloc.dart';
 import 'bloc/tasks_event.dart';
 import 'bloc/tasks_state.dart';
@@ -47,11 +51,91 @@ class TasksKanbanPage extends StatelessWidget {
           return const Center(child: Text('No tasks found.'));
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.taskEdit),
-        backgroundColor: goldColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'ai_fab',
+            onPressed: () => _showAiPromptDialog(context),
+            backgroundColor: Colors.black,
+            child: const Icon(Icons.auto_awesome, color: goldColor),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'add_fab',
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.taskEdit),
+            backgroundColor: goldColor,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Add Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAiPromptDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('AI Magic Task'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'e.g. Yarın akşam 8 için markete gitmeyi ekle',
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final prompt = controller.text;
+              if (prompt.isEmpty) return;
+
+              Navigator.pop(context);
+              
+              // Loading show
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('AI is thinking...'), duration: Duration(seconds: 2)),
+              );
+
+              final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+              final result = await PromptToActionService().processPrompt(prompt, userId);
+
+              if (result.type == AiActionType.createTask && result.entity is TaskEntity) {
+                if (context.mounted) {
+                  context.read<TasksBloc>().add(AddTask(result.entity as TaskEntity));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Task created by AI! ✨')),
+                  );
+                }
+              } else if (result.type == AiActionType.createEvent && result.entity is CalendarEventEntity) {
+                if (context.mounted) {
+                  try {
+                    final calendarRepo = context.read<CalendarRepository>();
+                    await calendarRepo.createPersonalEvent(result.entity as CalendarEventEntity);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Calendar event created by AI! 📅')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to create event: $e')),
+                    );
+                  }
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('AI could not understand or created an event.')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: goldColor),
+            child: const Text('Magic!'),
+          ),
+        ],
       ),
     );
   }
@@ -77,6 +161,14 @@ class TasksKanbanPage extends StatelessWidget {
     List<TaskEntity> tasks,
   ) {
     final columnTasks = tasks.where((t) => t.status == status).toList();
+    
+    // Sort by priority: high (2), medium (1), low (0)
+    columnTasks.sort((a, b) {
+      final pA = a.priority == TaskPriority.high ? 2 : (a.priority == TaskPriority.medium ? 1 : 0);
+      final pB = b.priority == TaskPriority.high ? 2 : (b.priority == TaskPriority.medium ? 1 : 0);
+      return pB.compareTo(pA); // Descending
+    });
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Expanded(
@@ -188,7 +280,7 @@ class _TaskCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 100, // BURASI KONTROL EDER: Kartın boylamasına yüksekliği
+      constraints: const BoxConstraints(minHeight: 100), // Minimum yükseklik 100 olsun
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF252525) : Colors.white,
@@ -208,86 +300,75 @@ class _TaskCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // İçeriğe göre küçül/büyü
           children: [
             Container(height: 5, color: TasksKanbanPage.goldColor),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                task.title,
-                                maxLines: 4,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                  height: 1.2,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                            ),
-                            _TaskActions(
-                              currentStatus: task.status,
-                              onStatusChanged: onStatusChanged ?? (s) {},
-                              onDelete: onDelete,
-                            ),
-                          ],
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          task.title,
+                          maxLines: 2, // Çok uzun başlıkları sınırla
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                            height: 1.2,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
                         ),
-                        if (task.description != null && task.description!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            task.description!,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: isDark ? Colors.white54 : Colors.black54,
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ],
+                      ),
+                      _TaskActions(
+                        currentStatus: task.status,
+                        onStatusChanged: onStatusChanged ?? (s) {},
+                        onDelete: onDelete,
+                      ),
+                    ],
+                  ),
+                  if (task.description != null && task.description!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      task.description!,
+                      maxLines: 2, // Açıklamayı da sınırla
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                        height: 1.3,
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                  const SizedBox(height: 12),
+                  _PriorityBadge(priority: task.priority),
+                  if (task.dueDate != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
                       children: [
-                        _PriorityBadge(priority: task.priority),
-                        if (task.dueDate != null) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                size: 12,
-                                color: isDark ? Colors.white38 : Colors.black38,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                DateFormat('d MMM yyyy').format(task.dueDate!),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white38 : Colors.black38,
-                                ),
-                              ),
-                            ],
+                        Icon(
+                          Icons.calendar_today,
+                          size: 12,
+                          color: isDark ? Colors.white38 : Colors.black38,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          DateFormat('d MMM yyyy').format(task.dueDate!),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white38 : Colors.black38,
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ],
-                ),
+                ],
               ),
             ),
           ],
