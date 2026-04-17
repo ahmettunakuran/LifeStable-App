@@ -8,6 +8,7 @@ import '../../tasks/presentation/bloc/tasks_event.dart';
 import '../../tasks/presentation/bloc/tasks_state.dart';
 import '../domain/entities/domain_entity.dart';
 import 'package:intl/intl.dart';
+import '../../../app/router/app_routes.dart';
 
 class DomainKanbanView extends StatelessWidget {
   const DomainKanbanView({super.key, required this.domain});
@@ -127,6 +128,13 @@ class DomainKanbanView extends StatelessWidget {
                         childWhenDragging: Opacity(opacity: 0.3, child: _TaskCard(task: task)),
                         child: _TaskCard(
                           task: task,
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.taskEdit,
+                              arguments: {'task': task},
+                            );
+                          },
                           onStatusChanged: (newStatus) {
                             context.read<TasksBloc>().add(UpdateTaskStatus(task.id, newStatus));
                           },
@@ -148,125 +156,129 @@ class DomainKanbanView extends StatelessWidget {
 }
 
 class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task, this.onStatusChanged, this.onDelete});
+  const _TaskCard({required this.task, this.onTap, this.onStatusChanged, this.onDelete});
   final TaskEntity task;
+  final VoidCallback? onTap;
   final ValueChanged<TaskStatus>? onStatusChanged;
   final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 180, // BURASI KONTROL EDER: Kart yüksekliği
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.08)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 5,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.goldLight.withValues(alpha: 0.6),
-                    AppColors.gold.withValues(alpha: 0.3),
-                  ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 180, // BURASI KONTROL EDER: Kart yüksekliği
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.08)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 5,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.goldLight.withValues(alpha: 0.6),
+                      AppColors.gold.withValues(alpha: 0.3),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                task.title,
-                                maxLines: 4,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                  height: 1.2,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            _TaskActions(
-                              currentStatus: task.status,
-                              onStatusChanged: onStatusChanged ?? (_) {},
-                              onDelete: onDelete,
-                            ),
-                          ],
-                        ),
-                        if (task.description != null && task.description!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            task.description!,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white.withValues(alpha: 0.5),
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _PriorityBadge(priority: task.priority),
-                        if (task.dueDate != null) ...[
-                          const SizedBox(height: 8),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.calendar_today,
-                                size: 12,
-                                color: Colors.white.withValues(alpha: 0.3),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                DateFormat('d MMM yyyy').format(task.dueDate!),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white.withValues(alpha: 0.3),
+                              Expanded(
+                                child: Text(
+                                  task.title,
+                                  maxLines: 4,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                    height: 1.2,
+                                    color: Colors.white,
+                                  ),
                                 ),
+                              ),
+                              _TaskActions(
+                                currentStatus: task.status,
+                                onStatusChanged: onStatusChanged ?? (_) {},
+                                onDelete: onDelete,
                               ),
                             ],
                           ),
+                          if (task.description != null && task.description!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              task.description!,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.5),
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _PriorityBadge(priority: task.priority),
+                          if (task.dueDate != null) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 12,
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  DateFormat('d MMM yyyy').format(task.dueDate!),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

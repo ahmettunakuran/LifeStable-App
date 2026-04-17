@@ -51,7 +51,13 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
-  void init() => _subscribe(_focused);
+  void init({DateTime? initialDay}) {
+    if (initialDay != null) {
+      _selected = initialDay;
+      _focused = initialDay;
+    }
+    _subscribe(_focused);
+  }
 
   @override
   Future<void> close() {

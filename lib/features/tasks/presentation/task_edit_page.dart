@@ -27,6 +27,8 @@ class _TaskEditPageState extends State<TaskEditPage> {
   final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
+  TaskEntity? _editingTask;
+
   @override
   void initState() {
     super.initState();
@@ -38,8 +40,19 @@ class _TaskEditPageState extends State<TaskEditPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args != null) {
-      _domainId = args['domainId'] as String?;
+    if (args != null && _editingTask == null && _domainId == null) {
+      if (args['task'] is TaskEntity) {
+        _editingTask = args['task'] as TaskEntity;
+        _titleController.text = _editingTask!.title;
+        _descriptionController.text = _editingTask!.description ?? '';
+        _status = _editingTask!.status;
+        _priority = _editingTask!.priority;
+        _dueDate = _editingTask!.dueDate;
+        _domainId = _editingTask!.domainId;
+        _teamId = _editingTask!.teamId;
+      } else {
+        _domainId = args['domainId'] as String?;
+      }
     }
   }
 
@@ -287,7 +300,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
         border: Border.all(color: AppColors.gold.withValues(alpha: 0.2), width: 1.2),
       ),
       child: DropdownButtonFormField<T>(
-        initialValue: value,
+        value: value,
         dropdownColor: AppColors.cardBg,
         style: const TextStyle(color: Colors.white, fontSize: 14),
         decoration: const InputDecoration(border: InputBorder.none),
@@ -300,7 +313,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
   void _saveTask() {
     if (_formKey.currentState!.validate()) {
       final task = TaskEntity(
-        id: const Uuid().v4(),
+        id: _editingTask?.id ?? const Uuid().v4(),
         domainId: _domainId!,
         title: _titleController.text,
         description: _descriptionController.text,
@@ -308,7 +321,9 @@ class _TaskEditPageState extends State<TaskEditPage> {
         priority: _priority,
         dueDate: _dueDate,
         teamId: _teamId,
+        assignedTo: _editingTask?.assignedTo,
       );
+      
       context.read<TasksBloc>().add(AddTask(task));
       Navigator.pop(context);
     }

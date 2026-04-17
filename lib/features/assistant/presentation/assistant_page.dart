@@ -13,6 +13,7 @@ import 'widgets/voice_input_button.dart';
 
 import '../../tasks/domain/repositories/task_repository.dart';
 import '../../calendar/domain/repositories/calendar_repository.dart';
+import '../../dashboard/domain/repositories/domain_repository.dart';
 import '../../../core/logic/ai_pipeline_service.dart';
 
 class AssistantPage extends StatelessWidget {
@@ -25,6 +26,7 @@ class AssistantPage extends StatelessWidget {
         repository: AssistantRepositoryImpl(),
         taskRepository: context.read<TaskRepository>(),
         calendarRepository: context.read<CalendarRepository>(),
+        domainRepository: context.read<DomainRepository>(),
         aiPipeline: AiPipelineService(),
       ),
       child: const _AssistantView(),
@@ -91,8 +93,20 @@ class _AssistantViewState extends State<_AssistantView> {
           child: BlocConsumer<AssistantCubit, AssistantState>(
             listener: (context, state) {
               if (state.status == AssistantStatus.responding ||
-                  state.status == AssistantStatus.idle) {
+                  state.status == AssistantStatus.idle ||
+                  state.status == AssistantStatus.navigate) {
                 _scrollToBottom();
+              }
+              if (state.status == AssistantStatus.navigate && state.redirectTo != null) {
+                Future.delayed(const Duration(milliseconds: 1500), () {
+                  if (context.mounted) {
+                    Navigator.pushReplacementNamed(
+                      context, 
+                      state.redirectTo!,
+                      arguments: state.redirectArgs,
+                    );
+                  }
+                });
               }
               if (state.status == AssistantStatus.error &&
                   state.errorMessage != null) {

@@ -18,8 +18,11 @@ class CalendarPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final initialDay = args?['initialDay'] as DateTime?;
+
     return BlocProvider(
-      create: (_) => CalendarCubit(CalendarRepositoryImpl())..init(),
+      create: (_) => CalendarCubit(CalendarRepositoryImpl())..init(initialDay: initialDay),
       child: const _CalendarView(),
     );
   }

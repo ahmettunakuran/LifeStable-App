@@ -44,11 +44,12 @@ class AiPipelineService {
 
       KURALLAR:
       1. CRUD İşlemleri:
-         - 'create' / 'add_event': Yeni öğe oluştur.
+         - 'create' / 'add_event': Yeni öğe oluştur. Zaman belirtilmişse ISO8601 formatında TAM zamanı (YYYY-MM-DDTHH:mm:ss) döndür.
          - 'delete': Mevcut öğeyi sil. (Tekil için 'id', toplu silme için 'ids' listesi gönder).
          - 'update': Mevcut öğeyi güncelle. ('id' ve değişen alanlar).
       2. Kullanıcı "Bugünkü tüm etkinlikleri sil" veya "Hepsini temizle" derse, Context içindeki uygun ID'leri bul ve 'ids' listesi olarak döndür.
       3. Başlık (title) içine saati ekleme.
+      4. Zaman Dilimi: Yerel saati kullan, sonuna 'Z' koyma. Kullanıcı "16:00" diyorsa, ISO string'in saati tam 16:00 olmalıdır.
 
       GÖREV ÖNCELİĞİ (Priority):
       - 'low', 'medium', 'high' değerlerini kullan.
@@ -56,11 +57,11 @@ class AiPipelineService {
 
       JSON FORMATI:
       {
-        "domain": "tasks" | "calendar" | "summary" | "sports" | "education",
+        "domain": "tasks" | "calendar" | "summary" | "habits",
         "action": "create" | "add_event" | "delete" | "update" | "read",
         "payload": { 
-           "id": "Silme veya güncelleme için tekil ID",
-           "ids": ["ID1", "ID2", "..."],
+           "domain": "Kullanıcının belirttiği alan adı (Örn: Gym, School, İş)",
+           "domainId": "Eğer Context içinde varsa alanın ID'si",
            "title": "...", 
            "dueDate": "ISO8601",
            "startTime": "ISO8601",

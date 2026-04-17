@@ -7,6 +7,9 @@ import '../../tasks/domain/repositories/task_repository.dart';
 import '../../calendar/domain/repositories/calendar_repository.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../../calendar/domain/entities/calendar_event_entity.dart';
+import '../../dashboard/domain/repositories/domain_repository.dart';
+import '../../dashboard/domain/entities/domain_entity.dart';
+import '../../../app/router/app_routes.dart';
 import '../../../core/logic/ai_pipeline_service.dart';
 
 part 'assistant_state.dart';
@@ -15,16 +18,19 @@ class AssistantCubit extends Cubit<AssistantState> {
   final AssistantRepository _repository;
   final TaskRepository _taskRepository;
   final CalendarRepository _calendarRepository;
+  final DomainRepository _domainRepository;
   final AiPipelineService _aiPipeline;
 
   AssistantCubit({
     required AssistantRepository repository,
     required TaskRepository taskRepository,
     required CalendarRepository calendarRepository,
+    required DomainRepository domainRepository,
     required AiPipelineService aiPipeline,
   })  : _repository = repository,
         _taskRepository = taskRepository,
         _calendarRepository = calendarRepository,
+        _domainRepository = domainRepository,
         _aiPipeline = aiPipeline,
         super(const AssistantState());
 
@@ -61,6 +67,7 @@ class AssistantCubit extends Cubit<AssistantState> {
 
     try {
       final tasks = await _taskRepository.fetchTasks();
+      final domains = await _domainRepository.fetchDomains();
       final now = DateTime.now();
       List<CalendarEventEntity> calendarEvents = [];
       try {
@@ -74,6 +81,9 @@ class AssistantCubit extends Cubit<AssistantState> {
       
       final String appData = """
       BUGÜN: ${now.toIso8601String().split('T')[0]}
+      KULLANICI ALANLARI (DOMAINS):
+      ${domains.map((d) => "- [ID: ${d.id}] ${d.name}").join("\n")}
+
       MEVCUT GÖREVLER:
       ${tasks.map((t) => "- [ID: ${t.id}] ${t.title} (DueDate: ${t.dueDate})").join("\n")}
       
@@ -97,24 +107,43 @@ class AssistantCubit extends Cubit<AssistantState> {
 
       print('AI RESPONSE: Domain: ${aiResult.domain}, Action: ${aiResult.action}, Payload: ${aiResult.payload}');
 
+      String? redirectTo;
+      Object? redirectArgs;
       if (aiResult.domain == AppDomain.tasks && aiResult.action == 'create') {
+        redirectTo = AppRoutes.tasksKanban;
         final dueDateStr = aiResult.payload['dueDate'];
         DateTime? dueDate;
         String title = aiResult.payload['title'] ?? 'Yeni Görev';
+        String domainId = aiResult.payload['domainId'] ?? aiResult.payload['domain_id'] ?? '';
+        int matchedDomainIndex = -1;
 
-        if (dueDateStr != null) {
-          try {
-            dueDate = DateTime.parse(dueDateStr);
-            final timePart = "${dueDate.hour.toString().padLeft(2, '0')}:${dueDate.minute.toString().padLeft(2, '0')}";
-            if (!title.contains(timePart)) {
-              title = "$title ($timePart)";
+        // If domain name was provided instead of ID, try to find it
+        final domainInput = (aiResult.payload['domain'] ?? aiResult.payload['domainId'] ?? '').toString().toLowerCase();
+        if (domainInput.isNotEmpty) {
+          for (int i = 0; i < domains.length; i++) {
+            if (domains[i].name.toLowerCase() == domainInput || domains[i].id == domainInput) {
+              domainId = domains[i].id;
+              matchedDomainIndex = i;
+              break;
             }
-          } catch (_) {}
+          }
+        }
+
+        if (domainId.isEmpty && domains.isNotEmpty) {
+          domainId = domains.first.id;
+          matchedDomainIndex = 0;
+        }
+
+        if (matchedDomainIndex != -1) {
+          redirectTo = AppRoutes.domainDashboard;
+          redirectArgs = matchedDomainIndex;
+        } else {
+          redirectTo = AppRoutes.tasksKanban;
         }
 
         final task = TaskEntity(
           id: const Uuid().v4(),
-          domainId: FirebaseAuth.instance.currentUser?.uid ?? 'default',
+          domainId: domainId,
           title: title,
           description: aiResult.payload['description'] ?? '',
           status: TaskStatus.todo,
@@ -125,7 +154,13 @@ class AssistantCubit extends Cubit<AssistantState> {
         await _taskRepository.createOrUpdateTask(task);
       } 
       else if (aiResult.domain == AppDomain.calendar && (aiResult.action == 'add_event' || aiResult.action == 'create')) {
-        final startAtStr = aiResult.payload['startTime'] ?? aiResult.payload['start_time'] ?? aiResult.payload['date'];
+        redirectTo = AppRoutes.calendar;
+        final startAtStr = aiResult.payload['startTime'] ?? 
+                         aiResult.payload['start_time'] ?? 
+                         aiResult.payload['date'] ?? 
+                         aiResult.payload['dueDate'] ?? 
+                         aiResult.payload['due_date'];
+
         final endAtStr = aiResult.payload['endTime'] ?? aiResult.payload['end_time'];
         
         DateTime startAt;
@@ -135,6 +170,8 @@ class AssistantCubit extends Cubit<AssistantState> {
           startAt = DateTime.now();
         }
 
+        redirectArgs = {'initialDay': startAt};
+
         DateTime endAt;
         try {
           endAt = endAtStr != null ? DateTime.parse(endAtStr) : startAt.add(const Duration(hours: 1));
@@ -143,10 +180,6 @@ class AssistantCubit extends Cubit<AssistantState> {
         }
         
         String title = aiResult.payload['title'] ?? 'Yeni Etkinlik';
-        final timePart = "${startAt.hour.toString().padLeft(2, '0')}:${startAt.minute.toString().padLeft(2, '0')}";
-        if (!title.contains(timePart)) {
-          title = "$title ($timePart)";
-        }
 
         final event = CalendarEventEntity(
           id: const Uuid().v4(),
@@ -201,15 +234,10 @@ class AssistantCubit extends Cubit<AssistantState> {
           if (aiResult.domain == AppDomain.tasks) {
             final existingTask = tasks.cast<TaskEntity?>().firstWhere((t) => t?.id == id, orElse: () => null);
             if (existingTask != null) {
+              redirectTo = AppRoutes.tasksKanban;
               final dueDateStr = aiResult.payload['dueDate'] ?? aiResult.payload['due_date'];
               DateTime? newDueDate = dueDateStr != null ? DateTime.parse(dueDateStr) : existingTask.dueDate;
               String newTitle = aiResult.payload['title'] ?? existingTask.title;
-              if (newDueDate != null) {
-                final timePart = "${newDueDate.hour.toString().padLeft(2, '0')}:${newDueDate.minute.toString().padLeft(2, '0')}";
-                if (!newTitle.contains(timePart)) {
-                  newTitle = "$newTitle ($timePart)";
-                }
-              }
               final updatedTask = existingTask.copyWith(
                 title: newTitle,
                 description: aiResult.payload['description'] ?? existingTask.description,
@@ -221,13 +249,12 @@ class AssistantCubit extends Cubit<AssistantState> {
           } else if (aiResult.domain == AppDomain.calendar) {
             final existingEvent = calendarEvents.cast<CalendarEventEntity?>().firstWhere((e) => e?.id == id, orElse: () => null);
             if (existingEvent != null) {
+              redirectTo = AppRoutes.calendar;
               final startAtStr = aiResult.payload['startTime'] ?? aiResult.payload['start_time'] ?? aiResult.payload['date'];
               DateTime newStartAt = startAtStr != null ? DateTime.parse(startAtStr) : existingEvent.startAt;
+              redirectArgs = {'initialDay': newStartAt};
+
               String newTitle = aiResult.payload['title'] ?? existingEvent.title;
-              final timePart = "${newStartAt.hour.toString().padLeft(2, '0')}:${newStartAt.minute.toString().padLeft(2, '0')}";
-              if (!newTitle.contains(timePart)) {
-                newTitle = "$newTitle ($timePart)";
-              }
               final updatedEvent = existingEvent.copyWith(
                 title: newTitle,
                 description: aiResult.payload['description'] ?? existingEvent.description,
@@ -250,7 +277,9 @@ class AssistantCubit extends Cubit<AssistantState> {
 
       emit(state.copyWith(
         messages: finalMessages,
-        status: AssistantStatus.idle,
+        status: redirectTo != null ? AssistantStatus.navigate : AssistantStatus.idle,
+        redirectTo: redirectTo,
+        redirectArgs: redirectArgs,
       ));
     } catch (e) {
       print("Assistant Error: $e");
