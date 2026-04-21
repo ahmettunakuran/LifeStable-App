@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../../calendar/domain/repositories/calendar_repository.dart';
 import '../../calendar/domain/entities/calendar_event_entity.dart';
 import '../domain/entities/task_entity.dart';
@@ -67,6 +68,49 @@ class TasksKanbanPage extends StatelessWidget {
             backgroundColor: goldColor,
             icon: const Icon(Icons.add, color: Colors.white),
             label: const Text('Add Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNav(context),
+    );
+  }
+
+  Widget _buildBottomNav(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.1))),
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _navBtn(context, Icons.group_outlined, 'Team', AppRoutes.teamDashboard),
+            _navBtn(context, Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
+            _navBtn(context, Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard),
+            _navBtn(context, Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _navBtn(BuildContext context, IconData icon, String label, String route) {
+    return GestureDetector(
+      onTap: () => Navigator.pushReplacementNamed(context, route),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.gold.withValues(alpha: 0.45), size: 22),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

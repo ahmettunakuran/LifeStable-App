@@ -752,38 +752,52 @@ class HomeDashboardPage extends StatelessWidget {
 
   Widget _buildBottomNav(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(bottom: 20, top: 10),
-      color: Colors.transparent,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavButton(context, 'Team', AppRoutes.teamDashboard),
-          _buildNavButton(context, 'Calendar', AppRoutes.calendar),
-          _buildNavButton(context, 'Dashboard', AppRoutes.homeDashboard),
-          _buildNavButton(context, 'Habit', AppRoutes.habitTracker),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.1))),
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavButton(context, Icons.group_outlined, 'Team', AppRoutes.teamDashboard),
+            _buildNavButton(context, Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
+            _buildNavButton(context, Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard, active: true),
+            _buildNavButton(context, Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildNavButton(BuildContext context, String label, String route) {
-    final bool isActive = ModalRoute.of(context)?.settings.name == route;
+  Widget _buildNavButton(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String route, {
+    bool active = false,
+  }) {
     return GestureDetector(
-      onTap: () {
-        if (!isActive) {
-          Navigator.pushNamed(context, route);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primary : Colors.blueAccent.withValues(alpha: 0.8),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-        ),
+      onTap: () => Navigator.pushReplacementNamed(context, route),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: active ? AppColors.gold : AppColors.gold.withValues(alpha: 0.45),
+            size: 22,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: active ? AppColors.gold : Colors.white.withValues(alpha: 0.4),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

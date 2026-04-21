@@ -44,3 +44,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .claude/
+
+ios/Runner/Info.plist
+.env
+lib/core/config/api_keys.dart
+android/local.properties

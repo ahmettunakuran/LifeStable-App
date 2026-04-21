@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:project_lifestable/services/team_service.dart';
-import '../../../core/localization/app_localizations.dart';
+import '../../../app/router/app_routes.dart';
+import '../../../core/localization/app_localizations.dart' hide AppColors;
+import '../../../shared/constants/app_colors.dart';
 import 'join_team_screen.dart';
 import 'team_detail_screen.dart';
 
@@ -266,6 +268,10 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
       appBar: AppBar(
         backgroundColor: AppColors.black,
         iconTheme: const IconThemeData(color: AppColors.gold),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.gold),
+          onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.homeDashboard),
+        ),
         title: const Text(
           'Team Dashboard',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -462,6 +468,53 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.1))),
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _navBtn(Icons.group_outlined, 'Team', AppRoutes.teamDashboard, active: true),
+            _navBtn(Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
+            _navBtn(Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard),
+            _navBtn(Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _navBtn(IconData icon, String label, String route, {bool active = false}) {
+    return GestureDetector(
+      onTap: () => Navigator.pushReplacementNamed(context, route),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: active ? AppColors.gold : AppColors.gold.withValues(alpha: 0.45),
+            size: 22,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: active ? AppColors.gold : Colors.white.withValues(alpha: 0.4),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
