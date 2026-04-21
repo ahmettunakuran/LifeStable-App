@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../app/router/app_routes.dart';
@@ -41,18 +42,61 @@ class HomeDashboardPage extends StatelessWidget {
             bottom: false,
             child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
               builder: (context, state) {
-                if (state is HomeDashboardLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.gold),
-                  );
-                }
-
-                if (state is HomeDashboardError) {
-                  return Center(
-                    child: Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.red),
-                    ),
+                if (state is HomeDashboardLoading || state is HomeDashboardError) {
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.menu, color: AppColors.gold),
+                                    onPressed: () => scaffoldKey.currentState?.openDrawer(),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'LifeStable',
+                                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.gold, letterSpacing: -0.5),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              _buildSkeletonBox(height: 110, radius: 27),
+                              const SizedBox(height: 16),
+                              Expanded(
+                                flex: 4,
+                                child: Row(
+                                  children: [
+                                    Expanded(child: _buildSkeletonBox()),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          Expanded(child: _buildSkeletonBox()),
+                                          const SizedBox(height: 12),
+                                          Expanded(child: _buildSkeletonBox()),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Expanded(flex: 1, child: _buildSkeletonBox()),
+                              const SizedBox(height: 8),
+                            ],
+                          ),
+                        ),
+                      ),
+                      _buildAIFloatingButton(context),
+                      _buildBottomNav(context),
+                    ],
                   );
                 }
 
@@ -91,7 +135,7 @@ class HomeDashboardPage extends StatelessWidget {
                               const SizedBox(height: 16),
 
                               // 1. Domain List Access (At the top)
-                              _buildSlidableDomainAccess(context, state.domains),
+                              _buildSlidableDomainAccess(context, state.domains, state.tasks, state.habits),
                               const SizedBox(height: 16),
                               
                               if (state.deadlineCount > 0) ...[
@@ -105,7 +149,7 @@ class HomeDashboardPage extends StatelessWidget {
                                 child: Row(
                                   children: [
                                     Expanded(
-                                      child: _buildSummaryCard(state.tasks, state.finishedEvents),
+                                      child: _buildSummaryCard(state.todayTasks),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -295,12 +339,10 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(
-    List<TaskEntity> tasks,
-    List<CalendarEventEntity> finishedEvents,
-  ) {
-    final doneTasks = tasks.where((t) => t.status == TaskStatus.done).toList();
-    
+  Widget _buildSummaryCard(List<TaskEntity> todayTasks) {
+    final count = todayTasks.length;
+    final nextTask = todayTasks.isNotEmpty ? todayTasks.first : null;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -313,15 +355,40 @@ class HomeDashboardPage extends StatelessWidget {
         children: [
           _buildCompactHeader('Fast Summary'),
           const SizedBox(height: 12),
-          if (doneTasks.isEmpty && finishedEvents.isEmpty)
-            const Expanded(child: Center(child: Text('No recent activity', style: TextStyle(color: Colors.white24, fontSize: 12))))
+          if (count == 0)
+            const Expanded(
+              child: Center(
+                child: Text('All clear today!', style: TextStyle(color: Colors.white24, fontSize: 12)),
+              ),
+            )
           else
             Expanded(
-              child: ListView(
-                physics: const NeverScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ...doneTasks.take(2).map((t) => _buildListItem(t.title, Icons.check_circle_outline, Colors.greenAccent)),
-                  ...finishedEvents.take(2).map((e) => _buildListItem(e.title, Icons.event_available, AppColors.gold)),
+                  Text(
+                    'You have $count task${count == 1 ? '' : 's'} today.',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  if (nextTask != null) ...[
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Next up:',
+                      style: TextStyle(color: Colors.white38, fontSize: 10),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      nextTask.title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -352,10 +419,21 @@ class HomeDashboardPage extends StatelessWidget {
 
   Widget _buildCloseDeadlinesSection(BuildContext context, List<TaskEntity> tasks, List<DomainEntity> domains) {
     final now = DateTime.now();
-    final closeTasks = tasks.where((t) {
-      if (t.dueDate == null || t.status == TaskStatus.done) return false;
-      return t.dueDate!.difference(now).inDays <= 3;
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final threeDaysLater = todayStart.add(const Duration(days: 3));
+
+    final allClose = tasks.where((t) {
+      if (t.dueDate == null) return false;
+      return !t.dueDate!.isBefore(todayStart) && t.dueDate!.isBefore(threeDaysLater);
     }).toList();
+
+    final doneCount = allClose.where((t) => t.status == TaskStatus.done).length;
+    final progress = allClose.isEmpty ? 0.0 : doneCount / allClose.length;
+
+    final incomplete = allClose.where((t) => t.status != TaskStatus.done).toList();
+    const priorityOrder = {TaskPriority.high: 0, TaskPriority.medium: 1, TaskPriority.low: 2};
+    incomplete.sort((a, b) =>
+        (priorityOrder[a.priority] ?? 1).compareTo(priorityOrder[b.priority] ?? 1));
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -368,35 +446,99 @@ class HomeDashboardPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildCompactHeader('Close Deadlines'),
-          const SizedBox(height: 12),
-          if (closeTasks.isEmpty)
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.white.withValues(alpha: 0.1),
+            color: AppColors.gold,
+            minHeight: 3,
+            borderRadius: BorderRadius.circular(2),
+          ),
+          const SizedBox(height: 8),
+          if (incomplete.isEmpty)
             const Expanded(child: Center(child: Text('All clear!', style: TextStyle(color: Colors.white24, fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: closeTasks.length.clamp(0, 3),
+                itemCount: incomplete.length.clamp(0, 3),
                 itemBuilder: (context, index) {
-                  final task = closeTasks[index];
+                  final task = incomplete[index];
                   final domainIndex = domains.indexWhere((d) => d.id == task.domainId);
                   return GestureDetector(
                     onTap: () {
                       if (domainIndex != -1) {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.domainDashboard,
-                          arguments: domainIndex,
-                        );
+                        Navigator.pushNamed(context, AppRoutes.domainDashboard, arguments: domainIndex);
                       } else {
                         Navigator.pushNamed(context, AppRoutes.domainDashboard);
                       }
                     },
-                    child: _buildListItem(task.title, Icons.timer_outlined, Colors.redAccent),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Icon(Icons.timer_outlined, size: 13, color: Colors.redAccent),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  task.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                                ),
+                                if (task.dueDate != null)
+                                  Text(
+                                    DateFormat('MMM d').format(task.dueDate!),
+                                    style: const TextStyle(color: Colors.white38, fontSize: 9),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          _buildPriorityBadge(task.priority),
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPriorityBadge(TaskPriority priority) {
+    final Color color;
+    final String label;
+    switch (priority) {
+      case TaskPriority.high:
+        color = Colors.redAccent;
+        label = 'HIGH';
+      case TaskPriority.medium:
+        color = AppColors.gold;
+        label = 'MED';
+      case TaskPriority.low:
+        color = Colors.greenAccent;
+        label = 'LOW';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900),
       ),
     );
   }
@@ -476,66 +618,134 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSlidableDomainAccess(BuildContext context, List<DomainEntity> domains) {
+  Widget _buildSlidableDomainAccess(
+    BuildContext context,
+    List<DomainEntity> domains,
+    List<TaskEntity> tasks,
+    List<Habit> habits,
+  ) {
     return Container(
-      height: 54,
+      height: 110,
       decoration: BoxDecoration(
         color: AppColors.gold.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(27),
       ),
       child: Row(
         children: [
-          // New Domain Button
           GestureDetector(
             onTap: () => Navigator.pushNamed(context, AppRoutes.domainEdit),
             child: Container(
               width: 54,
-              height: 54,
+              height: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.black.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(27),
+                  bottomLeft: Radius.circular(27),
+                ),
               ),
               child: const Icon(Icons.add, color: AppColors.black, size: 28),
             ),
           ),
           const VerticalDivider(width: 1, color: AppColors.black, indent: 14, endIndent: 14),
-          // Domain List
           Expanded(
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: domains.length,
-              itemBuilder: (context, index) {
-                final domain = domains[index];
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 24),
-                    child: GestureDetector(
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.domainDashboard,
-                        arguments: index,
-                      ),
-                      child: Text(
-                        domain.name.toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+            child: domains.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No domains yet',
+                      style: TextStyle(color: AppColors.black, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
+                  )
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: domains.length,
+                    itemBuilder: (context, index) {
+                      final domain = domains[index];
+                      final incompleteTasks = tasks
+                          .where((t) => t.domainId == domain.id && t.status != TaskStatus.done)
+                          .length;
+                      final domainHabits = habits.where((h) => h.domainId == domain.id).toList();
+                      final maxStreak = domainHabits.fold<int>(
+                        0,
+                        (best, h) => h.streak > best ? h.streak : best,
+                      );
+
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: GestureDetector(
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.domainDashboard,
+                              arguments: index,
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.black.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    domain.name.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: AppColors.black,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$incompleteTasks task${incompleteTasks == 1 ? '' : 's'}',
+                                    style: const TextStyle(
+                                      color: AppColors.black,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (maxStreak > 0) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 12),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          '$maxStreak day${maxStreak == 1 ? '' : 's'}',
+                                          style: const TextStyle(color: AppColors.black, fontSize: 10),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
           const Padding(
             padding: EdgeInsets.only(right: 18),
             child: Icon(Icons.arrow_forward_ios, color: AppColors.black, size: 14),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonBox({double? height, double radius = 16}) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.1)),
       ),
     );
   }
