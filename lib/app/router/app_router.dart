@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../features/alerts/domain/repositories/location_repository.dart';
+import '../../features/alerts/logic/location_cubit.dart';
 import '../../features/alerts/presentation/alerts_page.dart';
+import '../../features/alerts/presentation/battery_report_screen.dart';
+import '../../features/alerts/presentation/geofence_debug_screen.dart';
+import '../../features/alerts/presentation/map_screen.dart';
 import '../../features/assistant/presentation/assistant_page.dart';
 import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/login_page.dart';
@@ -11,7 +17,6 @@ import '../../features/dashboard/presentation/home_dashboard_page.dart';
 import '../../features/dashboard/presentation/domain_dashboard_page.dart';
 import '../../features/dashboard/presentation/domain_edit_page.dart';
 import '../../features/habits/presentation/habit_tracker_page.dart';
-import '../../features/map/presentation/map_page.dart';
 import '../../features/notes/presentation/notes_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
@@ -73,7 +78,23 @@ class AppRouter {
       case AppRoutes.alerts:
         return _buildRoute(const AlertsPage(), settings);
       case AppRoutes.map:
-        return _buildRoute(const MapPage(), settings);
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (context) => BlocProvider(
+            create: (_) => LocationCubit(context.read<LocationRepository>()),
+            child: const MapScreen(),
+          ),
+        );
+      case AppRoutes.geofenceDebug:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (context) => BlocProvider(
+            create: (_) => LocationCubit(context.read<LocationRepository>()),
+            child: const GeofenceDebugScreen(),
+          ),
+        );
+      case AppRoutes.batteryReport:
+        return _buildRoute(const BatteryReportScreen(), settings);
       case AppRoutes.calendar:
         return _buildRoute(const CalendarPage(), settings);
       case AppRoutes.aiAssistant:

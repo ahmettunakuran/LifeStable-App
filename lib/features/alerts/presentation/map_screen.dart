@@ -46,8 +46,9 @@ class _MapScreenState extends State<MapScreen> {
       }
       if (permission == LocationPermission.deniedForever) return;
 
+      // DÜZELTME: Versiyon uyumluluğu için desiredAccuracy kullanıldı
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        desiredAccuracy: LocationAccuracy.high,
       );
 
       if (!mounted) return;
@@ -75,7 +76,8 @@ class _MapScreenState extends State<MapScreen> {
       markers.add(Marker(
         markerId: MarkerId(loc.locationId),
         position: LatLng(loc.lat, loc.lng),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGold),
+        // DÜZELTME: hueGold yerine 45.0 (Altın rengi tonu) kullanıldı
+        icon: BitmapDescriptor.defaultMarkerWithHue(45.0),
         infoWindow: InfoWindow(
           title: loc.label,
           snippet: '${loc.radiusM} m radius',
@@ -303,8 +305,8 @@ class _LocationDetailSheet extends StatelessWidget {
             label: 'On Arrival',
             value: location.geofenceOnEnter,
             onChanged: (v) => context.read<LocationCubit>().updateLocation(
-                  location.copyWith(geofenceOnEnter: v),
-                ),
+              location.copyWith(geofenceOnEnter: v),
+            ),
           ),
           const SizedBox(height: 8),
           _buildToggle(
@@ -312,8 +314,8 @@ class _LocationDetailSheet extends StatelessWidget {
             label: 'On Leave',
             value: location.geofenceOnExit,
             onChanged: (v) => context.read<LocationCubit>().updateLocation(
-                  location.copyWith(geofenceOnExit: v),
-                ),
+              location.copyWith(geofenceOnExit: v),
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -359,7 +361,8 @@ class _LocationDetailSheet extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        Switch(value: value, onChanged: onChanged, activeColor: AppColors.gold),
+        // DÜZELTME: activeColor uyarısı için activeThumbColor güncellendi
+        Switch(value: value, onChanged: onChanged, activeThumbColor: AppColors.gold),
       ],
     );
   }

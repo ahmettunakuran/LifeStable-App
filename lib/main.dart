@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'firebase_options.dart';
 import 'app/app.dart';
+import 'features/alerts/domain/geofence_usecase.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +16,12 @@ void main() async {
     minimumFetchInterval: const Duration(hours: 1),
   ));
   await remoteConfig.fetchAndActivate();
+
+  // Initialize geofencing for already-logged-in users.
+  // For new sign-ins, GeofenceUseCase is called from AuthCubit/SplashPage.
+  if (FirebaseAuth.instance.currentUser != null) {
+    await GeofenceUseCase.instance.initializeAll();
+  }
 
   runApp(const LifeStableApp());
 }

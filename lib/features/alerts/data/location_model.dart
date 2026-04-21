@@ -13,6 +13,7 @@ class LocationModel {
   final bool geofenceOnEnter;
   final bool geofenceOnExit;
   final String? doNotRemindAfter;
+  final bool remind30MinAfterEntry;
 
   const LocationModel({
     required this.locationId,
@@ -25,6 +26,7 @@ class LocationModel {
     this.geofenceOnEnter = true,
     this.geofenceOnExit = false,
     this.doNotRemindAfter,
+    this.remind30MinAfterEntry = false,
   });
 
   factory LocationModel.fromMap(Map<String, dynamic> map, String id) {
@@ -39,6 +41,7 @@ class LocationModel {
       geofenceOnEnter: map['geofence_on_enter'] as bool? ?? true,
       geofenceOnExit: map['geofence_on_exit'] as bool? ?? false,
       doNotRemindAfter: map['dont_remind_after'] as String?,
+      remind30MinAfterEntry: map['remind_30min_after_entry'] as bool? ?? false,
     );
   }
 
@@ -53,6 +56,7 @@ class LocationModel {
       'geofence_on_enter': geofenceOnEnter,
       'geofence_on_exit': geofenceOnExit,
       if (doNotRemindAfter != null) 'dont_remind_after': doNotRemindAfter,
+      'remind_30min_after_entry': remind30MinAfterEntry,
     };
   }
 
@@ -68,6 +72,7 @@ class LocationModel {
       geofenceOnEnter: geofenceOnEnter,
       geofenceOnExit: geofenceOnExit,
       doNotRemindAfter: doNotRemindAfter,
+      remind30MinAfterEntry: remind30MinAfterEntry,
     );
   }
 
@@ -83,6 +88,7 @@ class LocationModel {
       geofenceOnEnter: entity.geofenceOnEnter,
       geofenceOnExit: entity.geofenceOnExit,
       doNotRemindAfter: entity.doNotRemindAfter,
+      remind30MinAfterEntry: entity.remind30MinAfterEntry,
     );
   }
 }

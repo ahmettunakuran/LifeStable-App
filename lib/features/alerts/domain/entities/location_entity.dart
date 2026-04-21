@@ -9,6 +9,7 @@ class LocationEntity {
   final bool geofenceOnEnter;
   final bool geofenceOnExit;
   final String? doNotRemindAfter;
+  final bool remind30MinAfterEntry;
 
   const LocationEntity({
     required this.locationId,
@@ -21,6 +22,7 @@ class LocationEntity {
     this.geofenceOnEnter = true,
     this.geofenceOnExit = false,
     this.doNotRemindAfter,
+    this.remind30MinAfterEntry = false,
   });
 
   LocationEntity copyWith({
@@ -34,6 +36,7 @@ class LocationEntity {
     bool? geofenceOnEnter,
     bool? geofenceOnExit,
     String? doNotRemindAfter,
+    bool? remind30MinAfterEntry,
   }) {
     return LocationEntity(
       locationId: locationId ?? this.locationId,
@@ -46,6 +49,7 @@ class LocationEntity {
       geofenceOnEnter: geofenceOnEnter ?? this.geofenceOnEnter,
       geofenceOnExit: geofenceOnExit ?? this.geofenceOnExit,
       doNotRemindAfter: doNotRemindAfter ?? this.doNotRemindAfter,
+      remind30MinAfterEntry: remind30MinAfterEntry ?? this.remind30MinAfterEntry,
     );
   }
 }
