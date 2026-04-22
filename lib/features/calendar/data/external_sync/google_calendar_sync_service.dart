@@ -13,13 +13,13 @@ class GoogleCalendarSyncService {
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
         _auth = auth ?? FirebaseAuth.instance,
         _functions = functions ?? FirebaseFunctions.instanceFor(region: 'us-central1') {
-    if (kDebugMode) {
+    /*if (kDebugMode) {
       if (defaultTargetPlatform == TargetPlatform.android) {
         _functions.useFunctionsEmulator('10.0.2.2', 5001);
       } else {
         _functions.useFunctionsEmulator('localhost', 5001);
       }
-    }
+    }*/
   }
 
   final FirebaseFirestore _firestore;

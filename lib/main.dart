@@ -16,11 +16,7 @@ void main() async {
   final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
 
   if (kDebugMode) {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      functions.useFunctionsEmulator('10.0.2.2', 5001);
-    } else {
-      functions.useFunctionsEmulator('localhost', 5001);
-    }
+    // Emulator disabled for Blaze/deployed backend testing.
   }
 
   runApp(const LifeStableApp());
