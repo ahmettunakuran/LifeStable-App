@@ -42,6 +42,31 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      match /calendar_events/{eventId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Public metadata only. Client may read connection state.
+      match /external_accounts/{provider} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      // Server-only secrets.
+      match /external_credentials/{provider} {
+        allow read, write: if false;
+      }
+
+      // Server-only OAuth nonce/state.
+      match /oauth_states/{provider} {
+        allow read, write: if false;
+      }
+
+      // Server-only mapping collection.
+      match /external_event_map/{mapId} {
+        allow read, write: if false;
+      }
+
       match /notes/{noteId} {
         allow read, write: if isOwner(userId);
       }
@@ -55,6 +80,9 @@ service cloud.firestore {
 
       match /tasks/{taskId} {
         allow read, write: if isSignedIn(); // Simplified for now
+      }
+      match /calendar_events/{eventId} {
+        allow read, write: if isSignedIn();
       }
     }
 
