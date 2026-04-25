@@ -43,13 +43,32 @@ class AiPipelineService {
       $appData
 
       KURALLAR:
-      1. CRUD İşlemleri:
+      1. İşlem Tipleri (Action):
          - 'create' / 'add_event': Yeni öğe oluştur. Zaman belirtilmişse ISO8601 formatında TAM zamanı (YYYY-MM-DDTHH:mm:ss) döndür.
          - 'delete': Mevcut öğeyi sil. (Tekil için 'id', toplu silme için 'ids' listesi gönder).
          - 'update': Mevcut öğeyi güncelle. ('id' ve değişen alanlar).
-      2. Kullanıcı "Bugünkü tüm etkinlikleri sil" veya "Hepsini temizle" derse, Context içindeki uygun ID'leri bul ve 'ids' listesi olarak döndür.
-      3. Başlık (title) içine saati ekleme.
-      4. Zaman Dilimi: Yerel saati kullan, sonuna 'Z' koyma. Kullanıcı "16:00" diyorsa, ISO string'in saati tam 16:00 olmalıdır.
+         - 'find_gap': Boş zaman/uygun slot bulma. Kullanıcı "Boş vaktim var mı?", "2 saatlik yer bul", "Ne zaman müsaitim?" gibi sorgularında kullanılır.
+         - 'read': Mevcut verileri sorgulama veya listeleme.
+
+      2. Zaman Tanımları (Göreceli):
+         - 'Bu sabah': 08:00 - 12:00
+         - 'Bu öğlen': 12:00 - 17:00
+         - 'Bu akşam': 17:00 - 22:00
+         - 'Gece': 22:00 - 00:00
+         - 'Haftaya': Mevcut tarihten 7 gün sonrası ve o hafta içi.
+         - '3-4 gün sonra': Mevcut tarihe 3 veya 4 gün ekle.
+
+      3. 'find_gap' için Özel Kurallar:
+         - MEVCUT TAKVİM ETKİNLİKLERİ ve MEVCUT GÖREVLER (eğer zamanı varsa) verilerini incele.
+         - Çakışmayan, kullanıcının istediği süreye (örn: 2 saat) uygun boşlukları tespit et.
+         - 'payload' içinde 'suggestedSlots' listesi döndür. Her slot {'startTime': '...', 'endTime': '...'} içermeli.
+         - 'responseText' içinde sadece bulunan boşlukları listele. Örn: "Bugün 14:00-16:00 ve 18:00-20:00 arası uygunsunuz."
+         - Gereksiz "işlem başlatıldı" gibi ara mesajlar verme, doğrudan sonucu söyle.
+
+      4. CRUD İşlemleri:
+         - Kullanıcı "Bugünkü tüm etkinlikleri sil" veya "Hepsini temizle" derse, Context içindeki uygun ID'leri bul ve 'ids' listesi olarak döndür.
+         - Başlık (title) içine saati ekleme.
+         - Zaman Dilimi: Yerel saati kullan, sonuna 'Z' koyma. Kullanıcı "16:00" diyorsa, ISO string'in saati tam 16:00 olmalıdır.
 
       GÖREV ÖNCELİĞİ (Priority):
       - 'low', 'medium', 'high' değerlerini kullan.
@@ -58,7 +77,7 @@ class AiPipelineService {
       JSON FORMATI:
       {
         "domain": "tasks" | "calendar" | "summary" | "habits",
-        "action": "create" | "add_event" | "delete" | "update" | "read",
+        "action": "create" | "add_event" | "delete" | "update" | "read" | "find_gap",
         "payload": { 
            "domain": "Kullanıcının belirttiği alan adı (Örn: Gym, School, İş)",
            "domainId": "Eğer Context içinde varsa alanın ID'si",
@@ -66,9 +85,13 @@ class AiPipelineService {
            "dueDate": "ISO8601",
            "startTime": "ISO8601",
            "endTime": "ISO8601",
-           "priority": "low" | "medium" | "high"
+           "priority": "low" | "medium" | "high",
+           "durationMinutes": 120,
+           "suggestedSlots": [
+              {"startTime": "ISO8601", "endTime": "ISO8601"}
+           ]
         },
-        "responseText": "Kullanıcıya yapılan işlem hakkında bilgi ver (örn: 'Bugünkü 3 etkinlik silindi.')."
+        "responseText": "Kullanıcıya yapılan işlem veya bulunan boşluklar hakkında bilgi ver."
       }
       """;
 
