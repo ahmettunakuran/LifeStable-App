@@ -5,4 +5,12 @@ abstract class TaskRepository {
   Future<void> createOrUpdateTask(TaskEntity task);
   Future<void> deleteTask(String taskId);
   Stream<List<TaskEntity>> watchTasks();
+
+  Future<bool> updateTeamTaskStatus({
+    required String teamId,
+    required String taskId,
+    required int clientVersion,
+    required TaskStatus newStatus,
+    required String currentUserId,
+  });
 }

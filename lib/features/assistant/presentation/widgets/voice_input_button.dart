@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import '../../../../core/localization/app_localizations.dart';
 
 class VoiceInputButton extends StatefulWidget {
   final bool isListening;

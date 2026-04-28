@@ -59,9 +59,9 @@ class ScheduleParser {
       // Ders adı en az 3 karakter olmalı ve "pazartesi" gibi bir gün ismi olmamalı
       if (titleCandidate.length >= 3 && currentDay != null && lastTime != null) {
         final now = DateTime.now();
-        final eventDate = _getNearestDayOfWeek(now, currentDay!);
-        
-        final timeParts = lastTime!.split(':');
+        final eventDate = _getNearestDayOfWeek(now, currentDay);
+
+        final timeParts = lastTime.split(':');
         final startAt = DateTime(
           eventDate.year,
           eventDate.month,

@@ -3,8 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../app/router/app_routes.dart';
-import '../data/assistant_repository_impl.dart';
-import '../domain/entities/chat_message.dart';
+
 import '../logic/assistant_cubit.dart';
 import 'widgets/chat_bubble.dart';
 import 'widgets/image_input_button.dart';
@@ -23,7 +22,6 @@ class AssistantPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => AssistantCubit(
-        repository: AssistantRepositoryImpl(),
         taskRepository: context.read<TaskRepository>(),
         calendarRepository: context.read<CalendarRepository>(),
         domainRepository: context.read<DomainRepository>(),

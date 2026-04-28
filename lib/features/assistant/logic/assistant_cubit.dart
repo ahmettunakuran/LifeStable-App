@@ -2,33 +2,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import '../domain/entities/chat_message.dart';
-import '../domain/repositories/assistant_repository.dart';
 import '../../tasks/domain/repositories/task_repository.dart';
 import '../../calendar/domain/repositories/calendar_repository.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../../calendar/domain/entities/calendar_event_entity.dart';
 import '../../dashboard/domain/repositories/domain_repository.dart';
-import '../../dashboard/domain/entities/domain_entity.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/logic/ai_pipeline_service.dart';
 
 part 'assistant_state.dart';
 
 class AssistantCubit extends Cubit<AssistantState> {
-  final AssistantRepository _repository;
   final TaskRepository _taskRepository;
   final CalendarRepository _calendarRepository;
   final DomainRepository _domainRepository;
   final AiPipelineService _aiPipeline;
 
   AssistantCubit({
-    required AssistantRepository repository,
     required TaskRepository taskRepository,
     required CalendarRepository calendarRepository,
     required DomainRepository domainRepository,
     required AiPipelineService aiPipeline,
-  })  : _repository = repository,
-        _taskRepository = taskRepository,
+  })  : _taskRepository = taskRepository,
         _calendarRepository = calendarRepository,
         _domainRepository = domainRepository,
         _aiPipeline = aiPipeline,
@@ -119,8 +114,8 @@ class AssistantCubit extends Cubit<AssistantState> {
       Object? redirectArgs;
       if (aiResult.domain == AppDomain.tasks && aiResult.action == 'create') {
         redirectTo = AppRoutes.tasksKanban;
-        final dueDateStr = aiResult.payload['dueDate'];
-        DateTime? dueDate;
+        final dueDateStr = aiResult.payload['dueDate']?.toString();
+        final DateTime? dueDate = dueDateStr != null ? DateTime.tryParse(dueDateStr) : null;
         String title = aiResult.payload['title'] ?? 'Yeni Görev';
         String domainId = aiResult.payload['domainId'] ?? aiResult.payload['domain_id'] ?? '';
         int matchedDomainIndex = -1;
