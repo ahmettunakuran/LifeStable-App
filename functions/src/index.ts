@@ -2,7 +2,6 @@ import { setGlobalOptions } from "firebase-functions/v2";
 import { auth, https, firestore } from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
-
 admin.initializeApp();
 
 setGlobalOptions({
@@ -111,3 +110,4 @@ export const deleteTask = https.onCall(async (data, context) => {
     await admin.firestore().collection("users").doc(context.auth.uid).collection("tasks").doc(data.taskId).delete();
     return { success: true };
 });
+export * from "./calendar-sync";
