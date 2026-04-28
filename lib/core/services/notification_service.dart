@@ -8,6 +8,7 @@ import '../../features/alerts/data/location_model.dart';
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
+  static NotificationService get instance => _instance;
   NotificationService._internal();
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -101,6 +102,23 @@ class NotificationService {
           presentBadge: true,
           presentSound: true,
         ),
+      ),
+    );
+  }
+
+  Future<void> showReminder30Min(String label) async {
+    await _localNotifications.show(
+      label.hashCode + 30,
+      'Still at $label?',
+      "It's been 30 minutes since you arrived. Need anything else?",
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _locationChannelId,
+          _locationChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
       ),
     );
   }
