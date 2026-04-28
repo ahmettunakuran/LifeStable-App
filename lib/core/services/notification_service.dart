@@ -13,15 +13,14 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
-    // Request permissions for Android 13+ and iOS
-    NotificationSettings settings = await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-    
-    print('User granted permission: ${settings.authorizationStatus}');
+    // Request permissions for iOS
+    if (Platform.isIOS) {
+      await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
 
     // Initialize local notifications
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
