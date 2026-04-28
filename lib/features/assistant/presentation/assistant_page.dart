@@ -101,7 +101,7 @@ class _AssistantViewState extends State<_AssistantView> {
                 Future.delayed(const Duration(milliseconds: 1500), () {
                   if (context.mounted) {
                     Navigator.pushReplacementNamed(
-                      context, 
+                      context,
                       state.redirectTo!,
                       arguments: state.redirectArgs,
                     );

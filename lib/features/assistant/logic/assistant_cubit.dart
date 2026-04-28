@@ -69,12 +69,20 @@ class AssistantCubit extends Cubit<AssistantState> {
       final tasks = await _taskRepository.fetchTasks();
       final domains = await _domainRepository.fetchDomains();
       final now = DateTime.now();
+      
+      // Fetch events for current and next month to support "next week" queries
       List<CalendarEventEntity> calendarEvents = [];
       try {
-        calendarEvents = await _calendarRepository.watchEventsForMonth(now).first.timeout(
+        final currentMonthEvents = await _calendarRepository.watchEventsForMonth(now).first.timeout(
           const Duration(seconds: 2),
           onTimeout: () => [],
         );
+        final nextMonth = DateTime(now.year, now.month + 1, 1);
+        final nextMonthEvents = await _calendarRepository.watchEventsForMonth(nextMonth).first.timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => [],
+        );
+        calendarEvents = [...currentMonthEvents, ...nextMonthEvents];
       } catch (e) {
         print("Calendar fetch error: $e");
       }
@@ -85,10 +93,10 @@ class AssistantCubit extends Cubit<AssistantState> {
       ${domains.map((d) => "- [ID: ${d.id}] ${d.name}").join("\n")}
 
       MEVCUT GÖREVLER:
-      ${tasks.map((t) => "- [ID: ${t.id}] ${t.title} (DueDate: ${t.dueDate})").join("\n")}
+      ${tasks.map((t) => "- [ID: ${t.id}] ${t.title} (Bitiş: ${t.dueDate?.toIso8601String()})").join("\n")}
       
       MEVCUT TAKVİM ETKİNLİKLERİ:
-      ${calendarEvents.map((e) => "- [ID: ${e.id}] ${e.title} (Date: ${e.startAt})").join("\n")}
+      ${calendarEvents.map((e) => "- [ID: ${e.id}] ${e.title} (Başlangıç: ${e.startAt.toIso8601String()}, Bitiş: ${e.endAt.toIso8601String()})").join("\n")}
       """;
 
       final historyData = state.messages
@@ -193,7 +201,14 @@ class AssistantCubit extends Cubit<AssistantState> {
         );
         
         await _calendarRepository.createPersonalEvent(event);
+      } else if (aiResult.action == 'find_gap') {
+        // Do not redirect for gap finding, stay in chat to show suggestions
       } else if (aiResult.action == 'delete') {
+        if (aiResult.domain == AppDomain.calendar) {
+          redirectTo = AppRoutes.calendar;
+        } else if (aiResult.domain == AppDomain.tasks) {
+          redirectTo = AppRoutes.tasksKanban;
+        }
         final id = aiResult.payload['id'];
         final ids = aiResult.payload['ids'] as List<dynamic>?;
 
@@ -229,40 +244,50 @@ class AssistantCubit extends Cubit<AssistantState> {
           }
         }
       } else if (aiResult.action == 'update') {
-        final id = aiResult.payload['id'];
-        if (id != null) {
-          if (aiResult.domain == AppDomain.tasks) {
-            final existingTask = tasks.cast<TaskEntity?>().firstWhere((t) => t?.id == id, orElse: () => null);
-            if (existingTask != null) {
-              redirectTo = AppRoutes.tasksKanban;
-              final dueDateStr = aiResult.payload['dueDate'] ?? aiResult.payload['due_date'];
-              DateTime? newDueDate = dueDateStr != null ? DateTime.parse(dueDateStr) : existingTask.dueDate;
-              String newTitle = aiResult.payload['title'] ?? existingTask.title;
-              final updatedTask = existingTask.copyWith(
-                title: newTitle,
-                description: aiResult.payload['description'] ?? existingTask.description,
-                dueDate: newDueDate,
-                priority: aiResult.payload['priority'] != null ? _parsePriority(aiResult.payload['priority']) : existingTask.priority,
-              );
-              await _taskRepository.createOrUpdateTask(updatedTask);
-            }
-          } else if (aiResult.domain == AppDomain.calendar) {
-            final existingEvent = calendarEvents.cast<CalendarEventEntity?>().firstWhere((e) => e?.id == id, orElse: () => null);
-            if (existingEvent != null) {
-              redirectTo = AppRoutes.calendar;
-              final startAtStr = aiResult.payload['startTime'] ?? aiResult.payload['start_time'] ?? aiResult.payload['date'];
-              DateTime newStartAt = startAtStr != null ? DateTime.parse(startAtStr) : existingEvent.startAt;
-              redirectArgs = {'initialDay': newStartAt};
+        final id = aiResult.payload['id'] ?? aiResult.payload['domainId'] ?? aiResult.payload['domain_id'];
+        if (aiResult.domain == AppDomain.tasks) {
+          final existingTask = tasks.cast<TaskEntity?>().firstWhere(
+            (t) => t?.id == id || (t != null && aiResult.payload['title'] != null && t.title.toLowerCase().contains(aiResult.payload['title'].toString().toLowerCase())), 
+            orElse: () => null
+          );
+          if (existingTask != null) {
+            redirectTo = AppRoutes.tasksKanban;
+            final dueDateStr = aiResult.payload['dueDate'] ?? aiResult.payload['due_date'];
+            DateTime? newDueDate = dueDateStr != null ? DateTime.parse(dueDateStr) : existingTask.dueDate;
+            String newTitle = aiResult.payload['title'] ?? existingTask.title;
+            final updatedTask = existingTask.copyWith(
+              title: newTitle,
+              description: aiResult.payload['description'] ?? existingTask.description,
+              dueDate: newDueDate,
+              priority: aiResult.payload['priority'] != null ? _parsePriority(aiResult.payload['priority']) : existingTask.priority,
+            );
+            await _taskRepository.createOrUpdateTask(updatedTask);
+          }
+        } else if (aiResult.domain == AppDomain.calendar) {
+          final existingEvent = calendarEvents.firstWhere(
+            (e) => e.id.toString() == id.toString(),
+            orElse: () => calendarEvents.firstWhere(
+              (e) => aiResult.payload['title'] != null && e.title.toLowerCase().contains(aiResult.payload['title'].toString().toLowerCase()),
+              orElse: () => CalendarEventEntity(id: 'none', userId: '', title: '', startAt: DateTime.now(), endAt: DateTime.now()),
+            ),
+          );
 
-              String newTitle = aiResult.payload['title'] ?? existingEvent.title;
-              final updatedEvent = existingEvent.copyWith(
-                title: newTitle,
-                description: aiResult.payload['description'] ?? existingEvent.description,
-                startAt: newStartAt,
-                endAt: aiResult.payload['endTime'] != null ? DateTime.parse(aiResult.payload['endTime']) : newStartAt.add(const Duration(hours: 1)),
-              );
-              await _calendarRepository.updateEvent(updatedEvent);
-            }
+          if (existingEvent.id != 'none') {
+            redirectTo = AppRoutes.calendar;
+            final startAtStr = aiResult.payload['startTime'] ?? aiResult.payload['start_time'] ?? aiResult.payload['date'];
+            final endAtStr = aiResult.payload['endTime'] ?? aiResult.payload['end_time'];
+
+            DateTime newStartAt = startAtStr != null ? DateTime.parse(startAtStr) : existingEvent.startAt;
+            redirectArgs = {'initialDay': newStartAt};
+
+            String newTitle = aiResult.payload['title'] ?? existingEvent.title;
+            final updatedEvent = existingEvent.copyWith(
+              title: newTitle,
+              description: aiResult.payload['description'] ?? existingEvent.description,
+              startAt: newStartAt,
+              endAt: endAtStr != null ? DateTime.parse(endAtStr) : (startAtStr != null ? newStartAt.add(const Duration(hours: 1)) : existingEvent.endAt),
+            );
+            await _calendarRepository.updateEvent(updatedEvent);
           }
         }
       }

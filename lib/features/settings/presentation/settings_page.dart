@@ -1,7 +1,202 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class SettingsPage extends StatelessWidget {
+import '../../calendar/data/external_sync/google_calendar_sync_service.dart';
+import '../../calendar/data/external_sync/google_external_account_entity.dart';
+
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  final GoogleCalendarSyncService _syncService = GoogleCalendarSyncService();
+
+  bool _busy = false;
+
+  Future<void> _connectGoogle() async {
+    try {
+      setState(() => _busy = true);
+
+      final authUrl = await _syncService.getConnectUrl();
+      final uri = Uri.parse(authUrl);
+
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!mounted) return;
+
+      if (!launched) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the Google sign-in page.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Browser opened. After approving access, return to the app.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connect failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _syncGoogle() async {
+    try {
+      setState(() => _busy = true);
+
+      final result = await _syncService.syncNow();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Sync complete • Created: ${result.created}, Updated: ${result.updated}, Deleted: ${result.deleted}',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sync failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _disconnectGoogle() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Disconnect Google Calendar'),
+        content: const Text(
+          'This removes the Google connection and sync mappings. Imported events already in LifeStable will stay unless you delete them manually.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Disconnect'),
+          ),
+        ],
+      ),
+    ) ??
+        false;
+
+    if (!confirmed) return;
+
+    try {
+      setState(() => _busy = true);
+      await _syncService.disconnect();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Google Calendar disconnected.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Disconnect failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  String _formatDate(DateTime? value) {
+    if (value == null) return '—';
+    return DateFormat('dd MMM yyyy • HH:mm').format(value);
+  }
+
+  Widget _buildGoogleCard(GoogleExternalAccountEntity? account) {
+    final isConnected = account != null;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.calendar_month),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Google Calendar',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Chip(
+                  label: Text(isConnected ? 'Connected' : 'Not connected'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isConnected
+                  ? 'Connected account: ${account.providerUserId}'
+                  : 'Connect your Google Calendar to import events into LifeStable.',
+            ),
+            const SizedBox(height: 8),
+            Text('Connected at: ${_formatDate(account?.connectedAt)}'),
+            Text('Last sync: ${_formatDate(account?.lastSyncAt)}'),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                if (!isConnected)
+                  FilledButton.icon(
+                    onPressed: _busy ? null : _connectGoogle,
+                    icon: const Icon(Icons.link),
+                    label: const Text('Connect'),
+                  ),
+                if (isConnected)
+                  FilledButton.icon(
+                    onPressed: _busy ? null : _syncGoogle,
+                    icon: const Icon(Icons.sync),
+                    label: const Text('Sync now'),
+                  ),
+                if (isConnected)
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : _disconnectGoogle,
+                    icon: const Icon(Icons.link_off),
+                    label: const Text('Disconnect'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -9,10 +204,35 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: const Center(
-        child: Text('Settings Placeholder'),
+      body: StreamBuilder<GoogleExternalAccountEntity?>(
+        stream: _syncService.watchGoogleConnection(),
+        builder: (context, snapshot) {
+          final account = snapshot.data;
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text(
+                'Calendar Sync',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'This MVP imports events from Google Calendar into your LifeStable calendar.',
+              ),
+              const SizedBox(height: 16),
+              _buildGoogleCard(account),
+              if (_busy) ...[
+                const SizedBox(height: 20),
+                const Center(child: CircularProgressIndicator()),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
 }
-
