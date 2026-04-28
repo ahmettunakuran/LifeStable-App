@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/localization/app_localizations.dart';
+import '../features/alerts/data/location_repository_impl.dart';
+import '../features/alerts/domain/repositories/location_repository.dart';
 import '../features/calendar/data/calender_repository_impl.dart';
 import '../features/calendar/domain/repositories/calendar_repository.dart';
 import '../features/dashboard/data/repositories/domain_repository_impl.dart';
@@ -29,6 +31,9 @@ class LifeStableApp extends StatelessWidget {
       providers: [
         RepositoryProvider<DomainRepository>(
           create: (context) => DomainRepositoryImpl(firestore, auth),
+        ),
+        RepositoryProvider<LocationRepository>(
+          create: (context) => LocationRepositoryImpl(firestore, auth),
         ),
         RepositoryProvider<TaskRepository>(
           create: (context) => TaskRepositoryImpl(firestore, auth),

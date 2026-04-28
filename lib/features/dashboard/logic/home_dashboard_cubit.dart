@@ -27,6 +27,7 @@ class HomeDashboardLoaded extends HomeDashboardState {
   const HomeDashboardLoaded({
     required this.habits,
     required this.tasks,
+    required this.todayTasks,
     required this.todayEvents,
     required this.finishedEvents,
     required this.closeEvents,
@@ -37,6 +38,7 @@ class HomeDashboardLoaded extends HomeDashboardState {
 
   final List<Habit> habits;
   final List<TaskEntity> tasks;
+  final List<TaskEntity> todayTasks;
   final List<CalendarEventEntity> todayEvents;
   final List<CalendarEventEntity> finishedEvents;
   final List<CalendarEventEntity> closeEvents;
@@ -92,38 +94,25 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
             return e.startAt.isAfter(now) && e.startAt.isBefore(threeDaysLater);
           }).toList();
 
-          final todayTasksCount = tasks.where((t) {
-            if (t.dueDate == null) return false;
+          final rawTodayTasks = tasks.where((t) {
+            if (t.dueDate == null || t.status == TaskStatus.done) return false;
             return t.dueDate!.isAfter(todayStart) && t.dueDate!.isBefore(tomorrowStart);
-          }).length;
+          }).toList();
+          const priorityOrder = {TaskPriority.high: 0, TaskPriority.medium: 1, TaskPriority.low: 2};
+          rawTodayTasks.sort((a, b) =>
+              (priorityOrder[a.priority] ?? 1).compareTo(priorityOrder[b.priority] ?? 1));
 
           final completedHabitsCount = habits.where((h) => h.isCompletedToday).length;
 
-          final sortedTasks = List<TaskEntity>.from(tasks)..sort((a, b) {
-            // Priority order: high (2), medium (1), low (0)
-            final priorityA = a.priority == TaskPriority.high ? 2 : (a.priority == TaskPriority.medium ? 1 : 0);
-            final priorityB = b.priority == TaskPriority.high ? 2 : (b.priority == TaskPriority.medium ? 1 : 0);
-            
-            // Sort by priority descending (high to low)
-            if (priorityA != priorityB) {
-              return priorityB.compareTo(priorityA);
-            }
-            
-            // If priorities are same, sort by due date (closest first)
-            if (a.dueDate != null && b.dueDate != null) {
-              return a.dueDate!.compareTo(b.dueDate!);
-            }
-            return 0;
-          });
-
           return HomeDashboardLoaded(
             habits: habits,
-            tasks: sortedTasks,
+            tasks: tasks,
+            todayTasks: rawTodayTasks,
             todayEvents: todayEvents,
             finishedEvents: finishedEvents,
             closeEvents: closeEvents,
             domains: domains,
-            deadlineCount: todayTasksCount,
+            deadlineCount: rawTodayTasks.length,
             completedHabitsCount: completedHabitsCount,
           );
         },

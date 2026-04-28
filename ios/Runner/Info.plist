@@ -74,5 +74,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>LifeStable needs location to trigger your reminders even when the app is closed.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Location is used to show your saved tasks nearby.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+        <string>fetch</string>
+    </array>
 </dict>
 </plist>

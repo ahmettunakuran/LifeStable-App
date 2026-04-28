@@ -30,9 +30,14 @@ dependencies:
   cloud_functions: ^5.2.1
   url_launcher: ^6.3.0
   http: ^1.6.0
-  firebase_remote_config: ^5.2.1
+  firebase_remote_config: ^5.5.0
+  google_maps_flutter: ^2.5.0
+  geolocator: ^11.0.0
+  geocoding: ^3.0.0
+  geofence_service: ^6.0.0+1
+  flutter_local_notifications: ^21.0.0
+  share_plus: ^13.0.0
   firebase_messaging: ^15.2.1
-  flutter_local_notifications: ^17.1.2
 
 dev_dependencies:
   flutter_test:

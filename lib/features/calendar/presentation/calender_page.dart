@@ -110,7 +110,7 @@ class _CalendarViewState extends State<_CalendarView>
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.homeDashboard),
             child: Container(
               padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
