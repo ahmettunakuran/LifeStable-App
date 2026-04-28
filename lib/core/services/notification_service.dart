@@ -10,6 +10,8 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
+  static NotificationService get instance => _instance;
+
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -28,8 +30,11 @@ class NotificationService {
     const initSettings =
         InitializationSettings(android: androidSettings, iOS: iosSettings);
 
-    await _localNotifications.initialize(initSettings,
-        onDidReceiveNotificationResponse: (details) {});
+    // flutter_local_notifications 21+ uses named parameters.
+    await _localNotifications.initialize(
+      settings: initSettings,
+      onDidReceiveNotificationResponse: (details) {},
+    );
 
     FirebaseMessaging.onMessage.listen(_showLocalNotification);
 
@@ -59,10 +64,10 @@ class NotificationService {
     final notification = message.notification;
     if (notification != null) {
       await _localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        const NotificationDetails(
+        id: notification.hashCode,
+        title: notification.title,
+        body: notification.body,
+        notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'team_updates', 'Team Updates',
             channelDescription: 'Notifications for team board changes',
@@ -87,10 +92,30 @@ class NotificationService {
         : "You've left $locationLabel.";
 
     await _localNotifications.show(
-      locationLabel.hashCode,
-      title,
-      body,
-      const NotificationDetails(
+      id: locationLabel.hashCode,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _locationChannelId, _locationChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> showReminder30Min(String locationLabel) async {
+    await _localNotifications.show(
+      id: ('reminder_$locationLabel').hashCode,
+      title: '⏰ Reminder: $locationLabel',
+      body: "You arrived at $locationLabel 30 minutes ago. Don't forget your tasks!",
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _locationChannelId, _locationChannelName,
           importance: Importance.high,
