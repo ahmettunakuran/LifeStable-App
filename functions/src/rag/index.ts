@@ -1,0 +1,1 @@
+export { seedKnowledgeBase } from "./seeder";

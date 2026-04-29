@@ -144,3 +144,4 @@ export const deleteTask = https.onCall(async (data, context) => {
     return { success: true };
 });
 export * from "./calendar-sync";
+export * from "./rag";
