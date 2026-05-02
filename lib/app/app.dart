@@ -70,7 +70,6 @@ class LifeStableApp extends StatelessWidget {
           valueListenable: localeNotifier,
           builder: (context, locale, _) {
             return MaterialApp(
-              key: ValueKey(locale.languageCode),
               title: 'LifeStable',
               debugShowCheckedModeBanner: false,
               locale: locale,

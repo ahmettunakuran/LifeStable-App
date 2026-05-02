@@ -31,18 +31,21 @@ class HomeDashboardPage extends StatelessWidget {
         context.read<NoteRepository>(),
         context.read<AiPipelineService>(),
       )..loadOverview(),
-      child: Scaffold(
-        key: scaffoldKey,
-        backgroundColor: AppColors.black,
-        drawer: _buildDrawer(context),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
-            ),
-          ),
+      child: ValueListenableBuilder<Locale>(
+        valueListenable: localeNotifier,
+        builder: (context, locale, _) {
+          return Scaffold(
+            key: scaffoldKey,
+            backgroundColor: AppColors.black,
+            drawer: _buildDrawer(context),
+            body: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
+                ),
+              ),
           child: SafeArea(
             bottom: false,
             child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
@@ -181,8 +184,8 @@ class HomeDashboardPage extends StatelessWidget {
                 return const SizedBox.shrink();
               },
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
