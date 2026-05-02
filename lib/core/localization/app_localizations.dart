@@ -1,6 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final localeNotifier = ValueNotifier<Locale>(const Locale('en'));
+
+class LanguageManager {
+  static const _key = 'app_language';
+
+  static Future<void> init() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedLang = prefs.getString(_key);
+      if (savedLang != null) {
+        localeNotifier.value = Locale(savedLang);
+      }
+    } catch (_) {}
+  }
+
+  static Future<void> setLanguage(String lang) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_key, lang);
+      localeNotifier.value = Locale(lang);
+    } catch (_) {
+      // Fallback
+      localeNotifier.value = Locale(lang);
+    }
+  }
+}
 
 class S {
   static final Map<String, Map<String, String>> _data = {
@@ -670,7 +696,7 @@ class LanguageSwitcher extends StatelessWidget {
             DropdownMenuItem(value: 'tr', child: Text('Türkçe', style: TextStyle(color: Colors.white))),
           ],
           onChanged: (val) {
-            if (val != null) localeNotifier.value = Locale(val);
+            if (val != null) LanguageManager.setLanguage(val);
           },
         );
       },

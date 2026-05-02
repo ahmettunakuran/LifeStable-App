@@ -8,8 +8,12 @@ import 'app/app.dart';
 import 'features/alerts/domain/geofence_usecase.dart';
 import 'core/services/notification_service.dart';
 
+import 'core/localization/app_localizations.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await LanguageManager.init();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
