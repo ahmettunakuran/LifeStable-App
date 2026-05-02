@@ -42,6 +42,53 @@ export const upsertTask = https.onCall(async (data, context) => {
     return { success: true };
 });
 
+export const onTeamMemberCreate = firestore
+    .document("team_members/{docId}")
+    .onCreate(async (snapshot, context) => {
+        const data = snapshot.data();
+        const teamId = data.team_id;
+        const newUserId = data.user_id;
+
+        if (!teamId) return null;
+
+        // 1. Get team name
+        const teamDoc = await admin.firestore().collection("teams").doc(teamId).get();
+        const teamName = teamDoc.data()?.name || "a team";
+
+        // 2. Get new user name
+        const newUserDoc = await admin.firestore().collection("users").doc(newUserId).get();
+        const newUserName = newUserDoc.data()?.name || "A new member";
+
+        // 3. Get all other team members to notify them
+        const membersSnapshot = await admin.firestore()
+            .collection("team_members")
+            .where("team_id", "==", teamId)
+            .get();
+
+        const tokens: string[] = [];
+        for (const doc of membersSnapshot.docs) {
+            const mData = doc.data();
+            if (mData.user_id === newUserId) continue; // Don't notify the person who just joined
+
+            const userDoc = await admin.firestore().collection("users").doc(mData.user_id).get();
+            const fcmToken = userDoc.data()?.fcmToken;
+            if (fcmToken) tokens.push(fcmToken);
+        }
+
+        if (tokens.length > 0) {
+            const message: admin.messaging.MulticastMessage = {
+                notification: {
+                    title: "New Team Member!",
+                    body: `${newUserName} has joined "${teamName}".`,
+                },
+                data: { teamId, type: "member_joined" },
+                tokens,
+            };
+            await admin.messaging().sendEachForMulticast(message);
+        }
+        return null;
+    });
+
 export const onTeamTaskWrite = firestore
     .document("teams/{teamId}/tasks/{taskId}")
     .onWrite(async (change, context) => {
@@ -55,18 +102,17 @@ export const onTeamTaskWrite = firestore
         if (!change.before.exists) action = "created";
         if (isDeleted) action = "deleted";
 
-        // 1. Get all team members
+        // Get all team members
         const membersSnapshot = await admin.firestore()
             .collection("team_members")
             .where("team_id", "==", teamId)
             .get();
 
         const userIds = membersSnapshot.docs.map(doc => doc.data().user_id);
-        logger.info(`Found ${userIds.length} members for team ${teamId}`);
-
+        
         if (userIds.length === 0) return null;
 
-        // 2. Get FCM tokens and send push notifications
+        // Get tokens
         const userDocs = await Promise.all(
             userIds.map(uid => admin.firestore().collection("users").doc(uid).get())
         );
@@ -80,21 +126,20 @@ export const onTeamTaskWrite = firestore
         if (tokens.length > 0) {
             const message: admin.messaging.MulticastMessage = {
                 notification: {
-                    title: "Team Board Update",
-                    body: `Task "${taskTitle}" was ${action} in your team board.`,
+                    title: "Team Update",
+                    body: `"${taskTitle}" was ${action}.`,
                 },
-                data: { teamId },
+                data: { teamId, taskId, type: "task_update" },
                 tokens,
             };
             try {
-                const resp = await admin.messaging().sendEachForMulticast(message);
-                logger.info(`Sent ${resp.successCount} push notifications.`);
+                await admin.messaging().sendEachForMulticast(message);
             } catch (error) {
                 logger.error("Error sending notifications:", error);
             }
         }
 
-        // 3. Auto-sync team task deadline to each member's personal calendar.
+        // Calendar Sync logic...
         const dueDate: string | undefined = change.after.exists
             ? change.after.data()?.dueDate
             : undefined;
@@ -106,12 +151,7 @@ export const onTeamTaskWrite = firestore
                 .collection("users").doc(uid)
                 .collection("calendar_events").doc(calEventId);
 
-            if (isDeleted) {
-                await calRef.delete().catch(() => null);
-                return;
-            }
-
-            if (!dueDate) {
+            if (isDeleted || !dueDate) {
                 await calRef.delete().catch(() => null);
                 return;
             }
@@ -122,19 +162,16 @@ export const onTeamTaskWrite = firestore
             await calRef.set({
                 userId: uid,
                 title: `[Team] ${taskTitle}`,
-                description: `Due date synced from team board (${teamId}).`,
+                description: `Due date synced from team board.`,
                 startAt: startAt.toISOString(),
                 endAt: endAt.toISOString(),
                 eventType: "team",
                 teamId,
-                teamName: null,
-                assignedMemberIds: [],
                 isRecurring: false,
             }, { merge: true });
         });
 
         await Promise.all(calendarOps);
-        logger.info(`Calendar sync complete for task ${taskId}.`);
         return null;
     });
 
