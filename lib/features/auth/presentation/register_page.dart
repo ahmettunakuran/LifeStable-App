@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -28,13 +29,13 @@ class _RegisterPageState extends State<RegisterPage>
   String _mapAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':
-        return 'This email is already in use.';
+        return S.of('email_in_use');
       case 'invalid-email':
-        return 'Invalid email address.';
+        return S.of('invalid_email');
       case 'weak-password':
-        return 'Password is too weak.';
+        return S.of('weak_password');
       default:
-        return e.message ?? 'Account creation failed.';
+        return e.message ?? S.of('register_failed');
     }
   }
 
@@ -137,176 +138,184 @@ class _RegisterPageState extends State<RegisterPage>
               ),
             ),
             child: SafeArea(
-              child: Stack(
+              child: Column(
                 children: [
-                  Positioned(
-                    top: -80,
-                    right: -80,
-                    child: _GlowCircle(
-                      size: 280,
-                      color: AppColors.gold.withOpacity(0.07),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, right: 16, bottom: 8),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: const LanguageSwitcher(),
                     ),
                   ),
-                  Positioned(
-                    bottom: -100,
-                    left: -60,
-                    child: _GlowCircle(
-                      size: 320,
-                      color: AppColors.gold.withOpacity(0.05),
-                    ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    right: 16,
-                    child: const LanguageSwitcher(),
-                  ),
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: AnimatedBuilder(
-                      animation: _contentController,
-                      builder: (context, child) => SlideTransition(
-                        position: _slideUp,
-                        child: Opacity(opacity: _fadeIn.value, child: child),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 48),
-                          GestureDetector(
-                            onTap: () => Navigator.of(context)
-                                .pushReplacementNamed(AppRoutes.login),
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: Colors.white.withOpacity(0.05),
-                                border: Border.all(
-                                  color: AppColors.gold.withOpacity(0.2),
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                                color: AppColors.gold,
-                                size: 18,
-                              ),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: -80,
+                          right: -80,
+                          child: _GlowCircle(
+                            size: 280,
+                            color: AppColors.gold.withOpacity(0.07),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: -100,
+                          left: -60,
+                          child: _GlowCircle(
+                            size: 320,
+                            color: AppColors.gold.withOpacity(0.05),
+                          ),
+                        ),
+                        SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 28),
+                          child: AnimatedBuilder(
+                            animation: _contentController,
+                            builder: (context, child) => SlideTransition(
+                              position: _slideUp,
+                              child: Opacity(opacity: _fadeIn.value, child: child),
                             ),
-                          ),
-                          const SizedBox(height: 28),
-                          ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [AppColors.goldLight, AppColors.gold],
-                            ).createShader(bounds),
-                            child: Text(
-                              S.of('create_account_title'),
-                              style: const TextStyle(
-                                fontSize: 44,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: -1.5,
-                                height: 1.15,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            S.of('create_account_subtitle'),
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withOpacity(0.5),
-                            ),
-                          ),
-                          const SizedBox(height: 36),
-                          _buildLabel(S.of('full_name')),
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            controller: _nameController,
-                            hint: S.of('name_hint'),
-                            icon: Icons.person_outline_rounded,
-                            keyboardType: TextInputType.name,
-                          ),
-                          const SizedBox(height: 20),
-                          _buildLabel(S.of('email')),
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            controller: _emailController,
-                            hint: S.of('email_hint'),
-                            icon: Icons.email_outlined,
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                          const SizedBox(height: 20),
-                          _buildLabel(S.of('password')),
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            controller: _passwordController,
-                            hint: '••••••••',
-                            icon: Icons.lock_outline_rounded,
-                            obscureText: _obscurePassword,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: AppColors.gold.withOpacity(0.6),
-                                size: 20,
-                              ),
-                              onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          _buildLabel(S.of('confirm_password')),
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            controller: _confirmPasswordController,
-                            hint: '••••••••',
-                            icon: Icons.lock_outline_rounded,
-                            obscureText: _obscureConfirm,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirm
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: AppColors.gold.withOpacity(0.6),
-                                size: 20,
-                              ),
-                              onPressed: () => setState(
-                                      () => _obscureConfirm = !_obscureConfirm),
-                            ),
-                          ),
-                          const SizedBox(height: 36),
-                          _buildGoldButton(
-                            label: S.of('create_account_btn'),
-                            isLoading: _isLoading,
-                            onTap: _isLoading ? null : _register,
-                          ),
-                          const SizedBox(height: 28),
-                          Center(
-                            child: TextButton(
-                              onPressed: () => Navigator.of(context)
-                                  .pushReplacementNamed(AppRoutes.login),
-                              child: RichText(
-                                text: TextSpan(
-                                  text: S.of('already_have_account'),
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.4),
-                                    fontSize: 14,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: S.of('sign_in_link'),
-                                      style: const TextStyle(
-                                        color: AppColors.gold,
-                                        fontWeight: FontWeight.w600,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 20),
+                                GestureDetector(
+                                  onTap: () => Navigator.of(context)
+                                      .pushReplacementNamed(AppRoutes.login),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.white.withOpacity(0.05),
+                                      border: Border.all(
+                                        color: AppColors.gold.withOpacity(0.2),
                                       ),
                                     ),
-                                  ],
+                                    child: const Icon(
+                                      Icons.arrow_back_ios_new_rounded,
+                                      color: AppColors.gold,
+                                      size: 18,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 28),
+                                ShaderMask(
+                                  shaderCallback: (bounds) => const LinearGradient(
+                                    colors: [AppColors.goldLight, AppColors.gold],
+                                  ).createShader(bounds),
+                                  child: Text(
+                                    S.of('create_account_title'),
+                                    style: const TextStyle(
+                                      fontSize: 44,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: -1.5,
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  S.of('create_account_subtitle'),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white.withOpacity(0.5),
+                                  ),
+                                ),
+                                const SizedBox(height: 36),
+                                _buildLabel(S.of('full_name')),
+                                const SizedBox(height: 8),
+                                _buildTextField(
+                                  controller: _nameController,
+                                  hint: S.of('name_hint'),
+                                  icon: Icons.person_outline_rounded,
+                                  keyboardType: TextInputType.name,
+                                ),
+                                const SizedBox(height: 20),
+                                _buildLabel(S.of('email')),
+                                const SizedBox(height: 8),
+                                _buildTextField(
+                                  controller: _emailController,
+                                  hint: S.of('email_hint'),
+                                  icon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                ),
+                                const SizedBox(height: 20),
+                                _buildLabel(S.of('password')),
+                                const SizedBox(height: 8),
+                                _buildTextField(
+                                  controller: _passwordController,
+                                  hint: '••••••••',
+                                  icon: Icons.lock_outline_rounded,
+                                  obscureText: _obscurePassword,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      color: AppColors.gold.withOpacity(0.6),
+                                      size: 20,
+                                    ),
+                                    onPressed: () => setState(
+                                            () => _obscurePassword = !_obscurePassword),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                _buildLabel(S.of('confirm_password')),
+                                const SizedBox(height: 8),
+                                _buildTextField(
+                                  controller: _confirmPasswordController,
+                                  hint: '••••••••',
+                                  icon: Icons.lock_outline_rounded,
+                                  obscureText: _obscureConfirm,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureConfirm
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      color: AppColors.gold.withOpacity(0.6),
+                                      size: 20,
+                                    ),
+                                    onPressed: () => setState(
+                                            () => _obscureConfirm = !_obscureConfirm),
+                                  ),
+                                ),
+                                const SizedBox(height: 36),
+                                _buildGoldButton(
+                                  label: S.of('create_account_btn'),
+                                  isLoading: _isLoading,
+                                  onTap: _isLoading ? null : _register,
+                                ),
+                                const SizedBox(height: 28),
+                                Center(
+                                  child: TextButton(
+                                    onPressed: () => Navigator.of(context)
+                                        .pushReplacementNamed(AppRoutes.login),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        text: S.of('already_have_account'),
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.4),
+                                          fontSize: 14,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: S.of('sign_in_link'),
+                                            style: const TextStyle(
+                                              color: AppColors.gold,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

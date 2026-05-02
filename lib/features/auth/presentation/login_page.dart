@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,19 +24,19 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   String _mapAuthError(FirebaseAuthException e) {
     final raw = (e.message ?? '').toUpperCase();
     if (raw.contains('CONFIGURATION_NOT_FOUND')) {
-      return 'Firebase Auth configuration not found.';
+      return S.of('auth_config_error');
     }
     switch (e.code) {
       case 'invalid-credential':
       case 'wrong-password':
       case 'user-not-found':
-        return 'Invalid email or password.';
+        return S.of('invalid_credentials');
       case 'invalid-email':
-        return 'Invalid email address.';
+        return S.of('invalid_email');
       case 'operation-not-allowed':
-        return 'Email/Password sign-in is not enabled.';
+        return S.of('op_not_allowed');
       default:
-        return e.message ?? 'Sign in failed.';
+        return e.message ?? S.of('sign_in_failed');
     }
   }
 
@@ -132,11 +133,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       size: 320,
                       color: AppColors.gold.withOpacity(0.05),
                     ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    right: 16,
-                    child: const LanguageSwitcher(),
                   ),
                   SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -352,6 +348,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: const LanguageSwitcher(),
                   ),
                 ],
               ),

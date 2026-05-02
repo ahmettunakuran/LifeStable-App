@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -189,7 +190,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Build habits.\nLive intentionally.',
+                              S.of('tagline'),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 18,
@@ -235,10 +236,10 @@ class _OnboardingPageState extends State<OnboardingPage>
                                     ),
                                   ],
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
-                                    'Get Started',
-                                    style: TextStyle(
+                                    S.of('get_started'),
+                                    style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.black,
@@ -251,8 +252,16 @@ class _OnboardingPageState extends State<OnboardingPage>
                             TextButton(
                               onPressed: () => Navigator.of(context)
                                   .pushReplacementNamed(AppRoutes.login),
-                              child: Text(
-                                'Already have an account? Sign in',
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(text: S.of('already_have_account')),
+                                    TextSpan(
+                                      text: S.of('sign_in_link'),
+                                      style: const TextStyle(color: AppColors.gold),
+                                    ),
+                                  ],
+                                ),
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.45),
                                   fontSize: 14,

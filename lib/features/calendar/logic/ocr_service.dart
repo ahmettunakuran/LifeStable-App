@@ -152,12 +152,30 @@ class OcrService {
     return relativeTo.add(Duration(days: diff < 0 ? diff + 7 : diff));
   }
 
-  Future<void> saveScheduleEvents(List<CalendarEventEntity> events, String userId) async {
+  Future<void> saveScheduleEvents(
+    List<CalendarEventEntity> events,
+    String userId, {
+    int weeks = 1,
+  }) async {
     if (events.isEmpty) return;
     final batch = _firestore.batch();
+
     for (var event in events) {
-      final docRef = _firestore.collection('users').doc(userId).collection('calendar_events').doc();
-      batch.set(docRef, event.toFirestore());
+      for (int i = 0; i < weeks; i++) {
+        final docRef = _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('calendar_events')
+            .doc();
+
+        final repeatedEvent = event.copyWith(
+          id: const Uuid().v4(),
+          startAt: event.startAt.add(Duration(days: i * 7)),
+          endAt: event.endAt.add(Duration(days: i * 7)),
+        );
+
+        batch.set(docRef, repeatedEvent.toFirestore());
+      }
     }
     await batch.commit();
   }

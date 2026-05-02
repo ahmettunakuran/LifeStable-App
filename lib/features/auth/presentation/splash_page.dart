@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -148,7 +149,7 @@ class _SplashPageState extends State<SplashPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Balance your life.',
+                        S.of('balance_your_life'),
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white.withOpacity(0.4),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class AlertsPage extends StatelessWidget {
   const AlertsPage({super.key});
@@ -7,10 +8,10 @@ class AlertsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alerts'),
+        title: Text(S.of('alerts')),
       ),
-      body: const Center(
-        child: Text('Alerts Placeholder'),
+      body: Center(
+        child: Text(S.of('alerts_placeholder')),
       ),
     );
   }

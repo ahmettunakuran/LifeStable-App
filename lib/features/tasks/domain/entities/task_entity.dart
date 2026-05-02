@@ -69,6 +69,7 @@ class TaskEntity {
       'status': status.name,
       'priority': priority.name,
       'dueDate': dueDate?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
       if (teamId != null) 'teamId': teamId,
       if (assignedTo != null) 'assignedTo': assignedTo,
     };

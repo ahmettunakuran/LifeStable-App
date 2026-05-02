@@ -5,6 +5,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../domain/entities/location_entity.dart';
 import '../../logic/location_cubit.dart';
@@ -105,7 +106,7 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _searchError = 'Address not found. Try a different query.';
+          _searchError = S.of('address_not_found');
           _isSearching = false;
         });
       }
@@ -115,13 +116,13 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
   Future<void> _save() async {
     if (_selectedPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please search or pick a location first.')),
+        SnackBar(content: Text(S.of('pick_location_first'))),
       );
       return;
     }
     if (_labelController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a label.')),
+        SnackBar(content: Text(S.of('enter_label'))),
       );
       return;
     }
@@ -181,7 +182,7 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
             ),
             const SizedBox(height: 16),
             Text(
-              widget.editingLocation != null ? 'Edit Location' : 'Add Location',
+              widget.editingLocation != null ? S.of('edit_location') : S.of('add_location'),
               style: const TextStyle(
                 color: AppColors.gold,
                 fontSize: 18,
@@ -196,7 +197,7 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
                     controller: _searchController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Search address…',
+                      hintText: S.of('search_address_hint'),
                       hintStyle: const TextStyle(color: Colors.white38),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.05),
@@ -251,7 +252,7 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
               controller: _labelController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Label (e.g. School, Gym, Market)',
+                hintText: S.of('location_label_hint'),
                 hintStyle: const TextStyle(color: Colors.white38),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
@@ -266,7 +267,7 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Radius', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                Text(S.of('radius'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
                 Text(
                   '${_radius.round()} m',
                   style: const TextStyle(color: AppColors.gold, fontSize: 14, fontWeight: FontWeight.bold),
@@ -289,9 +290,9 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
               ),
             ),
             const SizedBox(height: 8),
-            _buildToggleRow('On Arrival', _geofenceOnEnter, (v) => setState(() => _geofenceOnEnter = v)),
+            _buildToggleRow(S.of('on_arrival'), _geofenceOnEnter, (v) => setState(() => _geofenceOnEnter = v)),
             const SizedBox(height: 8),
-            _buildToggleRow('On Leave', _geofenceOnExit, (v) => setState(() => _geofenceOnExit = v)),
+            _buildToggleRow(S.of('on_leave'), _geofenceOnExit, (v) => setState(() => _geofenceOnExit = v)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () async {
@@ -310,11 +311,11 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Don\'t remind after', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    Text(S.of('dont_remind_after'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
                     Text(
                       _doNotRemindAfter != null
                           ? _doNotRemindAfter!.format(context)
-                          : 'Not set',
+                          : S.of('not_set'),
                       style: TextStyle(
                         color: _doNotRemindAfter != null ? AppColors.gold : Colors.white38,
                         fontSize: 14,
@@ -337,7 +338,7 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  widget.editingLocation != null ? 'Save Changes' : 'Save Location',
+                  widget.editingLocation != null ? S.of('save_changes') : S.of('save_location'),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
               ),

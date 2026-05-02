@@ -4,20 +4,20 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../features/alerts/data/location_model.dart';
+import '../localization/app_localizations.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
-  NotificationService._internal();
-
   static NotificationService get instance => _instance;
+  
+  NotificationService._internal();
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   static const _locationChannelId = 'location_alerts';
-  static const _locationChannelName = 'Location Alerts';
 
   Future<void> initialize() async {
     if (Platform.isIOS) {
@@ -67,14 +67,15 @@ class NotificationService {
         id: notification.hashCode,
         title: notification.title,
         body: notification.body,
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
-            'team_updates', 'Team Updates',
-            channelDescription: 'Notifications for team board changes',
+            'team_updates',
+            S.of('notification_channel_team_name'),
+            channelDescription: S.of('notification_channel_team_desc'),
             importance: Importance.max,
             priority: Priority.high,
           ),
-          iOS: DarwinNotificationDetails(),
+          iOS: const DarwinNotificationDetails(),
         ),
       );
     }
@@ -85,23 +86,24 @@ class NotificationService {
     required bool isEntering,
   }) async {
     final title = isEntering
-        ? '📍 Arrived at $locationLabel'
-        : '👋 Left $locationLabel';
+        ? S.of('notification_arrived_at', args: {'location': locationLabel})
+        : S.of('notification_left', args: {'location': locationLabel});
     final body = isEntering
-        ? "You've arrived at $locationLabel! Check your tasks here."
-        : "You've left $locationLabel.";
+        ? S.of('notification_arrived_body', args: {'location': locationLabel})
+        : S.of('notification_left_body', args: {'location': locationLabel});
 
     await _localNotifications.show(
       id: locationLabel.hashCode,
       title: title,
       body: body,
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          _locationChannelId, _locationChannelName,
+          _locationChannelId,
+          S.of('notification_channel_location_name'),
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
@@ -113,15 +115,16 @@ class NotificationService {
   Future<void> showReminder30Min(String locationLabel) async {
     await _localNotifications.show(
       id: ('reminder_$locationLabel').hashCode,
-      title: '⏰ Reminder: $locationLabel',
-      body: "You arrived at $locationLabel 30 minutes ago. Don't forget your tasks!",
-      notificationDetails: const NotificationDetails(
+      title: S.of('notification_reminder_title', args: {'location': locationLabel}),
+      body: S.of('notification_reminder_body', args: {'location': locationLabel}),
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          _locationChannelId, _locationChannelName,
+          _locationChannelId,
+          S.of('notification_channel_location_name'),
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,

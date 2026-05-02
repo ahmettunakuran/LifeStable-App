@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../app/router/app_routes.dart';
+import '../../../../shared/constants/app_colors.dart';
 
 import '../logic/assistant_cubit.dart';
 import 'widgets/chat_bubble.dart';
@@ -168,9 +169,9 @@ class _AssistantViewState extends State<_AssistantView> {
                 shaderCallback: (bounds) => const LinearGradient(
                   colors: [AppColors.goldLight, AppColors.gold],
                 ).createShader(bounds),
-                child: const Text(
-                  'LifeStable AI',
-                  style: TextStyle(
+                child: Text(
+                  S.of('assistant_title'),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -178,7 +179,7 @@ class _AssistantViewState extends State<_AssistantView> {
                 ),
               ),
               Text(
-                'Always here for you',
+                S.of('assistant_subtitle'),
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.4),
                   fontSize: 11,
@@ -205,10 +206,10 @@ class _AssistantViewState extends State<_AssistantView> {
               color: Colors.white, size: 56),
         ),
         const SizedBox(height: 20),
-        const Text(
-          'Hello!\nHow Can I Help You?',
+        Text(
+          S.of('assistant_welcome_title'),
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -217,7 +218,7 @@ class _AssistantViewState extends State<_AssistantView> {
         ),
         const SizedBox(height: 10),
         Text(
-          'You can ask me anything about\nyour tasks, habits, or calendar.',
+          S.of('assistant_welcome_subtitle'),
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white.withOpacity(0.4),
@@ -265,8 +266,8 @@ class _AssistantViewState extends State<_AssistantView> {
           ImageInputButton(
             onImageSelected: (path) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Image processing coming in Task 5.2.'),
+                SnackBar(
+                  content: Text(S.of('image_processing_coming')),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -285,8 +286,8 @@ class _AssistantViewState extends State<_AssistantView> {
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
                   hintText: isResponding
-                      ? 'AI is thinking...'
-                      : 'Type your message',
+                      ? S.of('ai_thinking')
+                      : S.of('type_message'),
                   hintStyle: TextStyle(
                     color: Colors.white.withOpacity(0.3),
                     fontSize: 14,
@@ -384,13 +385,13 @@ class _AssistantViewState extends State<_AssistantView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _navBtn(context, Icons.group_outlined, 'Team',
+          _navBtn(context, Icons.group_outlined, S.of('team'),
               AppRoutes.teamDashboard),
-          _navBtn(context, Icons.calendar_month_outlined, 'Calendar',
+          _navBtn(context, Icons.calendar_month_outlined, S.of('calendar'),
               AppRoutes.calendar),
-          _navBtn(context, Icons.dashboard_outlined, 'Dashboard',
+          _navBtn(context, Icons.dashboard_outlined, S.of('dashboard'),
               AppRoutes.homeDashboard),
-          _navBtn(context, Icons.local_fire_department_outlined, 'Habit',
+          _navBtn(context, Icons.local_fire_department_outlined, S.of('habit'),
               AppRoutes.habitTracker),
         ],
       ),

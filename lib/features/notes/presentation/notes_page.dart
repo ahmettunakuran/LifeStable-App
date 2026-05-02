@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../data/note_repository_impl.dart';
 import '../domain/entities/note_entity.dart';
 import '../logic/notes_cubit.dart';
@@ -38,13 +39,13 @@ class _NotesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (FirebaseAuth.instance.currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text('Please sign in to use notes.')),
+      return Scaffold(
+        body: Center(child: Text(S.of('please_sign_in_notes'))),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notes')),
+      appBar: AppBar(title: Text(S.of('notes'))),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: _domainsStream(),
         builder: (context, domainsSnapshot) {
@@ -60,7 +61,7 @@ class _NotesView extends StatelessWidget {
               }
               final notes = (state as NotesLoaded).notes;
               if (notes.isEmpty) {
-                return const Center(child: Text('No notes yet.'));
+                return Center(child: Text(S.of('no_notes_yet')));
               }
               return ListView.separated(
                 itemCount: notes.length,
@@ -120,7 +121,7 @@ class _NotesView extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(note == null ? 'Add Note' : 'Edit Note'),
+          title: Text(note == null ? S.of('add_note') : S.of('edit_note')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -132,23 +133,23 @@ class _NotesView extends StatelessWidget {
                       .map((d) => DropdownMenuItem<String>(
                             value: d.id,
                             child: Text(
-                                (d.data()['name'] as String?) ?? 'Unnamed'),
+                                (d.data()['name'] as String?) ?? S.of('unnamed')),
                           ))
                       .toList(),
                   onChanged: (v) =>
                       setDialogState(() => selectedDomainId = v ?? ''),
-                  decoration: const InputDecoration(labelText: 'Domain'),
+                  decoration: InputDecoration(labelText: S.of('domain')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: titleCtrl,
-                  decoration: const InputDecoration(labelText: 'Title'),
+                  decoration: InputDecoration(labelText: S.of('title')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: contentCtrl,
                   maxLines: 5,
-                  decoration: const InputDecoration(labelText: 'Content'),
+                  decoration: InputDecoration(labelText: S.of('content')),
                 ),
               ],
             ),
@@ -156,7 +157,7 @@ class _NotesView extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(S.of('cancel')),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -181,7 +182,7 @@ class _NotesView extends StatelessWidget {
                 }
                 if (ctx.mounted) Navigator.pop(ctx);
               },
-              child: const Text('Save'),
+              child: Text(S.of('save')),
             ),
           ],
         ),

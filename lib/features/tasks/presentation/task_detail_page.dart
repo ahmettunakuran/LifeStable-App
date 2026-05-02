@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class TaskDetailPage extends StatelessWidget {
   const TaskDetailPage({super.key});
@@ -7,10 +8,10 @@ class TaskDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Task Detail'),
+        title: Text(S.of('task_detail')),
       ),
-      body: const Center(
-        child: Text('Task Detail Placeholder'),
+      body: Center(
+        child: Text(S.of('task_detail_placeholder')),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:http/http.dart' as http;
+import '../localization/app_localizations.dart';
 
 enum AppDomain { tasks, calendar, habits, summary, sports, education, unknown }
 
@@ -26,8 +27,12 @@ class AiPipelineService {
       final apiKey = _remoteConfig.getString('groq_api_key');
       
       if (apiKey.isEmpty) {
-        print("KRİTİK HATA: groq_api_key Remote Config'de bulunamadı!");
-        return AiResult(domain: AppDomain.unknown, action: 'none', payload: {}, responseText: "Sistem yapılandırması eksik (API Key bulunamadı).");
+        return AiResult(
+          domain: AppDomain.unknown,
+          action: 'none',
+          payload: {},
+          responseText: S.of('ai_config_error'),
+        );
       }
           
       final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
@@ -38,7 +43,10 @@ class AiPipelineService {
       Sen LifeStable asistanısın. 24 saatlik (23:00, 21:00) dijital saat sistemini kullan.
       GÜNCEL ZAMAN (ISO): ${now.toIso8601String()}
       BUGÜN: ${_getWeekday(now.weekday)}
-      
+      DİL: ${localeNotifier.value.languageCode}
+
+      ÖNEMLİ: Kullanıcıya yanıt verirken ${localeNotifier.value.languageCode == 'tr' ? 'TÜRKÇE' : 'İNGİLİZCE'} konuş.
+
       UYGULAMA VERİLERİ (CONTEXT):
       $appData
 
@@ -136,13 +144,18 @@ class AiPipelineService {
           domain: _parseDomain(result['domain']),
           action: result['action'] ?? 'none',
           payload: result['payload'] ?? {},
-          responseText: result['responseText'] ?? "İşlem tamam.",
+          responseText: result['responseText'] ?? S.of('ai_default_response'),
         );
       }
     } catch (e) {
       print("Pipeline Error: $e");
     }
-    return AiResult(domain: AppDomain.unknown, action: 'none', payload: {}, responseText: "Bir hata oluştu.");
+    return AiResult(
+      domain: AppDomain.unknown,
+      action: 'none',
+      payload: {},
+      responseText: S.of('ai_error_generic'),
+    );
   }
 
   AppDomain _parseDomain(String? domain) {

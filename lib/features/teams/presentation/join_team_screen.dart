@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_lifestable/services/team_service.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 
 class JoinTeamScreen extends StatefulWidget {
   const JoinTeamScreen({super.key});
@@ -27,14 +28,20 @@ class _JoinTeamScreenState extends State<JoinTeamScreen> {
       await _teamService.joinTeamWithCode(_codeController.text.trim());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Successfully joined the team!')),
+          SnackBar(content: Text(S.of('join_success'))),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
+        String errorMsg = e.toString();
+        if (errorMsg.contains('Invalid invite code')) {
+          errorMsg = S.of('invalid_code');
+        } else if (errorMsg.contains('already a member')) {
+          errorMsg = S.of('already_in_team');
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text(errorMsg)),
         );
       }
     } finally {
@@ -50,7 +57,7 @@ class _JoinTeamScreenState extends State<JoinTeamScreen> {
         backgroundColor: AppColors.black,
         iconTheme: const IconThemeData(color: AppColors.gold),
         title: Text(
-          localeNotifier.value.languageCode == 'tr' ? 'Takıma Katıl' : 'Join Team',
+          S.of('join_team'),
           style: const TextStyle(color: Colors.white),
         ),
       ),
@@ -79,9 +86,7 @@ class _JoinTeamScreenState extends State<JoinTeamScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                localeNotifier.value.languageCode == 'tr'
-                    ? 'Davet Kodunu Gir'
-                    : 'Enter Invite Code',
+                S.of('enter_invite_code'),
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -90,9 +95,7 @@ class _JoinTeamScreenState extends State<JoinTeamScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                localeNotifier.value.languageCode == 'tr'
-                    ? 'Takım liderinden aldığın 8 haneli kodu gir.'
-                    : 'Enter the 8-digit code from your team leader.',
+                S.of('share_invite_code'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white.withOpacity(0.5)),
               ),
@@ -157,7 +160,7 @@ class _JoinTeamScreenState extends State<JoinTeamScreen> {
                       ),
                     )
                         : Text(
-                      localeNotifier.value.languageCode == 'tr' ? 'Katıl' : 'Join',
+                      S.of('join_team'),
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,

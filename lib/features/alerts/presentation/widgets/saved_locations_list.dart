@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../shared/constants/app_colors.dart';
 import '../../domain/entities/location_entity.dart';
 import '../../logic/location_cubit.dart';
@@ -21,18 +22,18 @@ class SavedLocationsList extends StatelessWidget {
         if (state.status == LocationStatus.error) {
           return Center(
             child: Text(
-              state.errorMessage ?? 'An error occurred.',
+              state.errorMessage ?? S.of('error_prefix', args: {'message': 'Unknown'}),
               style: const TextStyle(color: Colors.redAccent),
             ),
           );
         }
 
         if (state.locations.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
-              'No saved locations yet.\nTap the map to add one.',
+              S.of('no_locations_yet'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 14),
+              style: const TextStyle(color: Colors.white38, fontSize: 14),
             ),
           );
         }
@@ -96,9 +97,9 @@ class _LocationTile extends StatelessWidget {
               children: [
                 _badge('${location.radiusM} m', Colors.blueAccent),
                 const SizedBox(width: 6),
-                if (location.geofenceOnEnter) _badge('On Arrival', Colors.greenAccent),
+                if (location.geofenceOnEnter) _badge(S.of('on_arrival'), Colors.greenAccent),
                 if (location.geofenceOnEnter && location.geofenceOnExit) const SizedBox(width: 6),
-                if (location.geofenceOnExit) _badge('On Leave', Colors.orangeAccent),
+                if (location.geofenceOnExit) _badge(S.of('on_leave'), Colors.orangeAccent),
               ],
             ),
           ],
@@ -139,19 +140,19 @@ class _LocationTile extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cardBg,
-        title: const Text('Delete Location', style: TextStyle(color: Colors.white)),
+        title: Text(S.of('delete_location_title'), style: const TextStyle(color: Colors.white)),
         content: Text(
-          'Remove "${location.label}" from saved locations?',
+          S.of('delete_location_confirm', args: {'label': location.label}),
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: Text(S.of('cancel'), style: const TextStyle(color: Colors.white54)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+            child: Text(S.of('delete'), style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),

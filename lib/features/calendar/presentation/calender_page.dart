@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../data/calender_repository_impl.dart';
@@ -128,9 +129,9 @@ class _CalendarViewState extends State<_CalendarView>
             shaderCallback: (b) => const LinearGradient(
               colors: [AppColors.goldLight, AppColors.gold],
             ).createShader(b),
-            child: const Text(
-              'CALENDAR',
-              style: TextStyle(
+            child: Text(
+              S.of('calendar_title'),
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 2,
@@ -177,9 +178,9 @@ class _CalendarViewState extends State<_CalendarView>
           unselectedLabelColor: Colors.white.withValues(alpha: 0.4),
           labelStyle: const TextStyle(
               fontWeight: FontWeight.w700, fontSize: 12),
-          tabs: const [
-            Tab(text: 'Month / Week'),
-            Tab(text: 'Day View'),
+          tabs: [
+            Tab(text: S.of('month_week')),
+            Tab(text: S.of('day_view')),
           ],
         ),
       ),
@@ -340,18 +341,18 @@ class _CalendarViewState extends State<_CalendarView>
               children: [
                 if (count > 0)
                   _DotBadge(
-                      label: '$count event${count > 1 ? 's' : ''}',
+                      label: count > 1 ? S.of('events_count', args: {'count': count.toString()}) : S.of('event_count', args: {'count': count.toString()}),
                       color: AppColors.gold),
                 if (teamCount > 0) ...[
                   const SizedBox(width: 6),
                   _DotBadge(
-                      label: '$teamCount team',
+                      label: '$teamCount ${S.of('event_type_team').toLowerCase()}',
                       color: const Color(0xFFBA68C8)),
                 ],
                 if (conflictCount > 0) ...[
                   const SizedBox(width: 6),
                   _DotBadge(
-                      label: '$conflictCount conflict',
+                      label: conflictCount > 1 ? S.of('conflicts_count', args: {'count': conflictCount.toString()}) : S.of('conflict_count', args: {'count': conflictCount.toString()}),
                       color: Colors.orange),
                 ],
               ],
@@ -453,7 +454,7 @@ class _CalendarViewState extends State<_CalendarView>
             size: 44,
             color: AppColors.gold.withValues(alpha: 0.2)),
         const SizedBox(height: 12),
-        Text('No events today',
+        Text(S.of('no_events_today'),
             style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.25),
                 fontSize: 14)),
@@ -494,13 +495,13 @@ class _CalendarViewState extends State<_CalendarView>
                 ),
               ],
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.add, color: Colors.black, size: 20),
-                SizedBox(width: 8),
-                Text('New Event',
-                    style: TextStyle(
+                const Icon(Icons.add, color: Colors.black, size: 20),
+                const SizedBox(width: 8),
+                Text(S.of('new_event'),
+                    style: const TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.w700,
                         fontSize: 15)),
@@ -527,20 +528,20 @@ class _CalendarViewState extends State<_CalendarView>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navBtn(context, Icons.group_outlined, 'Team',
+            _navBtn(context, Icons.group_outlined, S.of('team'),
                 AppRoutes.teamDashboard),
             _navBtn(
                 context,
                 Icons.calendar_month_outlined,
-                'Calendar',
+                S.of('calendar'),
                 AppRoutes.calendar,
                 active: true),
-            _navBtn(context, Icons.dashboard_outlined, 'Dashboard',
+            _navBtn(context, Icons.dashboard_outlined, S.of('dashboard'),
                 AppRoutes.homeDashboard),
             _navBtn(
                 context,
                 Icons.local_fire_department_outlined,
-                'Habit',
+                S.of('habit'),
                 AppRoutes.habitTracker),
           ],
         ),
@@ -609,9 +610,9 @@ class _CalendarViewState extends State<_CalendarView>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Import Course Schedule',
-                style: TextStyle(
+              Text(
+                S.of('import_schedule'),
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold),
@@ -619,8 +620,8 @@ class _CalendarViewState extends State<_CalendarView>
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.photo_library, color: AppColors.gold),
-                title: const Text('Choose from Gallery',
-                    style: TextStyle(color: Colors.white)),
+                title: Text(S.of('choose_gallery'),
+                    style: const TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickAndProcessImage(context, ImageSource.gallery);
@@ -628,8 +629,8 @@ class _CalendarViewState extends State<_CalendarView>
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: AppColors.gold),
-                title: const Text('Take a Photo',
-                    style: TextStyle(color: Colors.white)),
+                title: Text(S.of('take_photo'),
+                    style: const TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickAndProcessImage(context, ImageSource.camera);
@@ -673,18 +674,18 @@ class _CalendarViewState extends State<_CalendarView>
 
       if (events.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No courses found in image.')),
+          SnackBar(content: Text(S.of('no_courses_found'))),
         );
         return;
       }
 
       // Kullanıcıya bulunan dersleri onayla
-      _showConfirmationDialog(context, events, (confirmedEvents) async {
-        await ocrService.saveScheduleEvents(confirmedEvents, userId);
+      _showConfirmationDialog(context, events, (confirmedEvents, weeks) async {
+        await ocrService.saveScheduleEvents(confirmedEvents, userId, weeks: weeks);
         cubit.init(); // Takvimi yenile.
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${confirmedEvents.length} courses added to calendar!')),
+            SnackBar(content: Text('${confirmedEvents.length * weeks} ${S.of('events_count', args: {'count': (confirmedEvents.length * weeks).toString()})} ${S.of('added_to_calendar').toLowerCase()} ($weeks ${S.of('weeks')})!')),
           );
         }
       });
@@ -692,7 +693,7 @@ class _CalendarViewState extends State<_CalendarView>
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text(S.of('error_prefix', args: {'message': e.toString()}))),
         );
       }
     }
@@ -701,17 +702,18 @@ class _CalendarViewState extends State<_CalendarView>
   void _showConfirmationDialog(
     BuildContext context,
     List<CalendarEventEntity> events,
-    Function(List<CalendarEventEntity>) onConfirm,
+    Function(List<CalendarEventEntity>, int) onConfirm,
   ) {
     final selected = List<bool>.filled(events.length, true);
+    int selectedWeeks = 1;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.cardBg,
-          title: const Text('Confirm Schedule',
-              style: TextStyle(color: Colors.white)),
+          title: Text(S.of('confirm_schedule'),
+              style: const TextStyle(color: Colors.white)),
           content: SizedBox(
             width: double.maxFinite,
             child: Column(
@@ -719,7 +721,7 @@ class _CalendarViewState extends State<_CalendarView>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Toggle events you want to import:',
+                  S.of('toggle_import'),
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 12),
@@ -754,6 +756,40 @@ class _CalendarViewState extends State<_CalendarView>
                     ),
                   ),
                 ),
+                const Divider(color: Colors.white12, height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(S.of('repeat_weeks'),
+                          style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButton<int>(
+                        value: selectedWeeks,
+                        dropdownColor: AppColors.cardBg,
+                        underline: const SizedBox(),
+                        style: const TextStyle(color: AppColors.gold),
+                        items: [1, 2, 4, 8, 10, 12, 14, 16]
+                            .map((w) => DropdownMenuItem(
+                                  value: w,
+                                  child: Text('$w ${S.of('weeks')}'),
+                                ))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) {
+                            setDialogState(() => selectedWeeks = v);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -761,7 +797,7 @@ class _CalendarViewState extends State<_CalendarView>
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child:
-                  const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                  Text(S.of('cancel'), style: const TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -772,10 +808,10 @@ class _CalendarViewState extends State<_CalendarView>
                     if (selected[i]) events[i],
                 ];
                 Navigator.pop(ctx);
-                if (confirmed.isNotEmpty) onConfirm(confirmed);
+                if (confirmed.isNotEmpty) onConfirm(confirmed, selectedWeeks);
               },
-              child: const Text('Add to Calendar',
-                  style: TextStyle(color: Colors.black)),
+              child: Text(S.of('add_to_calendar'),
+                  style: const TextStyle(color: Colors.black)),
             ),
           ],
         ),
@@ -910,7 +946,7 @@ class _EventCard extends StatelessWidget {
                             if (event.assignedMemberIds.isNotEmpty) ...[
                               const SizedBox(width: 6),
                               Text(
-                                '· ${event.assignedMemberIds.length} member${event.assignedMemberIds.length > 1 ? 's' : ''}',
+                                '· ' + (event.assignedMemberIds.length > 1 ? S.of('members_count', args: {'count': event.assignedMemberIds.length.toString()}) : S.of('member_count', args: {'count': event.assignedMemberIds.length.toString()})),
                                 style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.35),
                                     fontSize: 11),
@@ -951,7 +987,7 @@ class _EventCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                event.linkedTaskTitle ?? 'Linked task',
+                                event.linkedTaskTitle ?? S.of('linked_task'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -987,17 +1023,17 @@ class _EventCard extends StatelessWidget {
         backgroundColor: AppColors.cardBg,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete event?',
-            style: TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(S.of('delete_event_title'),
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
         content: Text(
-          'Remove "${event.title}"?${event.isTeamEvent ? '\n\nThis is a team event — it will be removed for everyone.' : ''}',
+          S.of('delete_event_confirm', args: {'title': event.title}) + (event.isTeamEvent ? '\n\n' + S.of('team_event_delete_warning') : ''),
           style: TextStyle(
               color: Colors.white.withValues(alpha: 0.55), fontSize: 13),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel',
+              child: Text(S.of('cancel'),
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5)))),
           TextButton(
@@ -1005,8 +1041,8 @@ class _EventCard extends StatelessWidget {
               Navigator.pop(context);
               onDelete();
             },
-            child: const Text('Delete',
-                style: TextStyle(color: Colors.redAccent)),
+            child: Text(S.of('delete'),
+                style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -1193,11 +1229,11 @@ class _TypeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (type) {
-      CalendarEventType.personal => ('Personal', AppColors.gold),
-      CalendarEventType.task => ('Task', const Color(0xFF4FC3F7)),
+      CalendarEventType.personal => (S.of('event_type_personal'), AppColors.gold),
+      CalendarEventType.task => (S.of('event_type_task'), const Color(0xFF4FC3F7)),
       CalendarEventType.classSchedule =>
-      ('Class', const Color(0xFF81C784)),
-      CalendarEventType.team => ('Team', const Color(0xFFBA68C8)),
+      (S.of('event_type_class'), const Color(0xFF81C784)),
+      CalendarEventType.team => (S.of('event_type_team'), const Color(0xFFBA68C8)),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),

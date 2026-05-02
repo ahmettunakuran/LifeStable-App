@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../../../../core/localization/app_localizations.dart';
 
 class VoiceInputButton extends StatefulWidget {
   final bool isListening;
@@ -39,8 +40,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
     if (!status.isGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Microphone permission is required.'),
+          SnackBar(
+            content: Text(S.of('mic_permission_required')),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -51,8 +52,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
     if (!_initialized) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Speech recognition is not available on this device.'),
+          SnackBar(
+            content: Text(S.of('speech_not_available')),
             behavior: SnackBarBehavior.floating,
           ),
         );

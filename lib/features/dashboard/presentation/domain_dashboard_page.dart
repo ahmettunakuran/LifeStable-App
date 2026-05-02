@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../domain/entities/domain_entity.dart';
 import '../logic/domain_cubit.dart';
 import 'domain_kanban_view.dart';
@@ -46,7 +47,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
           return Scaffold(
             backgroundColor: AppColors.black,
             appBar: _buildAppBar(const []),
-            body: Center(child: Text('Error: ${state.message}', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
+            body: Center(child: Text(S.of('error_prefix', args: {'message': state.message}), style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
           );
         } else if (state is DomainLoaded) {
           final domains = state.domains;
@@ -96,7 +97,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
   PreferredSizeWidget _buildAppBar(List<DomainEntity> domains) {
     final isLastPage = _currentPage >= domains.length;
     final currentDomain = isLastPage ? null : domains[_currentPage];
-    final title = isLastPage ? 'NEW DOMAIN' : currentDomain!.name.toUpperCase();
+    final title = isLastPage ? S.of('new_domain').toUpperCase() : currentDomain!.name.toUpperCase();
 
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -151,7 +152,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
         if (currentDomain != null && currentDomain.isTeamMirror)
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: Tooltip(message: 'Synced from team', child: Icon(Icons.sync, size: 18, color: AppColors.gold.withValues(alpha: 0.5))),
+            child: Tooltip(message: S.of('synced_from_team'), child: Icon(Icons.sync, size: 18, color: AppColors.gold.withValues(alpha: 0.5))),
           ),
       ],
     );
@@ -167,12 +168,12 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
           gradient: const LinearGradient(colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark]),
           boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.add, color: Colors.black, size: 20),
-            SizedBox(width: 8),
-            Text('Add Task', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 15)),
+            const Icon(Icons.add, color: Colors.black, size: 20),
+            const SizedBox(width: 8),
+            Text(S.of('add_task'), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 15)),
           ],
         ),
       ),
@@ -190,10 +191,10 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navBtn(Icons.group_outlined, 'Team', AppRoutes.teamDashboard),
-            _navBtn(Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
-            _navBtn(Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard),
-            _navBtn(Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+            _navBtn(Icons.group_outlined, S.of('team'), AppRoutes.teamDashboard),
+            _navBtn(Icons.calendar_month_outlined, S.of('calendar'), AppRoutes.calendar),
+            _navBtn(Icons.dashboard_outlined, S.of('dashboard'), AppRoutes.homeDashboard),
+            _navBtn(Icons.local_fire_department_outlined, S.of('habit'), AppRoutes.habitTracker),
           ],
         ),
       ),

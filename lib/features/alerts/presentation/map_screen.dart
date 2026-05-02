@@ -9,6 +9,7 @@ import '../../../shared/constants/app_colors.dart';
 import '../domain/entities/location_entity.dart';
 import '../logic/location_cubit.dart';
 import '../logic/location_state.dart';
+import '../../../core/localization/app_localizations.dart';
 import 'widgets/add_location_bottom_sheet.dart';
 import 'widgets/saved_locations_list.dart';
 
@@ -68,7 +69,7 @@ class _MapScreenState extends State<MapScreen> {
         markerId: const MarkerId('current_location'),
         position: _currentPosition!,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: 'You are here'),
+        infoWindow: InfoWindow(title: S.of('you_are_here')),
       ));
     }
 
@@ -80,7 +81,7 @@ class _MapScreenState extends State<MapScreen> {
         icon: BitmapDescriptor.defaultMarkerWithHue(45.0),
         infoWindow: InfoWindow(
           title: loc.label,
-          snippet: '${loc.radiusM} m radius',
+          snippet: S.of('radius_m', args: {'radius': loc.radiusM.toString()}),
         ),
         onTap: () => _showLocationDetailSheet(loc),
       ));
@@ -126,9 +127,9 @@ class _MapScreenState extends State<MapScreen> {
       backgroundColor: AppColors.black,
       appBar: AppBar(
         backgroundColor: AppColors.black,
-        title: const Text(
-          'Locations',
-          style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
+        title: Text(
+          S.of('locations'),
+          style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: AppColors.gold),
         actions: [
@@ -138,7 +139,7 @@ class _MapScreenState extends State<MapScreen> {
               color: AppColors.gold,
             ),
             onPressed: () => setState(() => _showSavedList = !_showSavedList),
-            tooltip: _showSavedList ? 'Show Map' : 'Saved Locations',
+            tooltip: _showSavedList ? S.of('show_map') : S.of('saved_locations'),
           ),
         ],
       ),
@@ -179,9 +180,9 @@ class _MapScreenState extends State<MapScreen> {
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
                       ),
-                      child: const Text(
-                        'Tap on the map to pin a location',
-                        style: TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w600),
+                      child: Text(
+                        S.of('pin_on_map_hint'),
+                        style: const TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -223,7 +224,7 @@ class _MapScreenState extends State<MapScreen> {
                 color: _isPickingLocation ? Colors.redAccent : AppColors.gold,
               ),
               label: Text(
-                _isPickingLocation ? 'Cancel' : 'Pin on Map',
+                _isPickingLocation ? S.of('cancel') : S.of('pin_on_map'),
                 style: TextStyle(
                   color: _isPickingLocation ? Colors.redAccent : AppColors.gold,
                   fontWeight: FontWeight.w600,
@@ -240,9 +241,9 @@ class _MapScreenState extends State<MapScreen> {
               initialPosition: _currentPosition,
             ),
             icon: const Icon(Icons.add_location_alt, color: AppColors.black),
-            label: const Text(
-              'Add Location',
-              style: TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
+            label: Text(
+              S.of('add_location'),
+              style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -296,13 +297,13 @@ class _LocationDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Radius: ${location.radiusM} m',
+            S.of('radius_m', args: {'radius': location.radiusM.toString()}),
             style: const TextStyle(color: Colors.white54, fontSize: 13),
           ),
           const SizedBox(height: 16),
           _buildToggle(
             context,
-            label: 'On Arrival',
+            label: S.of('on_arrival'),
             value: location.geofenceOnEnter,
             onChanged: (v) => context.read<LocationCubit>().updateLocation(
               location.copyWith(geofenceOnEnter: v),
@@ -311,7 +312,7 @@ class _LocationDetailSheet extends StatelessWidget {
           const SizedBox(height: 8),
           _buildToggle(
             context,
-            label: 'On Leave',
+            label: S.of('on_leave'),
             value: location.geofenceOnExit,
             onChanged: (v) => context.read<LocationCubit>().updateLocation(
               location.copyWith(geofenceOnExit: v),
@@ -327,7 +328,7 @@ class _LocationDetailSheet extends StatelessWidget {
                     AddLocationBottomSheet.show(context, editingLocation: location);
                   },
                   icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text('Edit'),
+                  label: Text(S.of('edit')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.gold,
                     side: const BorderSide(color: AppColors.gold),
@@ -342,7 +343,7 @@ class _LocationDetailSheet extends StatelessWidget {
                     context.read<LocationCubit>().deleteLocation(location.locationId);
                   },
                   icon: const Icon(Icons.delete_outline, size: 16),
-                  label: const Text('Delete'),
+                  label: Text(S.of('delete')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.redAccent,
                     side: const BorderSide(color: Colors.redAccent),

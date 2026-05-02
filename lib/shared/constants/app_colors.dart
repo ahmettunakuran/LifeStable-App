@@ -14,6 +14,8 @@ class AppColors {
 
   // ── Neutral backgrounds ───────────────────────────────────────────────────
   static const Color black  = Color(0xFF0D0D0D);
+  static const Color darkBg = Color(0xFF141008);
+  static const Color darkBg2 = Color(0xFF1E1608);
   static const Color cardBg = Color(0xFF1A1200);
 
   static const Color backgroundLight = Color(0xFFF5F5F7);

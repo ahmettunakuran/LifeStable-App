@@ -1,10 +1,12 @@
+import '../../notes/domain/repositories/note_repository.dart';
+import '../../../core/logic/ai_pipeline_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../app/router/app_routes.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../habits/presentation/habit.dart';
+import '../../habits/domain/habit_model.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../../tasks/domain/repositories/task_repository.dart';
 import '../../calendar/domain/repositories/calendar_repository.dart';
@@ -12,6 +14,7 @@ import '../../calendar/domain/entities/calendar_event_entity.dart';
 import '../domain/entities/domain_entity.dart';
 import '../domain/repositories/domain_repository.dart';
 import '../logic/home_dashboard_cubit.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class HomeDashboardPage extends StatelessWidget {
   const HomeDashboardPage({super.key});
@@ -25,6 +28,8 @@ class HomeDashboardPage extends StatelessWidget {
         context.read<TaskRepository>(),
         context.read<CalendarRepository>(),
         context.read<DomainRepository>(),
+        context.read<NoteRepository>(),
+        context.read<AiPipelineService>(),
       )..loadOverview(),
       child: Scaffold(
         key: scaffoldKey,
@@ -161,7 +166,7 @@ class HomeDashboardPage extends StatelessWidget {
                               const SizedBox(height: 12),
                               Expanded(
                                 flex: 1,
-                                child: _buildAIRecommendations(),
+                                child: _buildAIRecommendations(state.dailySummary),
                               ),
                               const SizedBox(height: 8),
                             ],
@@ -196,14 +201,14 @@ class HomeDashboardPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _buildDrawerButton(context, 'Calendar', AppRoutes.calendar),
-            _buildDrawerButton(context, 'To-Do List', AppRoutes.tasksKanban),
-            _buildDrawerButton(context, 'Team', AppRoutes.teamDashboard),
-            _buildDrawerButton(context, 'AI Bot', AppRoutes.aiAssistant),
-            _buildDrawerButton(context, 'Habits', AppRoutes.habitTracker),
-            _buildDrawerButton(context, 'Add Location', AppRoutes.map),
+            _buildDrawerButton(context, S.of('calendar'), AppRoutes.calendar),
+            _buildDrawerButton(context, S.of('todo_list'), AppRoutes.tasksKanban),
+            _buildDrawerButton(context, S.of('team'), AppRoutes.teamDashboard),
+            _buildDrawerButton(context, S.of('ai_bot'), AppRoutes.aiAssistant),
+            _buildDrawerButton(context, S.of('habits'), AppRoutes.habitTracker),
+            _buildDrawerButton(context, S.of('add_location'), AppRoutes.map),
             const Spacer(),
-            _buildDrawerButton(context, 'Settings', AppRoutes.settings),
+            _buildDrawerButton(context, S.of('settings'), AppRoutes.settings),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Row(
@@ -212,7 +217,7 @@ class HomeDashboardPage extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
                     icon: const Icon(Icons.logout, color: Colors.white70, size: 18),
-                    label: const Text('Log Out', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    label: Text(S.of('logout'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   ),
                   const Icon(Icons.help_outline, color: Colors.white70, size: 28),
@@ -274,14 +279,14 @@ class HomeDashboardPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '$totalStreak days',
+                  '$totalStreak ${S.of('days')}',
                   style: const TextStyle(
                       color: AppColors.gold,
                       fontSize: 12,
                       fontWeight: FontWeight.w900),
                 ),
                 Text(
-                  '$activeCount active',
+                  '$activeCount ${S.of('active')}',
                   style: TextStyle(
                       color: Colors.white.withOpacity(0.4),
                       fontSize: 9),
@@ -317,8 +322,8 @@ class HomeDashboardPage extends StatelessWidget {
               children: [
                 const Text('🔥', style: TextStyle(fontSize: 20)),
                 const SizedBox(width: 8),
-                const Text('Streak Tracker',
-                    style: TextStyle(
+                Text(S.of('streak_tracker'),
+                    style: const TextStyle(
                         color: AppColors.gold,
                         fontSize: 16,
                         fontWeight: FontWeight.w900)),
@@ -341,14 +346,14 @@ class HomeDashboardPage extends StatelessWidget {
             const SizedBox(height: 12),
             if (habits.isEmpty)
               Center(
-                child: Text('No habits yet.',
+                child: Text(S.of('no_habits_yet'),
                     style: TextStyle(
                         color: Colors.white.withOpacity(0.3),
                         fontSize: 13)),
               )
             else
               ...habits.map((h) {
-                final done = last7.map((d) => h.completedDates.contains(d)).toList();
+                final done = last7.map((d) => h.completionDates.any((date) => DateFormat('yyyy-MM-dd').format(date) == d)).toList();
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Row(
@@ -440,7 +445,7 @@ class HomeDashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        'You Have ${count == 2 ? "Two" : count} Deadlines Today.',
+        S.of('deadlines_today', args: {'count': count == 2 ? (S.of('two', args: {}) == 'two' ? 'Two' : 'İki') : count.toString()}),
         textAlign: TextAlign.center,
         style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold, fontSize: 13),
       ),
@@ -461,12 +466,12 @@ class HomeDashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCompactHeader('Fast Summary'),
+          _buildCompactHeader(S.of('fast_summary')),
           const SizedBox(height: 12),
           if (count == 0)
-            const Expanded(
+             Expanded(
               child: Center(
-                child: Text('All clear today!', style: TextStyle(color: Colors.white24, fontSize: 12)),
+                child: Text(S.of('all_clear_today'), style: const TextStyle(color: Colors.white24, fontSize: 12)),
               ),
             )
           else
@@ -476,12 +481,12 @@ class HomeDashboardPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'You have $count task${count == 1 ? '' : 's'} today.',
+                    S.of('tasks_today', args: {'count': count.toString()}),
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   if (nextTask != null) ...[
                     const SizedBox(height: 10),
-                    const Text('Next up:', style: TextStyle(color: Colors.white38, fontSize: 10)),
+                    Text(S.of('next_up'), style: const TextStyle(color: Colors.white38, fontSize: 10)),
                     const SizedBox(height: 4),
                     Text(
                       nextTask.title,
@@ -545,7 +550,7 @@ class HomeDashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCompactHeader('Close Deadlines'),
+          _buildCompactHeader(S.of('close_deadlines')),
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress,
@@ -556,7 +561,7 @@ class HomeDashboardPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (incomplete.isEmpty)
-            const Expanded(child: Center(child: Text('All clear!', style: TextStyle(color: Colors.white24, fontSize: 12))))
+             Expanded(child: Center(child: Text(S.of('all_clear'), style: const TextStyle(color: Colors.white24, fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
@@ -621,13 +626,13 @@ class HomeDashboardPage extends StatelessWidget {
     switch (priority) {
       case TaskPriority.high:
         color = Colors.redAccent;
-        label = 'HIGH';
+        label = S.of('high');
       case TaskPriority.medium:
         color = AppColors.gold;
-        label = 'MED';
+        label = S.of('med');
       case TaskPriority.low:
         color = Colors.greenAccent;
-        label = 'LOW';
+        label = S.of('low');
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
@@ -667,10 +672,10 @@ class HomeDashboardPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildCompactHeader("Today's Focus"),
+          _buildCompactHeader(S.of('todays_focus')),
           const SizedBox(height: 12),
           if (events.isEmpty)
-            const Expanded(child: Center(child: Text('No events today', style: TextStyle(color: Colors.white24, fontSize: 12))))
+             Expanded(child: Center(child: Text(S.of('no_events_today'), style: const TextStyle(color: Colors.white24, fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
@@ -690,7 +695,7 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAIRecommendations() {
+  Widget _buildAIRecommendations(String? summary) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -700,13 +705,20 @@ class HomeDashboardPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildCompactHeader("RECOMMENDATIONS (AI)"),
+          _buildCompactHeader(S.of('daily_insights')),
           const SizedBox(height: 12),
-          const Expanded(
-            child: Center(
-              child: Text(
-                'AI Recommendations to be added soon.',
-                style: TextStyle(color: Colors.white38, fontSize: 12, fontStyle: FontStyle.italic),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Center(
+                child: Text(
+                  summary ?? S.of('ai_summarizing'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      height: 1.4),
+                ),
               ),
             ),
           ),
@@ -739,7 +751,7 @@ class HomeDashboardPage extends StatelessWidget {
           const VerticalDivider(width: 1, color: AppColors.black, indent: 14, endIndent: 14),
           Expanded(
             child: domains.isEmpty
-                ? const Center(child: Text('No domains yet', style: TextStyle(color: AppColors.black, fontSize: 12, fontWeight: FontWeight.w600)))
+                ? Center(child: Text(S.of('no_domains_yet'), style: const TextStyle(color: AppColors.black, fontSize: 12, fontWeight: FontWeight.w600)))
                 : ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -764,13 +776,13 @@ class HomeDashboardPage extends StatelessWidget {
                           children: [
                             Text(domain.name.toUpperCase(), style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5)),
                             const SizedBox(height: 4),
-                            Text('$incompleteTasks task${incompleteTasks == 1 ? '' : 's'}', style: const TextStyle(color: AppColors.black, fontSize: 10, fontWeight: FontWeight.w600)),
+                            Text(S.of(incompleteTasks == 1 ? 'task_count' : 'tasks_count', args: {'count': incompleteTasks.toString()}), style: const TextStyle(color: AppColors.black, fontSize: 10, fontWeight: FontWeight.w600)),
                             if (maxStreak > 0) ...[
                               const SizedBox(height: 4),
                               Row(children: [
                                 const Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 12),
                                 const SizedBox(width: 2),
-                                Text('$maxStreak day${maxStreak == 1 ? '' : 's'}', style: const TextStyle(color: AppColors.black, fontSize: 10))
+                                Text(S.of(maxStreak == 1 ? 'day_count' : 'days_count', args: {'count': maxStreak.toString()}), style: const TextStyle(color: AppColors.black, fontSize: 10))
                               ])
                             ],
                           ],
@@ -807,10 +819,10 @@ class HomeDashboardPage extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavButton(context, Icons.group_outlined, 'Team', AppRoutes.teamDashboard),
-            _buildNavButton(context, Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
-            _buildNavButton(context, Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard, active: true),
-            _buildNavButton(context, Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+            _buildNavButton(context, Icons.group_outlined, S.of('team'), AppRoutes.teamDashboard),
+            _buildNavButton(context, Icons.calendar_month_outlined, S.of('calendar'), AppRoutes.calendar),
+            _buildNavButton(context, Icons.dashboard_outlined, S.of('dashboard'), AppRoutes.homeDashboard, active: true),
+            _buildNavButton(context, Icons.local_fire_department_outlined, S.of('habit'), AppRoutes.habitTracker),
           ],
         ),
       ),

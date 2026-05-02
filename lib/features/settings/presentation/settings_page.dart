@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../calendar/data/external_sync/google_calendar_sync_service.dart';
 import '../../calendar/data/external_sync/google_external_account_entity.dart';
 
@@ -33,13 +34,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (!launched) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open the Google sign-in page.')),
+          SnackBar(content: Text(S.of('could_not_open_google'))),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Browser opened. After approving access, return to the app.',
+              S.of('browser_opened'),
             ),
           ),
         );
@@ -47,7 +48,7 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Connect failed: $e')),
+        SnackBar(content: Text(S.of('connect_failed', args: {'error': e.toString()}))),
       );
     } finally {
       if (mounted) {
@@ -66,14 +67,14 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Sync complete • Created: ${result.created}, Updated: ${result.updated}, Deleted: ${result.deleted}',
+            '${S.of('sync_complete')} • ${S.of('created')}: ${result.created}, ${S.of('updated')}: ${result.updated}, ${S.of('deleted')}: ${result.deleted}',
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sync failed: $e')),
+        SnackBar(content: Text(S.of('sync_failed', args: {'error': e.toString()}))),
       );
     } finally {
       if (mounted) {
@@ -86,18 +87,16 @@ class _SettingsPageState extends State<SettingsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Disconnect Google Calendar'),
-        content: const Text(
-          'This removes the Google connection and sync mappings. Imported events already in LifeStable will stay unless you delete them manually.',
-        ),
+        title: Text(S.of('disconnect_confirm_title')),
+        content: Text(S.of('disconnect_confirm_msg')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(S.of('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Disconnect'),
+            child: Text(S.of('disconnect')),
           ),
         ],
       ),
@@ -112,12 +111,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Google Calendar disconnected.')),
+        SnackBar(content: Text('${S.of('google_calendar')} ${S.of('disconnected')}')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Disconnect failed: $e')),
+        SnackBar(content: Text(S.of('disconnect_failed', args: {'error': e.toString()}))),
       );
     } finally {
       if (mounted) {
@@ -144,29 +143,29 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 const Icon(Icons.calendar_month),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Google Calendar',
-                    style: TextStyle(
+                    S.of('google_calendar'),
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 Chip(
-                  label: Text(isConnected ? 'Connected' : 'Not connected'),
+                  label: Text(isConnected ? S.of('connected') : S.of('not_connected')),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               isConnected
-                  ? 'Connected account: ${account.providerUserId}'
-                  : 'Connect your Google Calendar to import events into LifeStable.',
+                  ? '${S.of('connected')} ${S.of('account')}: ${account.providerUserId}'
+                  : S.of('google_calendar_desc'),
             ),
             const SizedBox(height: 8),
-            Text('Connected at: ${_formatDate(account?.connectedAt)}'),
-            Text('Last sync: ${_formatDate(account?.lastSyncAt)}'),
+            Text(S.of('connected_at', args: {'date': _formatDate(account?.connectedAt)})),
+            Text(S.of('last_sync', args: {'date': _formatDate(account?.lastSyncAt)})),
             const SizedBox(height: 16),
             Wrap(
               spacing: 10,
@@ -176,19 +175,19 @@ class _SettingsPageState extends State<SettingsPage> {
                   FilledButton.icon(
                     onPressed: _busy ? null : _connectGoogle,
                     icon: const Icon(Icons.link),
-                    label: const Text('Connect'),
+                    label: Text(S.of('connect')),
                   ),
                 if (isConnected)
                   FilledButton.icon(
                     onPressed: _busy ? null : _syncGoogle,
                     icon: const Icon(Icons.sync),
-                    label: const Text('Sync now'),
+                    label: Text(S.of('sync_now')),
                   ),
                 if (isConnected)
                   OutlinedButton.icon(
                     onPressed: _busy ? null : _disconnectGoogle,
                     icon: const Icon(Icons.link_off),
-                    label: const Text('Disconnect'),
+                    label: Text(S.of('disconnect')),
                   ),
               ],
             ),
@@ -200,39 +199,50 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
-      body: StreamBuilder<GoogleExternalAccountEntity?>(
-        stream: _syncService.watchGoogleConnection(),
-        builder: (context, snapshot) {
-          final account = snapshot.data;
-
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              const Text(
-                'Calendar Sync',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                ),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, _, __) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(S.of('settings')),
+            actions: const [
+              Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Center(child: LanguageSwitcher()),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'This MVP imports events from Google Calendar into your LifeStable calendar.',
-              ),
-              const SizedBox(height: 16),
-              _buildGoogleCard(account),
-              if (_busy) ...[
-                const SizedBox(height: 20),
-                const Center(child: CircularProgressIndicator()),
-              ],
             ],
-          );
-        },
-      ),
+          ),
+          body: StreamBuilder<GoogleExternalAccountEntity?>(
+            stream: _syncService.watchGoogleConnection(),
+            builder: (context, snapshot) {
+              final account = snapshot.data;
+
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Text(
+                    S.of('calendar_sync'),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    S.of('settings_desc'),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildGoogleCard(account),
+                  if (_busy) ...[
+                    const SizedBox(height: 20),
+                    const Center(child: CircularProgressIndicator()),
+                  ],
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

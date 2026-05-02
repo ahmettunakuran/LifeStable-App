@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../../tasks/presentation/bloc/tasks_bloc.dart';
 import '../../tasks/presentation/bloc/tasks_event.dart';
@@ -35,7 +36,7 @@ class DomainKanbanView extends StatelessWidget {
         } else if (state is TasksError) {
           return Center(child: Text(state.message, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))));
         }
-        return Center(child: Text('No tasks found for this domain.', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))));
+        return Center(child: Text(S.of('no_tasks_found'), style: TextStyle(color: Colors.white.withValues(alpha: 0.4))));
       },
     );
   }
@@ -46,9 +47,9 @@ class DomainKanbanView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildKanbanColumn(context, 'TO DO', TaskStatus.todo, tasks),
-          _buildKanbanColumn(context, 'DOING', TaskStatus.inProgress, tasks),
-          _buildKanbanColumn(context, 'DONE', TaskStatus.done, tasks),
+          _buildKanbanColumn(context, S.of('todo'), TaskStatus.todo, tasks),
+          _buildKanbanColumn(context, S.of('doing'), TaskStatus.inProgress, tasks),
+          _buildKanbanColumn(context, S.of('done'), TaskStatus.done, tasks),
         ],
       ),
     );
@@ -332,16 +333,16 @@ class _TaskActions extends StatelessWidget {
         color: AppColors.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         itemBuilder: (context) => [
-          _buildMenuItem(TaskStatus.todo, 'To-Do', Icons.radio_button_unchecked),
-          _buildMenuItem(TaskStatus.inProgress, 'Doing', Icons.sync),
-          _buildMenuItem(TaskStatus.done, 'Done', Icons.check_circle_outline),
+          _buildMenuItem(TaskStatus.todo, S.of('todo'), Icons.radio_button_unchecked),
+          _buildMenuItem(TaskStatus.inProgress, S.of('doing'), Icons.sync),
+          _buildMenuItem(TaskStatus.done, S.of('done'), Icons.check_circle_outline),
           const PopupMenuDivider(),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'delete',
             child: Row(children: [
-              Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-              SizedBox(width: 8),
-              Text('Delete', style: TextStyle(color: Colors.redAccent, fontSize: 15)),
+              const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+              const SizedBox(width: 8),
+              Text(S.of('delete'), style: const TextStyle(color: Colors.redAccent, fontSize: 15)),
             ]),
           ),
         ],

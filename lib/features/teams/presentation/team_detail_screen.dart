@@ -6,6 +6,7 @@ import 'package:project_lifestable/services/team_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../../tasks/presentation/bloc/tasks_bloc.dart';
 import '../../tasks/presentation/bloc/tasks_event.dart';
@@ -96,9 +97,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
 
   String _roleLabel(String role) {
     switch (role) {
-      case 'owner': return 'Kurucu';
-      case 'admin': return 'Yönetici';
-      default: return 'Üye';
+      case 'owner': return S.of('owner');
+      case 'admin': return S.of('admin');
+      default: return S.of('member');
     }
   }
 
@@ -115,7 +116,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
     Clipboard.setData(ClipboardData(text: _inviteCode!));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Invite code copied!'),
+        content: Text(S.of('invite_code_copied')),
         backgroundColor: AppColors.goldDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -129,7 +130,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       setState(() => _inviteCode = newCode);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('New invite code generated!'),
+          content: Text(S.of('new_code_generated')),
           backgroundColor: AppColors.goldDark,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -141,7 +142,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
   }
 
   Future<void> _leaveTeam() async {
-    final confirm = await _showConfirmDialog(title: 'Leave Team', message: 'Are you sure you want to leave this team?', confirmLabel: 'Leave', confirmColor: Colors.redAccent);
+    final confirm = await _showConfirmDialog(
+      title: S.of('leave_team'),
+      message: S.of('leave_team_confirm'),
+      confirmLabel: S.of('leave'),
+      confirmColor: Colors.redAccent,
+    );
     if (!confirm) return;
     try {
       await _teamService.leaveTeam(widget.teamId);
@@ -152,7 +158,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
   }
 
   Future<void> _deleteTeam() async {
-    final confirm = await _showConfirmDialog(title: 'Delete Team', message: 'This will permanently delete the team and remove all members. Are you sure?', confirmLabel: 'Delete', confirmColor: Colors.redAccent);
+    final confirm = await _showConfirmDialog(
+      title: S.of('delete_team'),
+      message: S.of('delete_team_confirm'),
+      confirmLabel: S.of('delete'),
+      confirmColor: Colors.redAccent,
+    );
     if (!confirm) return;
     try {
       await _teamService.deleteTeam(widget.teamId);
@@ -171,7 +182,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
         title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         content: Text(message, style: TextStyle(color: Colors.white.withValues(alpha: 0.65))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(S.of('cancel'), style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(confirmLabel, style: TextStyle(color: confirmColor, fontWeight: FontWeight.w700))),
         ],
       ),
@@ -191,17 +202,17 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1500),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('New Team Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          title: Text(S.of('create_task'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _dialogField(titleController, 'Task Title', Icons.title),
+                _dialogField(titleController, S.of('task_title'), Icons.title),
                 const SizedBox(height: 12),
-                _dialogField(descController, 'Description', Icons.description, maxLines: 3),
+                _dialogField(descController, S.of('description_hint'), Icons.description, maxLines: 3),
                 const SizedBox(height: 16),
                 _dialogDropdown<String>(
-                  label: 'Assign To',
+                  label: S.of('members'),
                   value: selectedAssigneeId,
                   items: members.map((m) {
                     final data = m.data() as Map<String, dynamic>;
@@ -214,16 +225,22 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
                 ),
                 const SizedBox(height: 12),
                 _dialogDropdown<TaskPriority>(
-                  label: 'Priority',
+                  label: S.of('priority'),
                   value: selectedPriority,
-                  items: TaskPriority.values.map((p) => DropdownMenuItem(value: p, child: Text(p.name.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
+                  items: TaskPriority.values.map((p) {
+                    String pLabel = p.name.toUpperCase();
+                    if (p == TaskPriority.high) pLabel = S.of('priority_high').toUpperCase();
+                    if (p == TaskPriority.medium) pLabel = S.of('priority_medium').toUpperCase();
+                    if (p == TaskPriority.low) pLabel = S.of('priority_low').toUpperCase();
+                    return DropdownMenuItem(value: p, child: Text(pLabel, style: const TextStyle(color: Colors.white, fontSize: 14)));
+                  }).toList(),
                   onChanged: (v) => setDialogState(() => selectedPriority = v!),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.of('cancel'), style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
             GestureDetector(
               onTap: () {
                 if (titleController.text.isEmpty) return;
@@ -243,7 +260,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), gradient: const LinearGradient(colors: [AppColors.goldLight, AppColors.goldDark])),
-                child: const Text('Add Task', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                child: Text(S.of('add'), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
               ),
             ),
           ],
@@ -294,14 +311,14 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const SizedBox(height: 8),
           Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
-          const Padding(padding: EdgeInsets.all(16), child: Text('Member Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))),
-          if (canMakeAdmin) _bottomSheetTile(ctx, icon: Icons.shield, color: Colors.blueAccent, label: 'Make Admin', onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'admin')),
-          if (canDemote) _bottomSheetTile(ctx, icon: Icons.person, color: Colors.white54, label: 'Remove Admin', onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'member')),
-          if (canTransfer) _bottomSheetTile(ctx, icon: Icons.star, color: AppColors.gold, label: 'Transfer Ownership', onTap: () async {
-            final confirm = await _showConfirmDialog(title: 'Transfer Ownership', message: 'You will become an admin. The selected user will become the new owner.', confirmLabel: 'Transfer', confirmColor: AppColors.gold);
+          Padding(padding: const EdgeInsets.all(16), child: Text(S.of('member_actions'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))),
+          if (canMakeAdmin) _bottomSheetTile(ctx, icon: Icons.shield, color: Colors.blueAccent, label: S.of('make_admin'), onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'admin')),
+          if (canDemote) _bottomSheetTile(ctx, icon: Icons.person, color: Colors.white54, label: S.of('remove_admin'), onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'member')),
+          if (canTransfer) _bottomSheetTile(ctx, icon: Icons.star, color: AppColors.gold, label: S.of('transfer_ownership'), onTap: () async {
+            final confirm = await _showConfirmDialog(title: S.of('transfer_ownership'), message: S.of('transfer_ownership_confirm'), confirmLabel: S.of('ok'), confirmColor: AppColors.gold);
             if (confirm) await _teamService.updateMemberRole(widget.teamId, targetUserId, 'owner');
           }),
-          if (canRemove) _bottomSheetTile(ctx, icon: Icons.person_remove, color: Colors.redAccent, label: 'Remove from Team', onTap: () async => await _teamService.removeMember(widget.teamId, targetUserId)),
+          if (canRemove) _bottomSheetTile(ctx, icon: Icons.person_remove, color: Colors.redAccent, label: S.of('remove_from_team'), onTap: () async => await _teamService.removeMember(widget.teamId, targetUserId)),
           const SizedBox(height: 8),
         ]),
       ),
@@ -336,7 +353,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
             bottom: TabBar(
               controller: _tabController,
               indicatorColor: AppColors.gold, labelColor: AppColors.gold, unselectedLabelColor: Colors.white38,
-              tabs: const [Tab(text: 'KANBAN'), Tab(text: 'MEMBERS')],
+              tabs: [Tab(text: S.of('todo').toUpperCase()), Tab(text: S.of('members').toUpperCase())],
             ),
           ),
           body: Container(
@@ -375,13 +392,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
                 Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.gold.withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.key_rounded, color: AppColors.gold, size: 18)),
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Invite Code', style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 11)),
+                  Text(S.of('enter_invite_code'), style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 11)),
                   Text(_inviteCode!, style: const TextStyle(color: AppColors.goldLight, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: 5)),
                 ]),
                 const Spacer(),
-                if (canManage) IconButton(icon: Icon(Icons.refresh, color: AppColors.gold.withValues(alpha: 0.6), size: 18), tooltip: 'New Code', onPressed: _regenerateCode),
+                if (canManage) IconButton(icon: Icon(Icons.refresh, color: AppColors.gold.withValues(alpha: 0.6), size: 18), tooltip: S.of('new_habit'), onPressed: _regenerateCode),
                 Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: AppColors.gold.withValues(alpha: 0.1), border: Border.all(color: AppColors.gold.withValues(alpha: 0.3))),
-                    child: const Row(children: [Icon(Icons.copy, color: AppColors.gold, size: 14), SizedBox(width: 4), Text('Copy', style: TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w600))])),
+                    child: Row(children: [const Icon(Icons.copy, color: AppColors.gold, size: 14), const SizedBox(width: 4), Text(S.of('tap_to_copy'), style: const TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w600))])),
               ]),
             ),
           ),
@@ -422,11 +439,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       padding: const EdgeInsets.all(16),
       child: Column(children: [
         GestureDetector(onTap: _leaveTeam, child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.red.withValues(alpha: 0.08), border: Border.all(color: Colors.red.withValues(alpha: 0.3))),
-            child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.exit_to_app, color: Colors.redAccent, size: 18), SizedBox(width: 8), Text('Leave Team', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600))]))),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.exit_to_app, color: Colors.redAccent, size: 18), const SizedBox(width: 8), Text(S.of('leave_team'), style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600))]))),
         if (canManage) ...[
           const SizedBox(height: 10),
           GestureDetector(onTap: _deleteTeam, child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.red.withValues(alpha: 0.15), border: Border.all(color: Colors.red.withValues(alpha: 0.5))),
-              child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_forever, color: Colors.red, size: 18), SizedBox(width: 8), Text('Delete Team', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700))]))),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.delete_forever, color: Colors.red, size: 18), const SizedBox(width: 8), Text(S.of('delete'), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700))]))),
         ],
         const SizedBox(height: 8),
       ]),

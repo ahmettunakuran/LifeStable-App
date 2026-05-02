@@ -3,7 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 import '../core/localization/app_localizations.dart';
+import '../core/logic/ai_pipeline_service.dart';
+import '../features/notes/data/note_repository_impl.dart';
+import '../features/notes/domain/repositories/note_repository.dart';
 import '../features/alerts/data/location_repository_impl.dart';
 import '../features/alerts/domain/repositories/location_repository.dart';
 import '../features/calendar/data/calender_repository_impl.dart';
@@ -41,6 +46,12 @@ class LifeStableApp extends StatelessWidget {
         RepositoryProvider<CalendarRepository>(
           create: (context) => CalendarRepositoryImpl(firestore: firestore, auth: auth),
         ),
+        RepositoryProvider<NoteRepository>(
+          create: (context) => NoteRepositoryImpl(firestore),
+        ),
+        RepositoryProvider<AiPipelineService>(
+          create: (context) => AiPipelineService(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -62,6 +73,15 @@ class LifeStableApp extends StatelessWidget {
               title: 'LifeStable',
               debugShowCheckedModeBanner: false,
               locale: locale,
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('en'),
+                Locale('tr'),
+              ],
               theme: AppTheme.light,
               darkTheme: AppTheme.dark,
               themeMode: ThemeMode.dark,

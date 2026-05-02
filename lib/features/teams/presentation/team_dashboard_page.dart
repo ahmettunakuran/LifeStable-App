@@ -4,6 +4,7 @@ import 'package:project_lifestable/services/team_service.dart';
 import '../../../app/router/app_routes.dart';
 
 import '../../../shared/constants/app_colors.dart';
+import '../../../core/localization/app_localizations.dart';
 import 'join_team_screen.dart';
 import 'team_detail_screen.dart';
 
@@ -58,21 +59,21 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1500),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text(
-            'Create Team',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          title: Text(
+            S.of('create_team'),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
           ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _dialogField(nameController, 'Team Name', Icons.group),
+                _dialogField(nameController, S.of('team_name'), Icons.group),
                 const SizedBox(height: 12),
-                _dialogField(objectiveController, 'Objective (optional)', Icons.flag_outlined),
+                _dialogField(objectiveController, S.of('objective_optional'), Icons.flag_outlined),
                 const SizedBox(height: 16),
                 Text(
-                  'Team Color',
+                  S.of('team_color'),
                   style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13),
                 ),
                 const SizedBox(height: 8),
@@ -107,7 +108,7 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
-                'Cancel',
+                S.of('cancel'),
                 style: TextStyle(color: Colors.white.withOpacity(0.5)),
               ),
             ),
@@ -141,9 +142,9 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
                     colors: [AppColors.goldLight, AppColors.goldDark],
                   ),
                 ),
-                child: const Text(
-                  'Create',
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+                child: Text(
+                  S.of('add'),
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -180,15 +181,15 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1500),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Team Created!',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        title: Text(
+          S.of('team_created_title'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Share this invite code with your teammates:',
+              S.of('share_invite_code'),
               style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
             ),
             const SizedBox(height: 16),
@@ -197,7 +198,7 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
                 Clipboard.setData(ClipboardData(text: code));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Invite code copied!'),
+                    content: Text(S.of('invite_code_copied')),
                     backgroundColor: AppColors.goldDark,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -236,7 +237,7 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tap to copy',
+              S.of('tap_to_copy'),
               style: TextStyle(
                 color: Colors.white.withOpacity(0.3),
                 fontSize: 11,
@@ -247,9 +248,9 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'OK',
-              style: TextStyle(
+            child: Text(
+              S.of('ok'),
+              style: const TextStyle(
                 color: AppColors.gold,
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
@@ -272,14 +273,14 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
           icon: const Icon(Icons.arrow_back, color: AppColors.gold),
           onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.homeDashboard),
         ),
-        title: const Text(
-          'Team Dashboard',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        title: Text(
+          S.of('team_dashboard'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.group_add, color: AppColors.gold),
-            tooltip: 'Join with Code',
+            tooltip: S.of('join_with_code'),
             onPressed: () async {
               await Navigator.push(
                 context,
@@ -324,13 +325,13 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
                         size: 64, color: AppColors.gold.withOpacity(0.3)),
                     const SizedBox(height: 16),
                     Text(
-                      'No teams yet.',
+                      S.of('no_teams_yet'),
                       style: TextStyle(
                           color: Colors.white.withOpacity(0.6), fontSize: 16),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Create one or join with a code.',
+                      S.of('create_or_join_desc'),
                       style: TextStyle(
                           color: Colors.white.withOpacity(0.35), fontSize: 13),
                     ),
@@ -452,14 +453,14 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
               ),
             ],
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.add, color: Colors.black, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.add, color: Colors.black, size: 20),
+              const SizedBox(width: 8),
               Text(
-                'Create Team',
-                style: TextStyle(
+                S.of('create_team'),
+                style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
@@ -484,10 +485,10 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navBtn(Icons.group_outlined, 'Team', AppRoutes.teamDashboard, active: true),
-            _navBtn(Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
-            _navBtn(Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard),
-            _navBtn(Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+            _navBtn(Icons.group_outlined, S.of('team'), AppRoutes.teamDashboard, active: true),
+            _navBtn(Icons.calendar_month_outlined, S.of('calendar'), AppRoutes.calendar),
+            _navBtn(Icons.dashboard_outlined, S.of('dashboard'), AppRoutes.homeDashboard),
+            _navBtn(Icons.local_fire_department_outlined, S.of('habit'), AppRoutes.habitTracker),
           ],
         ),
       ),

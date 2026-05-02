@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../shared/constants/app_colors.dart';
 
 class ImageInputButton extends StatelessWidget {
   final void Function(String imagePath) onImageSelected;
@@ -29,14 +30,14 @@ class ImageInputButton extends StatelessWidget {
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded, color: AppColors.gold),
-              title: const Text('Take Photo',
-                  style: TextStyle(color: Colors.white)),
+              title: Text(S.of('take_photo'),
+                  style: const TextStyle(color: Colors.white)),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_rounded, color: AppColors.gold),
-              title: const Text('Choose from Gallery',
-                  style: TextStyle(color: Colors.white)),
+              title: Text(S.of('choose_gallery'),
+                  style: const TextStyle(color: Colors.white)),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -56,8 +57,8 @@ class ImageInputButton extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(source == ImageSource.camera
-                ? 'Camera permission is required.'
-                : 'Photo library permission is required.'),
+                ? S.of('camera_permission_required')
+                : S.of('photo_permission_required')),
             behavior: SnackBarBehavior.floating,
           ),
         );

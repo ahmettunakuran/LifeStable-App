@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/services/geofence_logger.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../data/geofence_service.dart';
@@ -80,8 +81,8 @@ class _GeofenceDebugScreenState extends State<GeofenceDebugScreen> {
   Widget build(BuildContext context) {
     // Only show in debug/profile builds
     if (kReleaseMode) {
-      return const Scaffold(
-        body: Center(child: Text('Debug tools disabled in release builds.')),
+      return Scaffold(
+        body: Center(child: Text(S.of('debug_disabled_release'))),
       );
     }
 
@@ -89,9 +90,9 @@ class _GeofenceDebugScreenState extends State<GeofenceDebugScreen> {
       backgroundColor: AppColors.black,
       appBar: AppBar(
         backgroundColor: AppColors.black,
-        title: const Text(
-          'Geofence Debug Tool',
-          style: TextStyle(
+        title: Text(
+          S.of('geofence_debug_tool'),
+          style: const TextStyle(
               color: AppColors.gold, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: AppColors.gold),
@@ -105,12 +106,12 @@ class _GeofenceDebugScreenState extends State<GeofenceDebugScreen> {
               children: [
                 _DeviceLocationCard(position: _devicePosition),
                 const SizedBox(height: 16),
-                const _SectionHeader('GEOFENCES'),
+                _SectionHeader(S.of('geofences')),
                 const SizedBox(height: 8),
                 if (state.locations.isEmpty)
-                  const Center(
-                    child: Text('No locations saved.',
-                        style: TextStyle(color: Colors.white54)),
+                  Center(
+                    child: Text(S.of('no_locations_saved'),
+                        style: const TextStyle(color: Colors.white54)),
                   )
                 else
                   ...state.locations.map((loc) {
@@ -135,11 +136,11 @@ class _GeofenceDebugScreenState extends State<GeofenceDebugScreen> {
                     );
                   }),
                 const SizedBox(height: 20),
-                const _SectionHeader('LAST 10 TRIGGER LOGS (today)'),
+                _SectionHeader(S.of('last_trigger_logs')),
                 const SizedBox(height: 8),
                 if (_recentLogs.isEmpty)
-                  const Text('No triggers today.',
-                      style: TextStyle(color: Colors.white38, fontSize: 12))
+                  Text(S.of('no_triggers_today'),
+                      style: const TextStyle(color: Colors.white38, fontSize: 12))
                 else
                   ..._recentLogs.map((e) => _LogRow(entry: e)),
               ],
@@ -169,8 +170,10 @@ class _DeviceLocationCard extends StatelessWidget {
           const Icon(Icons.my_location, color: AppColors.gold, size: 20),
           const SizedBox(width: 10),
           if (position == null)
-            const Text('Fetching device location...',
-                style: TextStyle(color: Colors.white54, fontSize: 13))
+            Expanded(
+              child: Text(S.of('fetching_location'),
+                  style: const TextStyle(color: Colors.white54, fontSize: 13)),
+            )
           else
             Expanded(
               child: Text(
@@ -242,7 +245,7 @@ class _GeofenceCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isInside ? 'INSIDE' : 'OUTSIDE',
+                  isInside ? S.of('inside') : S.of('outside'),
                   style: TextStyle(
                     color: isInside ? Colors.greenAccent : Colors.white38,
                     fontSize: 10,
@@ -265,12 +268,12 @@ class _GeofenceCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _ActionBtn(
-                  label: 'Simulate Enter',
+                  label: S.of('simulate_enter'),
                   icon: Icons.login,
                   color: Colors.greenAccent,
                   onTap: onEnter),
               _ActionBtn(
-                  label: 'Simulate Exit',
+                  label: S.of('simulate_exit'),
                   icon: Icons.logout,
                   color: Colors.redAccent,
                   onTap: onExit),
@@ -308,8 +311,8 @@ class _LogRow extends StatelessWidget {
           Expanded(
             child: Text(
               '${entry.locationId.substring(0, entry.locationId.length.clamp(0, 8))}..  '
-              '${isEnter ? 'ENTER' : 'EXIT'}  '
-              '${entry.notificationSent ? '✓ sent' : '✗ ${entry.skippedReason ?? 'skipped'}'}',
+              '${isEnter ? S.of('inside') : S.of('outside')}  '
+              '${entry.notificationSent ? S.of('sent') : S.of('skipped', args: {'reason': entry.skippedReason ?? 'skipped'})}',
               style:
                   const TextStyle(color: Colors.white60, fontSize: 11),
               overflow: TextOverflow.ellipsis,

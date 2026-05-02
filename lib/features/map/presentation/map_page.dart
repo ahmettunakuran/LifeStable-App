@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class MapPage extends StatelessWidget {
   const MapPage({super.key});
@@ -7,10 +8,10 @@ class MapPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Map'),
+        title: Text(S.of('map')),
       ),
-      body: const Center(
-        child: Text('Map Placeholder (no real map yet)'),
+      body: Center(
+        child: Text(S.of('map_placeholder')),
       ),
     );
   }

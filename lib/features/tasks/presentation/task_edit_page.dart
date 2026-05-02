@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../domain/entities/task_entity.dart';
 import 'bloc/tasks_bloc.dart';
 import 'bloc/tasks_event.dart';
@@ -90,7 +91,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.gold),
-        title: const Text('Create Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        title: Text(_editingTask == null ? S.of('create_task') : S.of('edit_task'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: const Icon(Icons.check, color: AppColors.gold), onPressed: _saveTask)],
       ),
       body: Container(
@@ -108,15 +109,15 @@ class _TaskEditPageState extends State<TaskEditPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _lbl('Title'),
+                _lbl(S.of('task_title')),
                 const SizedBox(height: 8),
-                _fld(_titleController, 'Task title', validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                _fld(_titleController, S.of('task_title_hint'), validator: (v) => v == null || v.isEmpty ? S.of('required_field') : null),
                 const SizedBox(height: 20),
-                _lbl('Description'),
+                _lbl(S.of('description')),
                 const SizedBox(height: 8),
-                _fld(_descriptionController, 'Optional description', maxLines: 3),
+                _fld(_descriptionController, S.of('description_hint'), maxLines: 3),
                 const SizedBox(height: 20),
-                _lbl('Domain'),
+                _lbl(S.of('domain')),
                 const SizedBox(height: 8),
                 _domainDropdown(),
                 const SizedBox(height: 20),
@@ -126,12 +127,21 @@ class _TaskEditPageState extends State<TaskEditPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _lbl('Status'),
+                          _lbl(S.of('status')),
                           const SizedBox(height: 8),
                           _dropdown<TaskStatus>(
                             value: _status,
                             items: TaskStatus.values,
-                            labelOf: (s) => s.name.toUpperCase(),
+                            labelOf: (s) {
+                              switch (s) {
+                                case TaskStatus.todo:
+                                  return S.of('status_todo').toUpperCase();
+                                case TaskStatus.inProgress:
+                                  return S.of('status_doing').toUpperCase();
+                                case TaskStatus.done:
+                                  return S.of('status_done').toUpperCase();
+                              }
+                            },
                             onChanged: (v) => setState(() => _status = v!),
                           ),
                         ],
@@ -142,12 +152,21 @@ class _TaskEditPageState extends State<TaskEditPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _lbl('Priority'),
+                          _lbl(S.of('priority')),
                           const SizedBox(height: 8),
                           _dropdown<TaskPriority>(
                             value: _priority,
                             items: TaskPriority.values,
-                            labelOf: (p) => p.name.toUpperCase(),
+                            labelOf: (p) {
+                              switch (p) {
+                                case TaskPriority.high:
+                                  return S.of('priority_high').toUpperCase();
+                                case TaskPriority.medium:
+                                  return S.of('priority_medium').toUpperCase();
+                                case TaskPriority.low:
+                                  return S.of('priority_low').toUpperCase();
+                              }
+                            },
                             onChanged: (v) => setState(() => _priority = v!),
                           ),
                         ],
@@ -156,7 +175,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _lbl('Due Date'),
+                _lbl(S.of('due_date')),
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () => _selectDate(context),
@@ -172,7 +191,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          _dueDate == null ? 'Select date' : '${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}',
+                          _dueDate == null ? S.of('select_date') : '${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}',
                           style: TextStyle(color: _dueDate == null ? Colors.white.withValues(alpha: 0.25) : Colors.white, fontSize: 15),
                         ),
                         Icon(Icons.calendar_today, size: 18, color: AppColors.gold.withValues(alpha: 0.5)),
@@ -191,8 +210,8 @@ class _TaskEditPageState extends State<TaskEditPage> {
                       gradient: const LinearGradient(colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark]),
                       boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 8))],
                     ),
-                    child: const Center(
-                      child: Text('Save Task', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black)),
+                    child: Center(
+                      child: Text(S.of('save_task'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black)),
                     ),
                   ),
                 ),
@@ -246,7 +265,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
             dropdownColor: AppColors.cardBg,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: const InputDecoration(border: InputBorder.none),
-            hint: Text('Select domain', style: TextStyle(color: Colors.white.withValues(alpha: 0.25))),
+            hint: Text(S.of('select_domain'), style: TextStyle(color: Colors.white.withValues(alpha: 0.25))),
             items: docs.map((doc) {
               final data = doc.data();
               final isTeam = data['teamId'] != null;
@@ -263,14 +282,14 @@ class _TaskEditPageState extends State<TaskEditPage> {
                           color: AppColors.gold.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text('TEAM', style: TextStyle(fontSize: 10, color: AppColors.gold, fontWeight: FontWeight.bold)),
+                        child: Text(S.of('team').toUpperCase(), style: const TextStyle(fontSize: 10, color: AppColors.gold, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ],
                 ),
               );
             }).toList(),
-            validator: (v) => v == null ? 'Please select a domain' : null,
+            validator: (v) => v == null ? S.of('please_select_domain') : null,
             onChanged: (v) {
               setState(() {
                 _domainId = v;

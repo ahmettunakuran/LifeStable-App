@@ -42,7 +42,10 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
       final currentState = state;
       if (currentState is TasksLoaded) {
         final task = currentState.tasks.firstWhere((t) => t.id == event.taskId);
-        final updatedTask = task.copyWith(status: event.status);
+        final updatedTask = task.copyWith(
+          status: event.status,
+          updatedAt: DateTime.now(),
+        );
         await _repository.createOrUpdateTask(updatedTask);
       }
     } catch (e) {
