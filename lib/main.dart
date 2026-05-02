@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'app/app.dart';
 import 'features/alerts/domain/geofence_usecase.dart';
 import 'core/services/notification_service.dart';
+import 'package:home_widget/home_widget.dart';
 
 import 'core/localization/app_localizations.dart';
 
@@ -14,6 +15,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await LanguageManager.init();
+  await HomeWidget.setAppGroupId('group.com.ahmettunakuran.lifestable');
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,

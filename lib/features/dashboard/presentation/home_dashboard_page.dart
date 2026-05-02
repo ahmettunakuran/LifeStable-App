@@ -151,7 +151,13 @@ class HomeDashboardPage extends StatelessWidget {
                                     child: Row(
                                       children: [
                                         Expanded(
-                                          child: _buildSummaryCard(state.todayTasks),
+                                          child: Column(
+                                            children: [
+                                              Expanded(child: _buildSummaryCard(state.todayTasks)),
+                                              const SizedBox(height: 12),
+                                              Expanded(child: _buildAIRecommendations(state.dailySummary)),
+                                            ],
+                                          ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -167,10 +173,7 @@ class HomeDashboardPage extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  Expanded(
-                                    flex: 1,
-                                    child: _buildAIRecommendations(state.dailySummary),
-                                  ),
+                                  _buildProactiveRecommendationsCard(state.aiProactiveSuggestions),
                                   const SizedBox(height: 8),
                                 ],
                               ),
@@ -729,6 +732,73 @@ class HomeDashboardPage extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProactiveRecommendationsCard(List<String>? suggestions) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.gold.withOpacity(0.15), Colors.transparent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.psychology, color: AppColors.gold, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                S.of('proactive_recommendations'),
+                style: const TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (suggestions == null)
+            Row(
+              children: [
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.gold),
+                ),
+                const SizedBox(width: 12),
+                Text(S.of('ai_recommending'), style: const TextStyle(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic)),
+              ],
+            )
+          else if (suggestions.isEmpty)
+            Text(S.of('proactive_empty'), style: const TextStyle(color: Colors.white38, fontSize: 12))
+          else
+            Column(
+              children: suggestions.map((s) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Icon(Icons.auto_awesome, color: AppColors.gold, size: 14),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        s,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+            ),
         ],
       ),
     );

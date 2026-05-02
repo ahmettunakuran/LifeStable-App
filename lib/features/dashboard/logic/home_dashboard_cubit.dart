@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
@@ -38,6 +40,7 @@ class HomeDashboardLoaded extends HomeDashboardState {
     required this.deadlineCount,
     required this.completedHabitsCount,
     this.dailySummary,
+    this.aiProactiveSuggestions,
   });
 
   final List<Habit> habits;
@@ -50,6 +53,7 @@ class HomeDashboardLoaded extends HomeDashboardState {
   final int deadlineCount;
   final int completedHabitsCount;
   final String? dailySummary;
+  final List<String>? aiProactiveSuggestions;
 }
 
 class HomeDashboardError extends HomeDashboardState {
@@ -115,8 +119,10 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
           final completedHabitsCount = habits.where((h) => h.isCompletedToday).length;
 
           String? currentSummary;
+          List<String>? currentProactive;
           if (state is HomeDashboardLoaded) {
             currentSummary = (state as HomeDashboardLoaded).dailySummary;
+            currentProactive = (state as HomeDashboardLoaded).aiProactiveSuggestions;
           }
 
           return HomeDashboardLoaded(
@@ -130,13 +136,20 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
             deadlineCount: rawTodayTasks.length,
             completedHabitsCount: completedHabitsCount,
             dailySummary: currentSummary,
+            aiProactiveSuggestions: currentProactive,
           );
         },
       ).listen(
         (newState) {
           emit(newState);
-          if (newState is HomeDashboardLoaded && newState.dailySummary == null) {
-            _generateDailySummary(newState);
+          if (newState is HomeDashboardLoaded) {
+            _updateHomeWidgets(newState);
+            if (newState.dailySummary == null) {
+              _generateDailySummary(newState);
+            }
+            if (newState.aiProactiveSuggestions == null) {
+              _generateProactiveRecommendations(newState);
+            }
           }
         },
         onError: (e) => emit(HomeDashboardError(e.toString())),
@@ -191,6 +204,56 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     }
   }
 
+  Future<void> _generateProactiveRecommendations(HomeDashboardLoaded currentState) async {
+    try {
+      final contextData = """
+      BEKLEYEN GÖREVLER:
+      ${currentState.tasks.where((t) => t.status != TaskStatus.done).take(5).map((t) => "- ${t.title}").join("\n")}
+      
+      ALIŞKANLIKLAR (Bugün yapılmayanlar):
+      ${currentState.habits.where((h) => !h.isCompletedToday).map((h) => "- ${h.name}").join("\n")}
+      """;
+
+      final aiResult = await _aiPipeline.dispatch(
+        "Kullanıcının mevcut görevlerine ve eksik alışkanlıklarına bakarak yapması gereken en fazla 3 proaktif öneri ver. Örneğin 'Bugün ders çalışma rutinine ek olarak kısa bir tekrar fena olmaz' veya 'Alışveriş listesi yapma zamanı'. Sadece önerileri madde işareti (*) kullanarak liste halinde dön, başka bir şey yazma.",
+        [],
+        appData: contextData,
+      );
+
+      final suggestions = aiResult.responseText
+          .split('\n')
+          .where((line) => line.trim().startsWith('*'))
+          .map((line) => line.replaceAll('*', '').trim())
+          .take(3)
+          .toList();
+
+      if (suggestions.isNotEmpty && state is HomeDashboardLoaded) {
+        emit((state as HomeDashboardLoaded).copyWith(aiProactiveSuggestions: suggestions));
+      }
+    } catch (e) {
+      print("Proactive Recommendations Error: $e");
+    }
+  }
+
+  Future<void> _updateHomeWidgets(HomeDashboardLoaded state) async {
+    try {
+      final tasksJson = jsonEncode(state.todayTasks.map((t) => {'title': t.title, 'isDone': t.status == TaskStatus.done}).toList());
+      final habitsJson = jsonEncode(state.habits.map((h) => {'name': h.name, 'isDone': h.isCompletedToday}).toList());
+
+      await HomeWidget.saveWidgetData<String>('tasks_data', tasksJson);
+      await HomeWidget.saveWidgetData<String>('habits_data', habitsJson);
+      await HomeWidget.saveWidgetData<int>('active_habits_count', state.habits.where((h) => !h.isPaused).length);
+      await HomeWidget.saveWidgetData<int>('tasks_count', state.todayTasks.length);
+
+      await HomeWidget.updateWidget(
+        name: 'LifeStableWidgetProvider',
+        iOSName: 'LifeStableWidget',
+      );
+    } catch (e) {
+      print("HomeWidget Update Error: $e");
+    }
+  }
+
   @override
   Future<void> close() {
     _subscription?.cancel();
@@ -210,6 +273,7 @@ extension on HomeDashboardLoaded {
     int? deadlineCount,
     int? completedHabitsCount,
     String? dailySummary,
+    List<String>? aiProactiveSuggestions,
   }) {
     return HomeDashboardLoaded(
       habits: habits ?? this.habits,
@@ -222,6 +286,7 @@ extension on HomeDashboardLoaded {
       deadlineCount: deadlineCount ?? this.deadlineCount,
       completedHabitsCount: completedHabitsCount ?? this.completedHabitsCount,
       dailySummary: dailySummary ?? this.dailySummary,
+      aiProactiveSuggestions: aiProactiveSuggestions ?? this.aiProactiveSuggestions,
     );
   }
 }
