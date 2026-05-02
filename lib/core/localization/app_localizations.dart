@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final localeNotifier = ValueNotifier<Locale>(const Locale('en'));
 
 class S {
+  static const String _localeKey = 'app_locale';
+
+  static Future<void> loadLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(_localeKey) ?? 'en';
+    localeNotifier.value = Locale(code);
+  }
+
+  static Future<void> setLocale(Locale locale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_localeKey, locale.languageCode);
+    localeNotifier.value = locale;
+  }
+
   static final Map<String, Map<String, String>> _data = {
     'en': {
       'welcome_back': 'Welcome\nback.',
@@ -33,6 +48,42 @@ class S {
       'fill_all_fields': 'Please fill all required fields.',
       'name_hint': 'John Doe',
       'email_hint': 'you@example.com',
+      // Dashboard & Menu
+      'calendar': 'Calendar',
+      'tasks': 'To-Do List',
+      'team': 'Team',
+      'ai_bot': 'AI Bot',
+      'habits': 'Habits',
+      'settings': 'Settings',
+      'dashboard': 'Dashboard',
+      'add_location': 'Add Location',
+      'logout': 'Log Out',
+      'fast_summary': 'Fast Summary',
+      'todays_focus': "Today's Focus",
+      'close_deadlines': 'Close Deadlines',
+      'recommendations_ai': 'RECOMMENDATIONS (AI)',
+      'streak_tracker': 'Streak Tracker',
+      'no_habits_yet': 'No habits yet.',
+      'active': 'active',
+      'days': 'days',
+      'deadlines_today': 'You Have {} Deadlines Today.',
+      // Calendar
+      'month_week': 'Month / Week',
+      'day_view': 'Day View',
+      'new_event': 'New Event',
+      'no_events_today': 'No events today',
+      'import_schedule': 'Import Course Schedule',
+      'confirm_schedule': 'Confirm Schedule',
+      // Settings
+      'language': 'Language',
+      'calendar_sync': 'Calendar Sync',
+      'connected': 'Connected',
+      'not_connected': 'Not connected',
+      'sync_now': 'Sync now',
+      'disconnect': 'Disconnect',
+      'connect': 'Connect',
+      'english': 'English',
+      'turkish': 'Turkish',
     },
     'tr': {
       'welcome_back': 'Tekrar\nhoş geldin.',
@@ -63,6 +114,42 @@ class S {
       'fill_all_fields': 'Lütfen tüm alanları doldurun.',
       'name_hint': 'Ad Soyad',
       'email_hint': 'siz@ornek.com',
+      // Dashboard & Menu
+      'calendar': 'Takvim',
+      'tasks': 'Yapılacaklar',
+      'team': 'Takım',
+      'ai_bot': 'AI Bot',
+      'habits': 'Alışkanlıklar',
+      'settings': 'Ayarlar',
+      'dashboard': 'Panel',
+      'add_location': 'Konum Ekle',
+      'logout': 'Çıkış Yap',
+      'fast_summary': 'Hızlı Özet',
+      'todays_focus': 'Bugünün Odağı',
+      'close_deadlines': 'Yaklaşan Teslimler',
+      'recommendations_ai': 'ÖNERİLER (AI)',
+      'streak_tracker': 'Seri Takibi',
+      'no_habits_yet': 'Henüz alışkanlık yok.',
+      'active': 'aktif',
+      'days': 'gün',
+      'deadlines_today': 'Bugün {} Teslimin Var.',
+      // Calendar
+      'month_week': 'Ay / Hafta',
+      'day_view': 'Gün Görünümü',
+      'new_event': 'Yeni Etkinlik',
+      'no_events_today': 'Bugün etkinlik yok',
+      'import_schedule': 'Ders Programı İçe Aktar',
+      'confirm_schedule': 'Programı Onayla',
+      // Settings
+      'language': 'Dil',
+      'calendar_sync': 'Takvim Senkronizasyonu',
+      'connected': 'Bağlı',
+      'not_connected': 'Bağlı değil',
+      'sync_now': 'Senkronize Et',
+      'disconnect': 'Bağlantıyı Kes',
+      'connect': 'Bağlan',
+      'english': 'İngilizce',
+      'turkish': 'Türkçe',
     },
   };
 
@@ -85,7 +172,7 @@ class LanguageSwitcher extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.black.withOpacity(0.3),
-            border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+            border: Border.all(color: const Color(0xFFC9A84C).withOpacity(0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -115,7 +202,7 @@ class _LangButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = current.languageCode == locale.languageCode;
     return GestureDetector(
-      onTap: () => localeNotifier.value = locale,
+      onTap: () => S.setLocale(locale),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -123,7 +210,7 @@ class _LangButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           gradient: isSelected
               ? const LinearGradient(
-            colors: [AppColors.gold, AppColors.goldDark],
+            colors: [Color(0xFFC9A84C), Color(0xFF9A7B2F)],
           )
               : null,
         ),
@@ -138,14 +225,4 @@ class _LangButton extends StatelessWidget {
       ),
     );
   }
-}
-
-class AppColors {
-  static const Color gold = Color(0xFFC9A84C);
-  static const Color goldDark = Color(0xFF9A7B2F);
-  static const Color goldLight = Color(0xFFF5C842);
-  static const Color black = Color(0xFF0D0D0D);
-  static const Color darkBg = Color(0xFF141008);
-  static const Color darkBg2 = Color(0xFF1E1608);
-  static const Color cardBg = Color(0xFF1A1500);
 }

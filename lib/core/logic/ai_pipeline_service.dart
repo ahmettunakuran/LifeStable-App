@@ -21,12 +21,12 @@ class AiResult {
 class AiPipelineService {
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
 
-  Future<AiResult> dispatch(String prompt, List<Map<String, dynamic>> history, {String? appData}) async {
+  Future<AiResult> dispatch(String prompt, List<Map<String, dynamic>> history, {String? appData, String configKey = 'groq_api_key'}) async {
     try {
-      final apiKey = _remoteConfig.getString('groq_api_key');
+      final apiKey = _remoteConfig.getString(configKey);
       
       if (apiKey.isEmpty) {
-        print("KRİTİK HATA: groq_api_key Remote Config'de bulunamadı!");
+        print("KRİTİK HATA: $configKey Remote Config'de bulunamadı!");
         return AiResult(domain: AppDomain.unknown, action: 'none', payload: {}, responseText: "Sistem yapılandırması eksik (API Key bulunamadı).");
       }
           
@@ -138,11 +138,66 @@ class AiPipelineService {
           payload: result['payload'] ?? {},
           responseText: result['responseText'] ?? "İşlem tamam.",
         );
+      } else {
+        print("API ERROR: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
       print("Pipeline Error: $e");
     }
     return AiResult(domain: AppDomain.unknown, action: 'none', payload: {}, responseText: "Bir hata oluştu.");
+  }
+
+  Future<String?> fetchDailyInsights(String appData, {String configKey = 'groq_api_key', String languageCode = 'tr'}) async {
+    try {
+      final apiKey = _remoteConfig.getString(configKey);
+      
+      if (apiKey.isEmpty) {
+        print("KRİTİK HATA: $configKey Remote Config'de bulunamadı!");
+        return "Insight yüklenemedi: API Key eksik.";
+      }
+          
+      final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
+
+      final langInstruction = languageCode == 'tr'
+          ? 'Yanıtını TÜRKÇE olarak ver.'
+          : 'Respond in ENGLISH.';
+
+      final systemInstruction = """
+      You are a 'Daily Insight' assistant for the LifeStable app. 
+      The user's today data (tasks, habits, etc.) is provided below.
+      Your job: Write a short, motivating 1-paragraph (max 2-3 sentences) summary about their day and give a concrete tip.
+      Output must be plain text shown directly to the user — NO JSON. Do NOT greet the user, get straight to the point.
+      $langInstruction
+      """;
+
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $apiKey"
+        },
+        body: jsonEncode({
+          "model": "llama-3.3-70b-versatile",
+          "messages": [
+            {"role": "system", "content": systemInstruction},
+            {"role": "user", "content": appData}
+          ],
+          "temperature": 0.6,
+          "max_tokens": 150
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['choices'][0]['message']['content'];
+      } else {
+        print("API ERROR Insights: ${response.statusCode} - ${response.body}");
+        return languageCode == 'tr' ? "Özet alınırken bir sorun oluştu." : "Failed to load summary.";
+      }
+    } catch (e) {
+      print("Insights Error: $e");
+      return languageCode == 'tr' ? "Bir hata oluştu." : "An error occurred.";
+    }
   }
 
   AppDomain _parseDomain(String? domain) {

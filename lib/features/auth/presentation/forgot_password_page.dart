@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../../../core/localization/app_localizations.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
