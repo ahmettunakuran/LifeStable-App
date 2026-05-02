@@ -46,143 +46,145 @@ class HomeDashboardPage extends StatelessWidget {
                   colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
                 ),
               ),
-          child: SafeArea(
-            bottom: false,
-            child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
-              builder: (context, state) {
-                if (state is HomeDashboardLoading || state is HomeDashboardError) {
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+              child: SafeArea(
+                bottom: false,
+                child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
+                  builder: (context, state) {
+                    if (state is HomeDashboardLoading || state is HomeDashboardError) {
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.menu, color: AppColors.gold),
-                                    onPressed: () => scaffoldKey.currentState?.openDrawer(),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.menu, color: AppColors.gold),
+                                        onPressed: () => scaffoldKey.currentState?.openDrawer(),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Text(
+                                        'LifeStable',
+                                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.gold, letterSpacing: -0.5),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 12),
-                                  const Text(
-                                    'LifeStable',
-                                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.gold, letterSpacing: -0.5),
+                                  const SizedBox(height: 16),
+                                  _buildSkeletonBox(height: 110, radius: 27),
+                                  const SizedBox(height: 16),
+                                  Expanded(
+                                    flex: 4,
+                                    child: Row(
+                                      children: [
+                                        Expanded(child: _buildSkeletonBox()),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            children: [
+                                              Expanded(child: _buildSkeletonBox()),
+                                              const SizedBox(height: 12),
+                                              Expanded(child: _buildSkeletonBox()),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                  const SizedBox(height: 12),
+                                  Expanded(flex: 1, child: _buildSkeletonBox()),
+                                  const SizedBox(height: 8),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              _buildSkeletonBox(height: 110, radius: 27),
-                              const SizedBox(height: 16),
-                              Expanded(
-                                flex: 4,
-                                child: Row(
-                                  children: [
-                                    Expanded(child: _buildSkeletonBox()),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          Expanded(child: _buildSkeletonBox()),
-                                          const SizedBox(height: 12),
-                                          Expanded(child: _buildSkeletonBox()),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Expanded(flex: 1, child: _buildSkeletonBox()),
-                              const SizedBox(height: 8),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                      _buildAIFloatingButton(context),
-                      _buildBottomNav(context),
-                    ],
-                  );
-                }
+                          _buildAIFloatingButton(context),
+                          _buildBottomNav(context),
+                        ],
+                      );
+                    }
 
-                if (state is HomeDashboardLoaded) {
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                    if (state is HomeDashboardLoaded) {
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.menu, color: AppColors.gold),
-                                    onPressed: () => scaffoldKey.currentState?.openDrawer(),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.menu, color: AppColors.gold),
+                                        onPressed: () => scaffoldKey.currentState?.openDrawer(),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Text(
+                                        'LifeStable',
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.gold,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      _buildHabitStreakTrigger(context, state.habits),
+                                    ],
                                   ),
-                                  const SizedBox(width: 12),
-                                  const Text(
-                                    'LifeStable',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                      color: AppColors.gold,
-                                      letterSpacing: -0.5,
+                                  const SizedBox(height: 16),
+                                  _buildSlidableDomainAccess(context, state.domains, state.tasks, state.habits),
+                                  const SizedBox(height: 16),
+                                  if (state.deadlineCount > 0) ...[
+                                    _buildDeadlineAlert(state.deadlineCount),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  Expanded(
+                                    flex: 4,
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildSummaryCard(state.todayTasks),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            children: [
+                                              Expanded(child: _buildFocusCard(context, state.todayEvents)),
+                                              const SizedBox(height: 12),
+                                              Expanded(child: _buildCloseDeadlinesSection(context, state.tasks, state.domains)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const Spacer(),
-                                  _buildHabitStreakTrigger(context, state.habits),
+                                  const SizedBox(height: 12),
+                                  Expanded(
+                                    flex: 1,
+                                    child: _buildAIRecommendations(state.dailySummary),
+                                  ),
+                                  const SizedBox(height: 8),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              _buildSlidableDomainAccess(context, state.domains, state.tasks, state.habits),
-                              const SizedBox(height: 16),
-                              if (state.deadlineCount > 0) ...[
-                                _buildDeadlineAlert(state.deadlineCount),
-                                const SizedBox(height: 16),
-                              ],
-                              Expanded(
-                                flex: 4,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildSummaryCard(state.todayTasks),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          Expanded(child: _buildFocusCard(context, state.todayEvents)),
-                                          const SizedBox(height: 12),
-                                          Expanded(child: _buildCloseDeadlinesSection(context, state.tasks, state.domains)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Expanded(
-                                flex: 1,
-                                child: _buildAIRecommendations(state.dailySummary),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                      _buildAIFloatingButton(context),
-                      _buildBottomNav(context),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
+                          _buildAIFloatingButton(context),
+                          _buildBottomNav(context),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
             ),
           );
         },
@@ -472,7 +474,7 @@ class HomeDashboardPage extends StatelessWidget {
           _buildCompactHeader(S.of('fast_summary')),
           const SizedBox(height: 12),
           if (count == 0)
-             Expanded(
+            Expanded(
               child: Center(
                 child: Text(S.of('all_clear_today'), style: const TextStyle(color: Colors.white24, fontSize: 12)),
               ),
@@ -564,7 +566,7 @@ class HomeDashboardPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (incomplete.isEmpty)
-             Expanded(child: Center(child: Text(S.of('all_clear'), style: const TextStyle(color: Colors.white24, fontSize: 12))))
+            Expanded(child: Center(child: Text(S.of('all_clear'), style: const TextStyle(color: Colors.white24, fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
@@ -657,7 +659,9 @@ class HomeDashboardPage extends StatelessWidget {
         color: AppColors.gold.withOpacity(0.8),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: title.isEmpty ? null : Text(
+      child: title.isEmpty
+          ? null
+          : Text(
         title.toUpperCase(),
         textAlign: TextAlign.center,
         style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1),
@@ -678,7 +682,7 @@ class HomeDashboardPage extends StatelessWidget {
           _buildCompactHeader(S.of('todays_focus')),
           const SizedBox(height: 12),
           if (events.isEmpty)
-             Expanded(child: Center(child: Text(S.of('no_events_today'), style: const TextStyle(color: Colors.white24, fontSize: 12))))
+            Expanded(child: Center(child: Text(S.of('no_events_today'), style: const TextStyle(color: Colors.white24, fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
@@ -785,8 +789,8 @@ class HomeDashboardPage extends StatelessWidget {
                               Row(children: [
                                 const Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 12),
                                 const SizedBox(width: 2),
-                                Text(S.of(maxStreak == 1 ? 'day_count' : 'days_count', args: {'count': maxStreak.toString()}), style: const TextStyle(color: AppColors.black, fontSize: 10))
-                              ])
+                                Text(S.of(maxStreak == 1 ? 'day_count' : 'days_count', args: {'count': maxStreak.toString()}), style: const TextStyle(color: AppColors.black, fontSize: 10)),
+                              ]),
                             ],
                           ],
                         ),
