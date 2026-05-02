@@ -22,9 +22,17 @@ class AiResult {
 class AiPipelineService {
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
 
-  Future<AiResult> dispatch(String prompt, List<Map<String, dynamic>> history, {String? appData}) async {
+  Future<AiResult> dispatch(String prompt, List<Map<String, dynamic>> history, {String? appData, bool useSecondaryKey = false}) async {
     try {
-      final apiKey = _remoteConfig.getString('groq_api_key');
+      final key1 = _remoteConfig.getString('groq_api_key');
+      final key2 = _remoteConfig.getString('groq_api_key2');
+      
+      String apiKey = key1;
+      if (useSecondaryKey && key2.isNotEmpty) {
+        apiKey = key2;
+      } else if (key1.isEmpty && key2.isNotEmpty) {
+        apiKey = key2;
+      }
       
       if (apiKey.isEmpty) {
         return AiResult(
@@ -110,7 +118,7 @@ class AiPipelineService {
           "Authorization": "Bearer $apiKey"
         },
         body: jsonEncode({
-          "model": "llama-3.3-70b-versatile",
+          "model": "llama-3.1-8b-instant",
           "messages": [
             {"role": "system", "content": systemInstruction},
             ...history.map((m) => {
@@ -144,8 +152,12 @@ class AiPipelineService {
           domain: _parseDomain(result['domain']),
           action: result['action'] ?? 'none',
           payload: result['payload'] ?? {},
-          responseText: result['responseText'] ?? S.of('ai_default_response'),
+          responseText: (result['responseText'] is List)
+              ? (result['responseText'] as List).join('\n')
+              : (result['responseText']?.toString() ?? S.of('ai_default_response')),
         );
+      } else {
+        print("API ERROR: " + response.statusCode.toString() + " - " + response.body);
       }
     } catch (e) {
       print("Pipeline Error: $e");

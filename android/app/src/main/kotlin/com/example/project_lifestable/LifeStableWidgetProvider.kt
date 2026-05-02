@@ -22,8 +22,8 @@ class LifeStableWidgetProvider : HomeWidgetProvider() {
             val activeHabitsCount = widgetData.getInt("active_habits_count", 0)
             val tasksJsonStr = widgetData.getString("tasks_data", "[]")
 
-            views.setTextViewText(R.id.tv_tasks, "Pending Tasks: \$tasksCount")
-            views.setTextViewText(R.id.tv_habits, "Active Habits: \$activeHabitsCount")
+            views.setTextViewText(R.id.tv_tasks, "Pending Tasks: $tasksCount")
+            views.setTextViewText(R.id.tv_habits, "Active Habits: $activeHabitsCount")
 
             var nextUp = "Next up: None"
             try {
@@ -31,7 +31,8 @@ class LifeStableWidgetProvider : HomeWidgetProvider() {
                 for (i in 0 until tasksArray.length()) {
                     val task = tasksArray.getJSONObject(i)
                     if (!task.getBoolean("isDone")) {
-                        nextUp = "Next up: \${task.getString("title")}"
+                        val title = task.getString("title")
+                        nextUp = "Next up: $title"
                         break
                     }
                 }

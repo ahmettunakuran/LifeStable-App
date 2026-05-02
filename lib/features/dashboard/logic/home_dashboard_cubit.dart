@@ -62,6 +62,8 @@ class HomeDashboardError extends HomeDashboardState {
 }
 
 class HomeDashboardCubit extends Cubit<HomeDashboardState> {
+  bool _isGeneratingInsights = false;
+
   HomeDashboardCubit(
     this._taskRepository,
     this._calendarRepository,
@@ -144,11 +146,8 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
           emit(newState);
           if (newState is HomeDashboardLoaded) {
             _updateHomeWidgets(newState);
-            if (newState.dailySummary == null) {
-              _generateDailySummary(newState);
-            }
-            if (newState.aiProactiveSuggestions == null) {
-              _generateProactiveRecommendations(newState);
+            if ((newState.dailySummary == null || newState.aiProactiveSuggestions == null) && !_isGeneratingInsights) {
+              _generateAiDashboardInsights(newState);
             }
           }
         },
@@ -160,7 +159,9 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     }
   }
 
-  Future<void> _generateDailySummary(HomeDashboardLoaded currentState) async {
+  Future<void> _generateAiDashboardInsights(HomeDashboardLoaded currentState) async {
+    if (_isGeneratingInsights) return;
+    _isGeneratingInsights = true;
     try {
       final now = DateTime.now();
       final todayStart = DateTime(now.year, now.month, now.day);
@@ -175,63 +176,56 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
       final notes = await _noteRepository.watchNotes(uid).first;
       final todayNotes = notes.where((n) => n.updatedAt.isAfter(todayStart)).toList();
 
-      if (completedToday.isEmpty && todayNotes.isEmpty && currentState.completedHabitsCount == 0) {
-        emit(currentState); // No need to summarize nothing
-        return;
-      }
-
       final contextData = """
       TAMAMLANAN GÖREVLER:
       ${completedToday.map((t) => "- ${t.title}").join("\n")}
+      
+      BEKLEYEN GÖREVLER:
+      ${currentState.tasks.where((t) => t.status != TaskStatus.done).take(5).map((t) => "- ${t.title}").join("\n")}
       
       BUGÜNKÜ NOTLAR:
       ${todayNotes.map((n) => "- ${n.title}: ${n.content}").join("\n")}
       
       TAMAMLANAN ALIŞKANLIKLAR: ${currentState.completedHabitsCount}
-      """;
-
-      final aiResult = await _aiPipeline.dispatch(
-        "Bugünkü ilerlememi ve notlarımı kısaca özetle. Motivasyon verici ve hafif bir ton kullan.",
-        [],
-        appData: contextData,
-      );
-
-      if (state is HomeDashboardLoaded) {
-        emit((state as HomeDashboardLoaded).copyWith(dailySummary: aiResult.responseText));
-      }
-    } catch (e) {
-      print("Summary Generation Error: $e");
-    }
-  }
-
-  Future<void> _generateProactiveRecommendations(HomeDashboardLoaded currentState) async {
-    try {
-      final contextData = """
-      BEKLEYEN GÖREVLER:
-      ${currentState.tasks.where((t) => t.status != TaskStatus.done).take(5).map((t) => "- ${t.title}").join("\n")}
       
-      ALIŞKANLIKLAR (Bugün yapılmayanlar):
+      YAPILMAYAN ALIŞKANLIKLAR:
       ${currentState.habits.where((h) => !h.isCompletedToday).map((h) => "- ${h.name}").join("\n")}
       """;
 
       final aiResult = await _aiPipeline.dispatch(
-        "Kullanıcının mevcut görevlerine ve eksik alışkanlıklarına bakarak yapması gereken en fazla 3 proaktif öneri ver. Örneğin 'Bugün ders çalışma rutinine ek olarak kısa bir tekrar fena olmaz' veya 'Alışveriş listesi yapma zamanı'. Sadece önerileri madde işareti (*) kullanarak liste halinde dön, başka bir şey yazma.",
+        "Kullanıcının görev, alışkanlık ve not verilerini analiz et. 1) JSON 'responseText' alanına motivasyon verici çok kısa bir özet (summary) yaz. 2) JSON 'payload' alanının içine 'recommendations' adında bir dizi (array) oluştur ve kullanıcının bekleyen/yapılmayan işlerine bakarak yapması gereken en fazla 3 proaktif öneri ver.",
         [],
         appData: contextData,
       );
 
-      final suggestions = aiResult.responseText
-          .split('\n')
-          .where((line) => line.trim().startsWith('*'))
-          .map((line) => line.replaceAll('*', '').trim())
-          .take(3)
-          .toList();
+      String summary = aiResult.responseText;
+      List<String> suggestions = [];
 
-      if (suggestions.isNotEmpty && state is HomeDashboardLoaded) {
-        emit((state as HomeDashboardLoaded).copyWith(aiProactiveSuggestions: suggestions));
+      if (aiResult.payload.containsKey('recommendations') && aiResult.payload['recommendations'] is List) {
+        suggestions = (aiResult.payload['recommendations'] as List).map((e) {
+          if (e is Map) {
+             return (e['title'] ?? e['description'] ?? e.toString()).toString();
+          }
+          return e.toString();
+        }).toList();
+      }
+
+      if (state is HomeDashboardLoaded) {
+        emit((state as HomeDashboardLoaded).copyWith(
+          dailySummary: summary.isNotEmpty ? summary : "Hadi, bugün harika bir gün!",
+          aiProactiveSuggestions: suggestions.isNotEmpty ? suggestions : ["Bugün için her şey yolunda görünüyor!"]
+        ));
       }
     } catch (e) {
-      print("Proactive Recommendations Error: $e");
+      print("AI Dashboard Insights Error: $e");
+      if (state is HomeDashboardLoaded) {
+        emit((state as HomeDashboardLoaded).copyWith(
+          dailySummary: "Bugün harika bir gün!",
+          aiProactiveSuggestions: []
+        ));
+      }
+    } finally {
+      _isGeneratingInsights = false;
     }
   }
 

@@ -48,7 +48,7 @@
             android:name="flutterEmbedding"
             android:value="2" />
         
-        <receiver android:name=".LifeStableWidgetProvider" android:exported="true">
+        <receiver android:name=".LifeStableWidgetProvider" android:exported="true" android:label="LifeStable">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
