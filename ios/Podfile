@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-platform :ios, '15.0'
+platform :ios, '15.5'
 
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
@@ -37,8 +37,153 @@ target 'Runner' do
   end
 end
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Patches an arm64 static archive (.a) or a flat Mach-O object (.o) in-place:
+# walks every archive member (or the file itself) and changes the
+# LC_BUILD_VERSION platform field from IOS (2) to IOSSIMULATOR (7).
+# Patching the binary directly (without extract/repack) preserves duplicate
+# member names that would otherwise be lost by ar -x.
+# ─────────────────────────────────────────────────────────────────────────────
+AR_PLATFORM_PATCHER_PY = <<~'PY'
+  import struct, sys
+
+  IOS, IOSSIM, LC_BUILD_VERSION = 2, 7, 0x32
+
+  def patch_macho(data):
+      data = bytearray(data)
+      if struct.unpack_from('<I', data, 0)[0] != 0xFEEDFACF:
+          return bytes(data)
+      ncmds = struct.unpack_from('<I', data, 16)[0]
+      off = 32
+      for _ in range(ncmds):
+          if off + 8 > len(data): break
+          cmd, sz = struct.unpack_from('<II', data, off)
+          if sz == 0: break
+          if cmd == LC_BUILD_VERSION and struct.unpack_from('<I', data, off+8)[0] == IOS:
+              struct.pack_into('<I', data, off+8, IOSSIM)
+          off += sz
+      return bytes(data)
+
+  def patch_ar(path):
+      with open(path, 'rb') as f:
+          raw = f.read()
+      if not raw.startswith(b'!<arch>\n'):
+          # Not an archive — try patching as raw Mach-O
+          patched = patch_macho(raw)
+          if patched != raw:
+              open(path, 'wb').write(patched)
+          return
+      out = bytearray(b'!<arch>\n')
+      off = 8
+      while off + 60 <= len(raw):
+          hdr  = raw[off:off+60]
+          if hdr[58:60] != b'`\n': break
+          size = int(raw[off+48:off+58].rstrip())
+          body = raw[off+60:off+60+size]
+          raw_name = hdr[:16].decode('ascii', errors='replace').strip()
+          # BSD extended name format: #1/<n> means first n bytes of body are the filename
+          if raw_name.startswith('#1/'):
+              name_len = int(raw_name[3:])
+              new_body = body[:name_len] + patch_macho(body[name_len:])
+          else:
+              new_body = patch_macho(body)
+          out.extend(hdr)
+          out.extend(new_body)
+          if size % 2: out.append(0x0A)
+          off += 60 + size + (size % 2)
+      open(path, 'wb').write(bytes(out))
+
+  for path in sys.argv[1:]:
+      patch_ar(path)
+PY
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Creates an XCFramework for a Google ML Kit pod so that the arm64
+# iOS-Simulator slice is correctly tagged.  Returns the xcframework path on
+# success, or nil on failure / if the xcframework already exists.
+# ─────────────────────────────────────────────────────────────────────────────
+def build_mlkit_xcframework(pod_name, pods_root, patcher_path)
+  require 'fileutils'
+
+  fw_dir = "#{pods_root}/#{pod_name}/Frameworks"
+  fw     = "#{fw_dir}/#{pod_name}.framework"
+  bin    = "#{fw}/#{pod_name}"
+  xcfw   = "#{fw_dir}/#{pod_name}.xcframework"
+
+  return xcfw if File.exist?(xcfw)
+  return nil  unless File.exist?(bin)
+
+  tmp    = "/tmp/#{pod_name}_xcfw_#{Time.now.to_i}"
+  dev_fw = "#{tmp}/ios-arm64/#{pod_name}.framework"
+  sim_fw = "#{tmp}/ios-arm64_x86_64-simulator/#{pod_name}.framework"
+  [dev_fw, sim_fw].each { |d| FileUtils.mkdir_p(d) }
+
+  Dir.glob("#{fw}/*").each do |f|
+    unless File.basename(f) == pod_name
+      FileUtils.cp_r(f, dev_fw)
+      FileUtils.cp_r(f, sim_fw)
+    end
+  end
+
+  # Device slice: unmodified arm64
+  system("lipo -thin arm64 -output '#{dev_fw}/#{pod_name}' '#{bin}'")
+
+  # Simulator slice: arm64 with patched platform + x86_64
+  system("lipo -thin arm64 -output '#{tmp}/arm64_sim' '#{bin}'")
+  # Patch archive members (or flat .o) directly — no extract/repack needed
+  system("python3 '#{patcher_path}' '#{tmp}/arm64_sim'")
+
+  x86_ok = system("lipo -thin x86_64 -output '#{tmp}/x86_64' '#{bin}' 2>/dev/null")
+  if x86_ok && File.exist?("#{tmp}/arm64_sim")
+    system("lipo -create '#{tmp}/arm64_sim' '#{tmp}/x86_64' -output '#{sim_fw}/#{pod_name}'")
+  elsif File.exist?("#{tmp}/arm64_sim")
+    FileUtils.cp("#{tmp}/arm64_sim", "#{sim_fw}/#{pod_name}")
+  end
+
+  unless File.exist?("#{sim_fw}/#{pod_name}")
+    FileUtils.rm_rf(tmp)
+    return nil
+  end
+
+  if system("xcodebuild -create-xcframework -framework '#{dev_fw}' -framework '#{sim_fw}' -output '#{xcfw}'")
+    FileUtils.rm_rf(tmp)
+    xcfw
+  else
+    FileUtils.rm_rf([tmp, xcfw])
+    nil
+  end
+end
+
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+    end
+  end
+
+  # ── Patch Google ML Kit pods for arm64 iOS-Simulator support ──────────────
+  patcher = '/tmp/patch_ar_platform.py'
+  File.write(patcher, AR_PLATFORM_PATCHER_PY)
+
+  mlkit_pods = %w[MLImage MLKitCommon MLKitVision MLKitTextRecognition MLKitTextRecognitionCommon]
+  sim_search_paths = []
+
+  mlkit_pods.each do |pod|
+    xcfw = build_mlkit_xcframework(pod, installer.sandbox.root, patcher)
+    if xcfw
+      puts "  → #{pod}.xcframework created"
+      sim_search_paths << "$(PODS_ROOT)/#{pod}/Frameworks/#{pod}.xcframework/ios-arm64_x86_64-simulator"
+    end
+  end
+
+  unless sim_search_paths.empty?
+    xcconfig_path = File.join(File.dirname(installer.sandbox.root), 'Flutter', 'MLKitSimPaths.xcconfig')
+    File.write(xcconfig_path, <<~XCCONFIG)
+      // Auto-generated by Podfile post_install — do not edit manually
+      EXCLUDED_ARCHS[sdk=iphonesimulator*]=i386
+      FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*]=#{sim_search_paths.map { |p| "\"#{p}\"" }.join(' ')} $(inherited)
+    XCCONFIG
+    puts "  → MLKitSimPaths.xcconfig written"
   end
 end
