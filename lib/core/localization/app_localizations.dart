@@ -41,6 +41,10 @@ class S {
       'forgot_password_subtitle': "No worries, we'll send you reset instructions.",
       'send_reset_link': 'Send Reset Link',
       'back_to_sign_in': 'Back to Sign In',
+      // Onboarding
+      'get_started': 'Get Started',
+      'onboarding_subtitle': 'Build habits.\nLive intentionally.',
+      'already_have_account_onboarding': 'Already have an account? Sign in',
       'check_email_title': 'Check your\nemail.',
       'check_email_subtitle': "We've sent a password reset link to your email.",
       'email_required': 'Email and password are required.',
@@ -107,6 +111,10 @@ class S {
       'forgot_password_subtitle': 'Endişelenme, sıfırlama talimatları göndereceğiz.',
       'send_reset_link': 'Sıfırlama Bağlantısı Gönder',
       'back_to_sign_in': 'Girişe Dön',
+      // Onboarding
+      'get_started': 'Hadi Başlayalım',
+      'onboarding_subtitle': 'Alışkanlıklar edin.\nBilinçli yaşa.',
+      'already_have_account_onboarding': 'Zaten hesabın var mı? Giriş yap',
       'check_email_title': 'E-postanı\nkontrol et.',
       'check_email_subtitle': 'Şifre sıfırlama bağlantısı e-posta adresine gönderildi.',
       'email_required': 'E-posta ve şifre gereklidir.',

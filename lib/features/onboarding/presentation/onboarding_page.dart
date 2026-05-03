@@ -91,186 +91,196 @@ class _OnboardingPageState extends State<OnboardingPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.black,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.3,
-            colors: [Color(0xFF1E1608), Color(0xFF0D0D0D)],
-          ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Positioned(
-                top: -80,
-                right: -60,
-                child: _GlowCircle(
-                  size: 280,
-                  color: AppColors.gold.withOpacity(0.07),
-                ),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: AppColors.black,
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 1.3,
+                colors: [Color(0xFF1E1608), Color(0xFF0D0D0D)],
               ),
-              Positioned(
-                bottom: -100,
-                left: -80,
-                child: _GlowCircle(
-                  size: 320,
-                  color: AppColors.gold.withOpacity(0.05),
-                ),
-              ),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedBuilder(
-                        animation: _logoController,
-                        builder: (context, child) => Opacity(
-                          opacity: _logoOpacity.value,
-                          child: Transform.scale(
-                            scale: _logoScale.value,
-                            child: child,
-                          ),
-                        ),
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.gold.withOpacity(0.4),
-                                blurRadius: 36,
-                                spreadRadius: 6,
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: AppColors.cardBg,
-                                child: const Icon(
-                                  Icons.balance,
-                                  color: AppColors.gold,
-                                  size: 56,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      AnimatedBuilder(
-                        animation: _textController,
-                        builder: (context, child) => SlideTransition(
-                          position: _textSlide,
-                          child: Opacity(opacity: _textOpacity.value, child: child),
-                        ),
-                        child: Column(
-                          children: [
-                            ShaderMask(
-                              shaderCallback: (bounds) => const LinearGradient(
-                                colors: [AppColors.goldLight, AppColors.gold],
-                              ).createShader(bounds),
-                              child: const Text(
-                                'LifeStable',
-                                style: TextStyle(
-                                  fontSize: 48,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: -1.5,
-                                  height: 1.1,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Build habits.\nLive intentionally.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white.withOpacity(0.55),
-                                letterSpacing: 0.3,
-                                height: 1.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 64),
-                      AnimatedBuilder(
-                        animation: _buttonController,
-                        builder: (context, child) => SlideTransition(
-                          position: _buttonSlide,
-                          child: Opacity(
-                              opacity: _buttonOpacity.value, child: child),
-                        ),
-                        child: Column(
-                          children: [
-                            GestureDetector(
-                              onTap: () => Navigator.of(context)
-                                  .pushReplacementNamed(AppRoutes.register),
-                              child: Container(
-                                width: double.infinity,
-                                padding:
-                                const EdgeInsets.symmetric(vertical: 18),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      AppColors.goldLight,
-                                      AppColors.gold,
-                                      AppColors.goldDark,
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.gold.withOpacity(0.35),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'Get Started',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            TextButton(
-                              onPressed: () => Navigator.of(context)
-                                  .pushReplacementNamed(AppRoutes.login),
-                              child: Text(
-                                'Already have an account? Sign in',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.45),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+            ),
+            child: SafeArea(
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: -80,
+                    right: -60,
+                    child: _GlowCircle(
+                      size: 280,
+                      color: AppColors.gold.withOpacity(0.07),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    bottom: -100,
+                    left: -80,
+                    child: _GlowCircle(
+                      size: 320,
+                      color: AppColors.gold.withOpacity(0.05),
+                    ),
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedBuilder(
+                            animation: _logoController,
+                            builder: (context, child) => Opacity(
+                              opacity: _logoOpacity.value,
+                              child: Transform.scale(
+                                scale: _logoScale.value,
+                                child: child,
+                              ),
+                            ),
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.gold.withOpacity(0.4),
+                                    blurRadius: 36,
+                                    spreadRadius: 6,
+                                  ),
+                                ],
+                              ),
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/images/logo.png',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: AppColors.cardBg,
+                                    child: const Icon(
+                                      Icons.balance,
+                                      color: AppColors.gold,
+                                      size: 56,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          AnimatedBuilder(
+                            animation: _textController,
+                            builder: (context, child) => SlideTransition(
+                              position: _textSlide,
+                              child: Opacity(opacity: _textOpacity.value, child: child),
+                            ),
+                            child: Column(
+                              children: [
+                                ShaderMask(
+                                  shaderCallback: (bounds) => const LinearGradient(
+                                    colors: [AppColors.goldLight, AppColors.gold],
+                                  ).createShader(bounds),
+                                  child: const Text(
+                                    'LifeStable',
+                                    style: TextStyle(
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: -1.5,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  S.of('onboarding_subtitle'),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white.withOpacity(0.55),
+                                    letterSpacing: 0.3,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 64),
+                          AnimatedBuilder(
+                            animation: _buttonController,
+                            builder: (context, child) => SlideTransition(
+                              position: _buttonSlide,
+                              child: Opacity(
+                                  opacity: _buttonOpacity.value, child: child),
+                            ),
+                            child: Column(
+                              children: [
+                                GestureDetector(
+                                  onTap: () => Navigator.of(context)
+                                      .pushReplacementNamed(AppRoutes.register),
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding:
+                                    const EdgeInsets.symmetric(vertical: 18),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          AppColors.goldLight,
+                                          AppColors.gold,
+                                          AppColors.goldDark,
+                                        ],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.gold.withOpacity(0.35),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        S.of('get_started'),
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context)
+                                      .pushReplacementNamed(AppRoutes.login),
+                                  child: Text(
+                                    S.of('already_have_account_onboarding'),
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.45),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: const LanguageSwitcher(),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

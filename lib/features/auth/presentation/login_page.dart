@@ -134,11 +134,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       color: AppColors.gold.withOpacity(0.05),
                     ),
                   ),
-                  Positioned(
-                    top: 12,
-                    right: 16,
-                    child: const LanguageSwitcher(),
-                  ),
                   SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: AnimatedBuilder(
@@ -353,6 +348,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: const LanguageSwitcher(),
                   ),
                 ],
               ),
