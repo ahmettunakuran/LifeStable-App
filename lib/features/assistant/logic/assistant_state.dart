@@ -2,6 +2,22 @@ part of 'assistant_cubit.dart';
 
 enum AssistantStatus { initial, responding, idle, error, navigate }
 
+enum UndoableKind { task, calendarEvent, habit, domain }
+
+class UndoableAction {
+  final String token;
+  final UndoableKind kind;
+  final String entityId;
+  final String label;
+
+  const UndoableAction({
+    required this.token,
+    required this.kind,
+    required this.entityId,
+    required this.label,
+  });
+}
+
 class AssistantState {
   final List<ChatMessage> messages;
   final AssistantStatus status;
@@ -9,6 +25,7 @@ class AssistantState {
   final String? errorMessage;
   final String? redirectTo;
   final Object? redirectArgs;
+  final UndoableAction? undoable;
 
   const AssistantState({
     this.messages = const [],
@@ -17,6 +34,7 @@ class AssistantState {
     this.errorMessage,
     this.redirectTo,
     this.redirectArgs,
+    this.undoable,
   });
 
   bool get showWelcome =>
@@ -29,6 +47,8 @@ class AssistantState {
     String? errorMessage,
     String? redirectTo,
     Object? redirectArgs,
+    UndoableAction? undoable,
+    bool clearUndoable = false,
   }) {
     return AssistantState(
       messages: messages ?? this.messages,
@@ -37,6 +57,7 @@ class AssistantState {
       errorMessage: errorMessage ?? this.errorMessage,
       redirectTo: redirectTo ?? this.redirectTo,
       redirectArgs: redirectArgs ?? this.redirectArgs,
+      undoable: clearUndoable ? null : (undoable ?? this.undoable),
     );
   }
 }
