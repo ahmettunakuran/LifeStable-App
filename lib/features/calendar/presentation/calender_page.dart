@@ -12,6 +12,7 @@ import '../domain/entities/calendar_event_entity.dart';
 import '../logic/calender_cubit.dart';
 import '../logic/ocr_service.dart';
 import 'event_create_edit_page.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key});
@@ -61,44 +62,49 @@ class _CalendarViewState extends State<_CalendarView>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.black,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0D0D0D),
-              Color(0xFF1A1200),
-              Color(0xFF0D0D0D),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(context),
-              _buildViewTabs(),
-              Expanded(
-                child: BlocBuilder<CalendarCubit, CalendarState>(
-                  builder: (context, state) => switch (state) {
-                    CalendarLoading() => const Center(
-                        child: CircularProgressIndicator(
-                            color: AppColors.gold, strokeWidth: 2)),
-                    CalendarLoaded() => _viewIndex == 0
-                        ? _buildCalendarView(context, state)
-                        : _buildDayTimeline(context, state),
-                    CalendarError(:final message) => _buildError(message),
-                  },
-                ),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: AppColors.black,
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0D0D0D),
+                  Color(0xFF1A1200),
+                  Color(0xFF0D0D0D),
+                ],
               ),
-            ],
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _buildAppBar(context),
+                  _buildViewTabs(),
+                  Expanded(
+                    child: BlocBuilder<CalendarCubit, CalendarState>(
+                      builder: (context, state) => switch (state) {
+                        CalendarLoading() => const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.gold, strokeWidth: 2)),
+                        CalendarLoaded() => _viewIndex == 0
+                            ? _buildCalendarView(context, state)
+                            : _buildDayTimeline(context, state),
+                        CalendarError(:final message) => _buildError(message),
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
-      floatingActionButton: _buildFab(context),
-      bottomNavigationBar: _buildBottomNav(context),
+          floatingActionButton: _buildFab(context),
+          bottomNavigationBar: _buildBottomNav(context),
+        );
+      },
     );
   }
 
@@ -128,8 +134,8 @@ class _CalendarViewState extends State<_CalendarView>
             shaderCallback: (b) => const LinearGradient(
               colors: [AppColors.goldLight, AppColors.gold],
             ).createShader(b),
-            child: const Text(
-              'CALENDAR',
+            child: Text(
+              S.of('calendar').toUpperCase(),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
@@ -177,9 +183,9 @@ class _CalendarViewState extends State<_CalendarView>
           unselectedLabelColor: Colors.white.withValues(alpha: 0.4),
           labelStyle: const TextStyle(
               fontWeight: FontWeight.w700, fontSize: 12),
-          tabs: const [
-            Tab(text: 'Month / Week'),
-            Tab(text: 'Day View'),
+          tabs: [
+            Tab(text: S.of('month_week')),
+            Tab(text: S.of('day_view')),
           ],
         ),
       ),
@@ -453,7 +459,7 @@ class _CalendarViewState extends State<_CalendarView>
             size: 44,
             color: AppColors.gold.withValues(alpha: 0.2)),
         const SizedBox(height: 12),
-        Text('No events today',
+        Text(S.of('no_events_today'),
             style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.25),
                 fontSize: 14)),
@@ -494,13 +500,13 @@ class _CalendarViewState extends State<_CalendarView>
                 ),
               ],
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.add, color: Colors.black, size: 20),
-                SizedBox(width: 8),
-                Text('New Event',
-                    style: TextStyle(
+                const Icon(Icons.add, color: Colors.black, size: 20),
+                const SizedBox(width: 8),
+                Text(S.of('new_event'),
+                    style: const TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.w700,
                         fontSize: 15)),
@@ -527,20 +533,20 @@ class _CalendarViewState extends State<_CalendarView>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navBtn(context, Icons.group_outlined, 'Team',
+            _navBtn(context, Icons.group_outlined, S.of('team'),
                 AppRoutes.teamDashboard),
             _navBtn(
                 context,
                 Icons.calendar_month_outlined,
-                'Calendar',
+                S.of('calendar'),
                 AppRoutes.calendar,
                 active: true),
-            _navBtn(context, Icons.dashboard_outlined, 'Dashboard',
+            _navBtn(context, Icons.dashboard_outlined, S.of('dashboard'),
                 AppRoutes.homeDashboard),
             _navBtn(
                 context,
                 Icons.local_fire_department_outlined,
-                'Habit',
+                S.of('habits'),
                 AppRoutes.habitTracker),
           ],
         ),
@@ -609,9 +615,9 @@ class _CalendarViewState extends State<_CalendarView>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Import Course Schedule',
-                style: TextStyle(
+              Text(
+                S.of('import_schedule'),
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold),
@@ -679,8 +685,8 @@ class _CalendarViewState extends State<_CalendarView>
       }
 
       // Kullanıcıya bulunan dersleri onayla
-      _showConfirmationDialog(context, events, (confirmedEvents) async {
-        await ocrService.saveScheduleEvents(confirmedEvents, userId);
+      _showConfirmationDialog(context, events, (confirmedEvents, weeks) async {
+        await ocrService.saveScheduleEvents(confirmedEvents, userId, weeks: weeks);
         cubit.init(); // Takvimi yenile.
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -701,23 +707,51 @@ class _CalendarViewState extends State<_CalendarView>
   void _showConfirmationDialog(
     BuildContext context,
     List<CalendarEventEntity> events,
-    Function(List<CalendarEventEntity>) onConfirm,
+    Function(List<CalendarEventEntity>, int) onConfirm,
   ) {
     final selected = List<bool>.filled(events.length, true);
+    int selectedWeeks = 1;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.cardBg,
-          title: const Text('Confirm Schedule',
-              style: TextStyle(color: Colors.white)),
+          title: Text(S.of('confirm_schedule'),
+              style: const TextStyle(color: Colors.white)),
           content: SizedBox(
             width: double.maxFinite,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      S.of('number_of_weeks'),
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                    DropdownButton<int>(
+                      value: selectedWeeks,
+                      dropdownColor: AppColors.cardBg,
+                      style: const TextStyle(color: AppColors.gold),
+                      underline: Container(),
+                      items: [1, 2, 4, 8, 10, 12, 14, 16]
+                          .map((e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(e.toString()),
+                              ))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedWeeks = val);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const Divider(color: Colors.white12),
                 Text(
                   'Toggle events you want to import:',
                   style: TextStyle(
@@ -772,7 +806,7 @@ class _CalendarViewState extends State<_CalendarView>
                     if (selected[i]) events[i],
                 ];
                 Navigator.pop(ctx);
-                if (confirmed.isNotEmpty) onConfirm(confirmed);
+                if (confirmed.isNotEmpty) onConfirm(confirmed, selectedWeeks);
               },
               child: const Text('Add to Calendar',
                   style: TextStyle(color: Colors.black)),

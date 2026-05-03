@@ -12,6 +12,7 @@ import '../../calendar/domain/entities/calendar_event_entity.dart';
 import '../domain/entities/domain_entity.dart';
 import '../domain/repositories/domain_repository.dart';
 import '../logic/home_dashboard_cubit.dart';
+import '../../../core/localization/app_localizations.dart';
 
 class HomeDashboardPage extends StatelessWidget {
   const HomeDashboardPage({super.key});
@@ -26,22 +27,25 @@ class HomeDashboardPage extends StatelessWidget {
         context.read<CalendarRepository>(),
         context.read<DomainRepository>(),
       )..loadOverview(),
-      child: Scaffold(
-        key: scaffoldKey,
-        backgroundColor: AppColors.black,
-        drawer: _buildDrawer(context),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
-            ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
-              builder: (context, state) {
+      child: ValueListenableBuilder<Locale>(
+        valueListenable: localeNotifier,
+        builder: (context, locale, _) {
+          return Scaffold(
+            key: scaffoldKey,
+            backgroundColor: AppColors.black,
+            drawer: _buildDrawer(context),
+            body: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
+                ),
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
+                  builder: (context, state) {
                 if (state is HomeDashboardLoading || state is HomeDashboardError) {
                   return Column(
                     children: [
@@ -159,10 +163,10 @@ class HomeDashboardPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Expanded(
-                                flex: 1,
-                                child: _buildAIRecommendations(),
-                              ),
+                                Expanded(
+                                  flex: 1,
+                                  child: _buildAIRecommendations(state),
+                                ),
                               const SizedBox(height: 8),
                             ],
                           ),
@@ -178,9 +182,11 @@ class HomeDashboardPage extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  ),
+);
+}
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
@@ -196,14 +202,14 @@ class HomeDashboardPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _buildDrawerButton(context, 'Calendar', AppRoutes.calendar),
-            _buildDrawerButton(context, 'To-Do List', AppRoutes.tasksKanban),
-            _buildDrawerButton(context, 'Team', AppRoutes.teamDashboard),
-            _buildDrawerButton(context, 'AI Bot', AppRoutes.aiAssistant),
-            _buildDrawerButton(context, 'Habits', AppRoutes.habitTracker),
-            _buildDrawerButton(context, 'Add Location', AppRoutes.map),
+            _buildDrawerButton(context, S.of('calendar'), AppRoutes.calendar),
+            _buildDrawerButton(context, S.of('tasks'), AppRoutes.tasksKanban),
+            _buildDrawerButton(context, S.of('team'), AppRoutes.teamDashboard),
+            _buildDrawerButton(context, S.of('ai_bot'), AppRoutes.aiAssistant),
+            _buildDrawerButton(context, S.of('habits'), AppRoutes.habitTracker),
+            _buildDrawerButton(context, S.of('add_location'), AppRoutes.map),
             const Spacer(),
-            _buildDrawerButton(context, 'Settings', AppRoutes.settings),
+            _buildDrawerButton(context, S.of('settings'), AppRoutes.settings),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Row(
@@ -212,7 +218,7 @@ class HomeDashboardPage extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
                     icon: const Icon(Icons.logout, color: Colors.white70, size: 18),
-                    label: const Text('Log Out', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    label: Text(S.of('logout'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   ),
                   const Icon(Icons.help_outline, color: Colors.white70, size: 28),
@@ -274,14 +280,14 @@ class HomeDashboardPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '$totalStreak days',
+                  '$totalStreak ${S.of('days')}',
                   style: const TextStyle(
                       color: AppColors.gold,
                       fontSize: 12,
                       fontWeight: FontWeight.w900),
                 ),
                 Text(
-                  '$activeCount active',
+                  '$activeCount ${S.of('active')}',
                   style: TextStyle(
                       color: Colors.white.withOpacity(0.4),
                       fontSize: 9),
@@ -317,8 +323,8 @@ class HomeDashboardPage extends StatelessWidget {
               children: [
                 const Text('🔥', style: TextStyle(fontSize: 20)),
                 const SizedBox(width: 8),
-                const Text('Streak Tracker',
-                    style: TextStyle(
+                Text(S.of('streak_tracker'),
+                    style: const TextStyle(
                         color: AppColors.gold,
                         fontSize: 16,
                         fontWeight: FontWeight.w900)),
@@ -341,7 +347,7 @@ class HomeDashboardPage extends StatelessWidget {
             const SizedBox(height: 12),
             if (habits.isEmpty)
               Center(
-                child: Text('No habits yet.',
+                child: Text(S.of('no_habits_yet'),
                     style: TextStyle(
                         color: Colors.white.withOpacity(0.3),
                         fontSize: 13)),
@@ -440,7 +446,7 @@ class HomeDashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        'You Have ${count == 2 ? "Two" : count} Deadlines Today.',
+        S.of('deadlines_today').replaceFirst('{}', count == 2 ? "Two" : count.toString()),
         textAlign: TextAlign.center,
         style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold, fontSize: 13),
       ),
@@ -461,7 +467,7 @@ class HomeDashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCompactHeader('Fast Summary'),
+          _buildCompactHeader(S.of('fast_summary')),
           const SizedBox(height: 12),
           if (count == 0)
             const Expanded(
@@ -545,7 +551,7 @@ class HomeDashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCompactHeader('Close Deadlines'),
+          _buildCompactHeader(S.of('close_deadlines')),
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress,
@@ -667,7 +673,7 @@ class HomeDashboardPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildCompactHeader("Today's Focus"),
+          _buildCompactHeader(S.of('todays_focus')),
           const SizedBox(height: 12),
           if (events.isEmpty)
             const Expanded(child: Center(child: Text('No events today', style: TextStyle(color: Colors.white24, fontSize: 12))))
@@ -690,7 +696,33 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAIRecommendations() {
+  Widget _buildAIRecommendations(HomeDashboardLoaded state) {
+    Widget content;
+
+    if (state.isInsightLoading) {
+      content = const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(color: AppColors.gold, strokeWidth: 2),
+        ),
+      );
+    } else if (state.aiInsight != null && state.aiInsight!.isNotEmpty) {
+      content = SingleChildScrollView(
+        child: Text(
+          state.aiInsight!,
+          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+        ),
+      );
+    } else {
+      content = const Center(
+        child: Text(
+          'Özet bulunamadı.',
+          style: TextStyle(color: Colors.white38, fontSize: 12, fontStyle: FontStyle.italic),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -699,17 +731,11 @@ class HomeDashboardPage extends StatelessWidget {
         border: Border.all(color: AppColors.gold.withOpacity(0.1)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildCompactHeader("RECOMMENDATIONS (AI)"),
-          const SizedBox(height: 12),
-          const Expanded(
-            child: Center(
-              child: Text(
-                'AI Recommendations to be added soon.',
-                style: TextStyle(color: Colors.white38, fontSize: 12, fontStyle: FontStyle.italic),
-              ),
-            ),
-          ),
+          _buildCompactHeader(S.of('recommendations_ai')),
+          const SizedBox(height: 8),
+          Expanded(child: content),
         ],
       ),
     );

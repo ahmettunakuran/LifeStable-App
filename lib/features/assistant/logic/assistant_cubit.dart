@@ -176,7 +176,8 @@ class AssistantCubit extends Cubit<AssistantState> {
       final aiResult = await _aiPipeline.dispatch(
         content.trim(), 
         historyData,
-        appData: appData
+        appData: appData,
+        configKey: 'groq_api_key',
       );
 
       print('AI RESPONSE: Domain: ${aiResult.domain}, Action: ${aiResult.action}, Payload: ${aiResult.payload}');

@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'app/app.dart';
 import 'features/alerts/domain/geofence_usecase.dart';
 import 'core/services/notification_service.dart';
+import 'core/localization/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,10 @@ void main() async {
 
   // Initialize Notifications
   await NotificationService().initialize();
+
+  // Load saved locale
+  await S.loadLocale();
+
 
   final remoteConfig = FirebaseRemoteConfig.instance;
   await remoteConfig.setConfigSettings(RemoteConfigSettings(
