@@ -685,8 +685,8 @@ class _CalendarViewState extends State<_CalendarView>
       }
 
       // Kullanıcıya bulunan dersleri onayla
-      _showConfirmationDialog(context, events, (confirmedEvents) async {
-        await ocrService.saveScheduleEvents(confirmedEvents, userId);
+      _showConfirmationDialog(context, events, (confirmedEvents, weeks) async {
+        await ocrService.saveScheduleEvents(confirmedEvents, userId, weeks: weeks);
         cubit.init(); // Takvimi yenile.
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -707,9 +707,10 @@ class _CalendarViewState extends State<_CalendarView>
   void _showConfirmationDialog(
     BuildContext context,
     List<CalendarEventEntity> events,
-    Function(List<CalendarEventEntity>) onConfirm,
+    Function(List<CalendarEventEntity>, int) onConfirm,
   ) {
     final selected = List<bool>.filled(events.length, true);
+    int selectedWeeks = 1;
 
     showDialog(
       context: context,
@@ -724,6 +725,33 @@ class _CalendarViewState extends State<_CalendarView>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      S.of('number_of_weeks'),
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                    DropdownButton<int>(
+                      value: selectedWeeks,
+                      dropdownColor: AppColors.cardBg,
+                      style: const TextStyle(color: AppColors.gold),
+                      underline: Container(),
+                      items: [1, 2, 4, 8, 10, 12, 14, 16]
+                          .map((e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(e.toString()),
+                              ))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedWeeks = val);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const Divider(color: Colors.white12),
                 Text(
                   'Toggle events you want to import:',
                   style: TextStyle(
@@ -778,7 +806,7 @@ class _CalendarViewState extends State<_CalendarView>
                     if (selected[i]) events[i],
                 ];
                 Navigator.pop(ctx);
-                if (confirmed.isNotEmpty) onConfirm(confirmed);
+                if (confirmed.isNotEmpty) onConfirm(confirmed, selectedWeeks);
               },
               child: const Text('Add to Calendar',
                   style: TextStyle(color: Colors.black)),

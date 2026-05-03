@@ -78,6 +78,7 @@ class S {
       'no_events_today': 'No events today',
       'import_schedule': 'Import Course Schedule',
       'confirm_schedule': 'Confirm Schedule',
+      'number_of_weeks': 'Repeat for weeks:',
       // Settings
       'language': 'Language',
       'calendar_sync': 'Calendar Sync',
@@ -148,6 +149,7 @@ class S {
       'no_events_today': 'Bugün etkinlik yok',
       'import_schedule': 'Ders Programı İçe Aktar',
       'confirm_schedule': 'Programı Onayla',
+      'number_of_weeks': 'Kaç hafta eklensin?',
       // Settings
       'language': 'Dil',
       'calendar_sync': 'Takvim Senkronizasyonu',
