@@ -216,7 +216,7 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
 
     final result = await _aiPipelineService.fetchDailyInsights(
       promptData.toString(),
-      configKey: 'groq_api_key',
+      configKey: 'groq_api_key2',
       languageCode: languageCode,
     );
     
