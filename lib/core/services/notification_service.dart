@@ -38,6 +38,13 @@ class NotificationService {
 
     FirebaseMessaging.onMessage.listen(_showLocalNotification);
 
+    // On iOS, APNs token must exist before getToken() can succeed.
+    // It is never available on Simulator, so skip token registration there.
+    if (Platform.isIOS) {
+      final apnsToken = await _fcm.getAPNSToken();
+      if (apnsToken == null) return;
+    }
+
     FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user != null) {
         final token = await _fcm.getToken();

@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/localization/app_localizations.dart';
 
+
 class ImageInputButton extends StatelessWidget {
   final void Function(String imagePath) onImageSelected;
   const ImageInputButton({super.key, required this.onImageSelected});
