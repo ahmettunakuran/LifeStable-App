@@ -1,8 +1,9 @@
 import 'dart:convert';
+import 'dart:io' as io;
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:http/http.dart' as http;
 
-enum AppDomain { tasks, calendar, habits, summary, sports, education, unknown }
+enum AppDomain { tasks, calendar, habits, summary, sports, education, domains, unknown }
 
 class AiResult {
   final AppDomain domain;
@@ -21,9 +22,14 @@ class AiResult {
 class AiPipelineService {
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
 
-  Future<AiResult> dispatch(String prompt, List<Map<String, dynamic>> history, {String? appData}) async {
+  Future<AiResult> dispatch(
+    String prompt,
+    List<Map<String, dynamic>> history, {
+    String? appData,
+    String configKey = 'groq_api_key',
+  }) async {
     try {
-      final apiKey = _remoteConfig.getString('groq_api_key');
+      final apiKey = _remoteConfig.getString(configKey);
       
       if (apiKey.isEmpty) {
         print("KRİTİK HATA: groq_api_key Remote Config'de bulunamadı!");
@@ -152,5 +158,162 @@ class AiPipelineService {
   String _getWeekday(int day) {
     const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
     return days[day - 1];
+  }
+
+  Future<String?> fetchDailyInsights(
+    String data, {
+    String configKey = 'groq_api_key',
+    String languageCode = 'tr',
+  }) async {
+    try {
+      final apiKey = _remoteConfig.getString(configKey);
+      if (apiKey.isEmpty) return null;
+
+      final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
+      
+      final systemPrompt = languageCode == 'tr' 
+          ? "Sen bir verimlilik asistanısın. Kullanıcının bugünkü görevlerine ve alışkanlıklarına bakarak kısa, motive edici ve aksiyon odaklı bir günlük özet çıkar. Maksimum 2-3 cümle olsun."
+          : "You are a productivity assistant. Based on the user's tasks and habits for today, provide a short, motivating, and action-oriented daily insight. Maximum 2-3 sentences.";
+
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $apiKey"
+        },
+        body: jsonEncode({
+          "model": "llama-3.3-70b-versatile",
+          "messages": [
+            {"role": "system", "content": systemPrompt},
+            {"role": "user", "content": data}
+          ],
+          "temperature": 0.7
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return decoded['choices'][0]['message']['content'];
+      }
+    } catch (e) {
+      print("Insight Error: $e");
+    }
+    return null;
+  }
+
+  /// Vision fallback for non-structured schedule images
+  Future<List<Map<String, dynamic>>?> extractScheduleFromImage(String imagePath) async {
+    // This is often a fallback for when ML Kit layout analysis fails.
+    // We send the image directly to Gemini to find a schedule.
+    try {
+      final apiKey = _remoteConfig.getString('gemini_api_key');
+      if (apiKey.isEmpty) return null;
+
+      final bytes = await http.ByteStream(Stream.value(List<int>.from(await http.readBytes(Uri.file(imagePath))))).toBytes();
+      final base64Image = base64Encode(await _readImageBytes(imagePath));
+
+      final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey');
+
+      final prompt = """Analyze this image. If it contains a class schedule or weekly calendar, 
+      extract all entries into a JSON list.
+      Format: {"events": [{"title": "...", "dayOfWeek": 1-7, "startHour": 0-23, "startMinute": 0-59, "endHour": 0-23, "endMinute": 0-59}]}""";
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "contents": [{
+            "parts": [
+              {"text": prompt},
+              {"inline_data": {"mime_type": "image/jpeg", "data": base64Image}}
+            ]
+          }],
+          "generationConfig": {"response_mime_type": "application/json"}
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final content = data['candidates'][0]['content']['parts'][0]['text'];
+        final decoded = jsonDecode(content);
+        final list = decoded['events'] as List?;
+        return list?.cast<Map<String, dynamic>>();
+      }
+    } catch (e) {
+      print("Vision Schedule Error: $e");
+    }
+    return null;
+  }
+
+  Future<String?> extractTextFromImage(String imagePath) async {
+    try {
+      final apiKey = _remoteConfig.getString('gemini_api_key');
+      if (apiKey.isEmpty) return null;
+
+      final base64Image = base64Encode(await _readImageBytes(imagePath));
+      final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey');
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "contents": [{
+            "parts": [
+              {"text": "Extract all readable text from this image as plain text."},
+              {"inline_data": {"mime_type": "image/jpeg", "data": base64Image}}
+            ]
+          }]
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['candidates'][0]['content']['parts'][0]['text'];
+      }
+    } catch (e) {
+      print("Vision OCR Error: $e");
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>?> parseSchedulePerDay(Map<int, String> perDayText) async {
+    try {
+      final apiKey = _remoteConfig.getString('gemini_api_key');
+      if (apiKey.isEmpty) return null;
+
+      final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey');
+
+      final prompt = """I have text extracted from a schedule image, organized by day of week.
+      Map these into a JSON list of entries.
+      Input: $perDayText
+      Output Format: {"events": [{"title": "...", "dayOfWeek": 1-7, "startHour": 0-23, "startMinute": 0-59, "endHour": 0-23, "endMinute": 0-59, "description": "..."}]}""";
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "contents": [{"parts": [{"text": prompt}]}],
+          "generationConfig": {"response_mime_type": "application/json"}
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final content = data['candidates'][0]['content']['parts'][0]['text'];
+        final decoded = jsonDecode(content);
+        final list = decoded['events'] as List?;
+        return list?.cast<Map<String, dynamic>>();
+      }
+    } catch (e) {
+      print("Per-Day Parse Error: $e");
+    }
+    return null;
+  }
+
+  Future<List<int>> _readImageBytes(String path) async {
+    return io.File(path).readAsBytes();
   }
 }

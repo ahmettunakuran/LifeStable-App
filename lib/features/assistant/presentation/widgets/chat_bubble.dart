@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/localization/app_localizations.dart';
-import '../../domain/entities/chat_message.dart';
+import 'package:project_lifestable/core/localization/app_localizations.dart';
+import 'package:project_lifestable/shared/constants/app_colors.dart';
+import 'package:project_lifestable/features/assistant/domain/entities/chat_message.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
