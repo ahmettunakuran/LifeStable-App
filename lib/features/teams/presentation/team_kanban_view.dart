@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../../tasks/domain/entities/task_entity.dart';
+import '../../tasks/domain/repositories/task_repository.dart';
 import '../../tasks/presentation/bloc/tasks_bloc.dart';
 import '../../tasks/presentation/bloc/tasks_event.dart';
 import '../../tasks/presentation/bloc/tasks_state.dart';
@@ -82,8 +84,28 @@ class TeamKanbanView extends StatelessWidget {
             Expanded(
               child: DragTarget<TaskEntity>(
                 onWillAcceptWithDetails: (details) => details.data.status != status,
-                onAcceptWithDetails: (details) {
-                  context.read<TasksBloc>().add(UpdateTaskStatus(details.data.id, status));
+                onAcceptWithDetails: (details) async {
+                  final task = details.data;
+                  final uid =
+                      FirebaseAuth.instance.currentUser?.uid ?? '';
+                  final repo = context.read<TaskRepository>();
+                  final ok = await repo.updateTeamTaskStatus(
+                    teamId: teamId,
+                    taskId: task.id,
+                    clientVersion: task.version,
+                    newStatus: status,
+                    currentUserId: uid,
+                  );
+                  if (!ok && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.orange.shade800,
+                        content: const Text(
+                          'Conflict detected — another member updated this task. Pull to refresh.',
+                        ),
+                      ),
+                    );
+                  }
                 },
                 builder: (context, candidateData, rejectedData) {
                   return ListView.builder(

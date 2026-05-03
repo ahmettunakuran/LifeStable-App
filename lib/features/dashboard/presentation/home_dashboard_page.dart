@@ -109,7 +109,6 @@ class HomeDashboardPage extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Header
                               Row(
                                 children: [
                                   IconButton(
@@ -129,21 +128,16 @@ class HomeDashboardPage extends StatelessWidget {
                                     ),
                                   ),
                                   const Spacer(),
-                                  _buildHabitStreakTrigger(state.habits),
+                                  _buildHabitStreakTrigger(context, state.habits),
                                 ],
                               ),
                               const SizedBox(height: 16),
-
-                              // 1. Domain List Access (At the top)
                               _buildSlidableDomainAccess(context, state.domains, state.tasks, state.habits),
                               const SizedBox(height: 16),
-                              
                               if (state.deadlineCount > 0) ...[
                                 _buildDeadlineAlert(state.deadlineCount),
                                 const SizedBox(height: 16),
                               ],
-
-                              // 2. Main Grid Section (Summary, Focus, Deadlines)
                               Expanded(
                                 flex: 4,
                                 child: Row(
@@ -164,27 +158,21 @@ class HomeDashboardPage extends StatelessWidget {
                                   ],
                                 ),
                               ),
-
                               const SizedBox(height: 12),
-
-                              // 3. AI Recommendations
                               Expanded(
                                 flex: 1,
                                 child: _buildAIRecommendations(),
                               ),
-
                               const SizedBox(height: 8),
                             ],
                           ),
                         ),
                       ),
-                      
                       _buildAIFloatingButton(context),
                       _buildBottomNav(context),
                     ],
                   );
                 }
-
                 return const SizedBox.shrink();
               },
             ),
@@ -248,7 +236,7 @@ class HomeDashboardPage extends StatelessWidget {
             Navigator.pushNamed(context, route);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.gold.withValues(alpha: 0.8),
+            backgroundColor: AppColors.gold.withOpacity(0.8),
             foregroundColor: AppColors.black,
             elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
@@ -263,35 +251,163 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHabitStreakTrigger(List<Habit> habits) {
-    return PopupMenuButton(
-      icon: const Icon(Icons.local_fire_department, color: AppColors.gold, size: 24),
-      offset: const Offset(0, 40),
-      color: AppColors.goldLight,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          enabled: false,
-          child: Column(
-            children: habits.map((h) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(h.name, style: const TextStyle(color: AppColors.black, fontSize: 11, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 20),
-                  Row(
+  Widget _buildHabitStreakTrigger(BuildContext context, List<Habit> habits) {
+    final totalStreak = habits.fold<int>(0, (s, h) => s + h.streak);
+    final activeCount = habits.where((h) => !h.isPaused).length;
+
+    return GestureDetector(
+      onTap: () => _showStreakSheet(context, habits),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.gold.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🔥', style: TextStyle(fontSize: 16)),
+            const SizedBox(width: 4),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$totalStreak days',
+                  style: const TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  '$activeCount active',
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.4),
+                      fontSize: 9),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showStreakSheet(BuildContext context, List<Habit> habits) {
+    final now = DateTime.now();
+    final last7 = List.generate(7, (i) {
+      final d = now.subtract(Duration(days: 6 - i));
+      return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    });
+    final dayLabels = ['6d', '5d', '4d', '3d', '2d', 'Yest', 'Today'];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cardBg,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('🔥', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 8),
+                const Text('Streak Tracker',
+                    style: TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: dayLabels
+                  .map((l) => SizedBox(
+                width: 32,
+                child: Text(l,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.35),
+                        fontSize: 9)),
+              ))
+                  .toList(),
+            ),
+            const SizedBox(height: 12),
+            if (habits.isEmpty)
+              Center(
+                child: Text('No habits yet.',
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 13)),
+              )
+            else
+              ...habits.map((h) {
+                final done = last7.map((d) => h.completedDates.contains(d)).toList();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
                     children: [
-                      Text('${h.streak} Days', style: const TextStyle(color: AppColors.black, fontSize: 11)),
-                      const Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 14),
+                      Expanded(
+                        child: Text(
+                          h.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: h.isPaused ? Colors.white38 : Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Row(
+                        children: List.generate(7, (i) {
+                          final filled = done[i];
+                          return Container(
+                            width: 28,
+                            height: 28,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: filled
+                                  ? AppColors.gold.withOpacity(0.85)
+                                  : Colors.white.withOpacity(0.07),
+                              border: Border.all(
+                                color: filled ? AppColors.gold : Colors.white.withOpacity(0.1),
+                              ),
+                            ),
+                            child: Center(
+                              child: filled
+                                  ? const Text('🔥', style: TextStyle(fontSize: 12))
+                                  : Text(
+                                '${i == 6 ? 'T' : (6 - i).toString()}',
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.2),
+                                    fontSize: 9),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${h.streak}🔥',
+                        style: const TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900),
+                      ),
                     ],
                   ),
-                ],
-              ),
-            )).toList(),
-          ),
+                );
+              }),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -305,14 +421,10 @@ class HomeDashboardPage extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: Colors.white.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.auto_awesome,
-              color: Colors.blueAccent,
-              size: 24,
-            ),
+            child: const Icon(Icons.auto_awesome, color: Colors.blueAccent, size: 24),
           ),
         ),
       ),
@@ -324,17 +436,13 @@ class HomeDashboardPage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.9),
+        color: AppColors.gold.withOpacity(0.9),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         'You Have ${count == 2 ? "Two" : count} Deadlines Today.',
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: AppColors.black,
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
-        ),
+        style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold, fontSize: 13),
       ),
     );
   }
@@ -346,9 +454,9 @@ class HomeDashboardPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.gold.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,20 +481,13 @@ class HomeDashboardPage extends StatelessWidget {
                   ),
                   if (nextTask != null) ...[
                     const SizedBox(height: 10),
-                    const Text(
-                      'Next up:',
-                      style: TextStyle(color: Colors.white38, fontSize: 10),
-                    ),
+                    const Text('Next up:', style: TextStyle(color: Colors.white38, fontSize: 10)),
                     const SizedBox(height: 4),
                     Text(
                       nextTask.title,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.gold,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: const TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ],
@@ -432,15 +533,14 @@ class HomeDashboardPage extends StatelessWidget {
 
     final incomplete = allClose.where((t) => t.status != TaskStatus.done).toList();
     const priorityOrder = {TaskPriority.high: 0, TaskPriority.medium: 1, TaskPriority.low: 2};
-    incomplete.sort((a, b) =>
-        (priorityOrder[a.priority] ?? 1).compareTo(priorityOrder[b.priority] ?? 1));
+    incomplete.sort((a, b) => (priorityOrder[a.priority] ?? 1).compareTo(priorityOrder[b.priority] ?? 1));
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.gold.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,7 +549,7 @@ class HomeDashboardPage extends StatelessWidget {
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
+            backgroundColor: Colors.white.withOpacity(0.1),
             color: AppColors.gold,
             minHeight: 3,
             borderRadius: BorderRadius.circular(2),
@@ -532,14 +632,11 @@ class HomeDashboardPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        border: Border.all(color: color.withOpacity(0.5)),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900),
-      ),
+      child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
     );
   }
 
@@ -549,7 +646,7 @@ class HomeDashboardPage extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.8),
+        color: AppColors.gold.withOpacity(0.8),
         borderRadius: BorderRadius.circular(6),
       ),
       child: title.isEmpty ? null : Text(
@@ -564,9 +661,9 @@ class HomeDashboardPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.gold.withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -597,9 +694,9 @@ class HomeDashboardPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.gold.withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -618,16 +715,11 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSlidableDomainAccess(
-    BuildContext context,
-    List<DomainEntity> domains,
-    List<TaskEntity> tasks,
-    List<Habit> habits,
-  ) {
+  Widget _buildSlidableDomainAccess(BuildContext context, List<DomainEntity> domains, List<TaskEntity> tasks, List<Habit> habits) {
     return Container(
       height: 110,
       decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.8),
+        color: AppColors.gold.withOpacity(0.8),
         borderRadius: BorderRadius.circular(27),
       ),
       child: Row(
@@ -638,11 +730,8 @@ class HomeDashboardPage extends StatelessWidget {
               width: 54,
               height: double.infinity,
               decoration: BoxDecoration(
-                color: AppColors.black.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(27),
-                  bottomLeft: Radius.circular(27),
-                ),
+                color: AppColors.black.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(27), bottomLeft: Radius.circular(27)),
               ),
               child: const Icon(Icons.add, color: AppColors.black, size: 28),
             ),
@@ -650,90 +739,50 @@ class HomeDashboardPage extends StatelessWidget {
           const VerticalDivider(width: 1, color: AppColors.black, indent: 14, endIndent: 14),
           Expanded(
             child: domains.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No domains yet',
-                      style: TextStyle(color: AppColors.black, fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                  )
+                ? const Center(child: Text('No domains yet', style: TextStyle(color: AppColors.black, fontSize: 12, fontWeight: FontWeight.w600)))
                 : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: domains.length,
-                    itemBuilder: (context, index) {
-                      final domain = domains[index];
-                      final incompleteTasks = tasks
-                          .where((t) => t.domainId == domain.id && t.status != TaskStatus.done)
-                          .length;
-                      final domainHabits = habits.where((h) => h.domainId == domain.id).toList();
-                      final maxStreak = domainHabits.fold<int>(
-                        0,
-                        (best, h) => h.streak > best ? h.streak : best,
-                      );
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: domains.length,
+              itemBuilder: (context, index) {
+                final domain = domains[index];
+                final incompleteTasks = tasks.where((t) => t.domainId == domain.id && t.status != TaskStatus.done).length;
+                final domainHabits = habits.where((h) => h.domainId == domain.id).toList();
+                final maxStreak = domainHabits.fold<int>(0, (best, h) => h.streak > best ? h.streak : best);
 
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: GestureDetector(
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              AppRoutes.domainDashboard,
-                              arguments: index,
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: AppColors.black.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    domain.name.toUpperCase(),
-                                    style: const TextStyle(
-                                      color: AppColors.black,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 12,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '$incompleteTasks task${incompleteTasks == 1 ? '' : 's'}',
-                                    style: const TextStyle(
-                                      color: AppColors.black,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  if (maxStreak > 0) ...[
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 12),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          '$maxStreak day${maxStreak == 1 ? '' : 's'}',
-                                          style: const TextStyle(color: AppColors.black, fontSize: 10),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.domainDashboard, arguments: index),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(color: AppColors.black.withOpacity(0.12), borderRadius: BorderRadius.circular(16)),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(domain.name.toUpperCase(), style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5)),
+                            const SizedBox(height: 4),
+                            Text('$incompleteTasks task${incompleteTasks == 1 ? '' : 's'}', style: const TextStyle(color: AppColors.black, fontSize: 10, fontWeight: FontWeight.w600)),
+                            if (maxStreak > 0) ...[
+                              const SizedBox(height: 4),
+                              Row(children: [
+                                const Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 12),
+                                const SizedBox(width: 2),
+                                Text('$maxStreak day${maxStreak == 1 ? '' : 's'}', style: const TextStyle(color: AppColors.black, fontSize: 10))
+                              ])
+                            ],
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
+                );
+              },
+            ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: 18),
-            child: Icon(Icons.arrow_forward_ios, color: AppColors.black, size: 14),
-          ),
+          const Padding(padding: EdgeInsets.only(right: 18), child: Icon(Icons.arrow_forward_ios, color: AppColors.black, size: 14)),
         ],
       ),
     );
@@ -743,9 +792,9 @@ class HomeDashboardPage extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.gold.withOpacity(0.1)),
       ),
     );
   }
@@ -753,10 +802,7 @@ class HomeDashboardPage extends StatelessWidget {
   Widget _buildBottomNav(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.1))),
-      ),
+      decoration: BoxDecoration(color: AppColors.cardBg, border: Border(top: BorderSide(color: AppColors.gold.withOpacity(0.1)))),
       child: SafeArea(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -771,32 +817,15 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildNavButton(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String route, {
-    bool active = false,
-  }) {
+  Widget _buildNavButton(BuildContext context, IconData icon, String label, String route, {bool active = false}) {
     return GestureDetector(
       onTap: () => Navigator.pushReplacementNamed(context, route),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: active ? AppColors.gold : AppColors.gold.withValues(alpha: 0.45),
-            size: 22,
-          ),
+          Icon(icon, color: active ? AppColors.gold : AppColors.gold.withOpacity(0.45), size: 22),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: active ? AppColors.gold : Colors.white.withValues(alpha: 0.4),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(label, style: TextStyle(color: active ? AppColors.gold : Colors.white.withOpacity(0.4), fontSize: 10, fontWeight: FontWeight.w600)),
         ],
       ),
     );

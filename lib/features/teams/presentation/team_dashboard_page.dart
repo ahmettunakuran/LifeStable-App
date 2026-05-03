@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:project_lifestable/services/team_service.dart';
 import '../../../app/router/app_routes.dart';
-import '../../../core/localization/app_localizations.dart' hide AppColors;
+
 import '../../../shared/constants/app_colors.dart';
 import 'join_team_screen.dart';
 import 'team_detail_screen.dart';

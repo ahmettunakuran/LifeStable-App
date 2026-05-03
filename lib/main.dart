@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'firebase_options.dart';
 import 'app/app.dart';
 import 'features/alerts/domain/geofence_usecase.dart';
@@ -15,8 +14,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
 
   if (kDebugMode) {
     // Emulator disabled for Blaze/deployed backend testing.

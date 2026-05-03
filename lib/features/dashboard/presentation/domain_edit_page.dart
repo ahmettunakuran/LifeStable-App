@@ -53,12 +53,16 @@ class _DomainEditPageState extends State<DomainEditPage> {
     final isEditing = widget.domain != null;
     return Scaffold(
       backgroundColor: AppColors.black,
-      appBar: isEditing ? AppBar(
+      appBar: AppBar(
         backgroundColor: Colors.transparent, elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.gold),
-        title: const Text('Edit Domain', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.check, color: AppColors.gold), onPressed: _save)],
-      ) : null,
+        title: isEditing
+            ? const Text('Edit Domain', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
+            : null,
+        actions: isEditing
+            ? [IconButton(icon: const Icon(Icons.check, color: AppColors.gold), onPressed: _save)]
+            : null,
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,

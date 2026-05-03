@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../app/router/app_routes.dart';
-import '../data/assistant_repository_impl.dart';
-import '../domain/entities/chat_message.dart';
+
 import '../logic/assistant_cubit.dart';
 import 'widgets/chat_bubble.dart';
 import 'widgets/image_input_button.dart';
@@ -23,7 +24,6 @@ class AssistantPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => AssistantCubit(
-        repository: AssistantRepositoryImpl(),
         taskRepository: context.read<TaskRepository>(),
         calendarRepository: context.read<CalendarRepository>(),
         domainRepository: context.read<DomainRepository>(),
@@ -44,9 +44,13 @@ class _AssistantViewState extends State<_AssistantView> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
+  String? _lastShownUndoableToken;
+  Timer? _undoableDismissTimer;
+  String? _attachedImagePath;
 
   @override
   void dispose() {
+    _undoableDismissTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
@@ -66,8 +70,20 @@ class _AssistantViewState extends State<_AssistantView> {
   }
 
   void _sendMessage(BuildContext context, String text) {
-    if (text.trim().isEmpty) return;
-    context.read<AssistantCubit>().sendMessage(text);
+    final trimmed = text.trim();
+    final imagePath = _attachedImagePath;
+
+    if (imagePath != null) {
+      context.read<AssistantCubit>().sendImage(
+            imagePath,
+            caption: trimmed.isEmpty ? null : trimmed,
+          );
+      setState(() => _attachedImagePath = null);
+    } else {
+      if (trimmed.isEmpty) return;
+      context.read<AssistantCubit>().sendMessage(trimmed);
+    }
+
     _textController.clear();
     _focusNode.unfocus();
     _scrollToBottom();
@@ -91,11 +107,51 @@ class _AssistantViewState extends State<_AssistantView> {
         ),
         child: SafeArea(
           child: BlocConsumer<AssistantCubit, AssistantState>(
+            listenWhen: (prev, curr) =>
+                prev.status != curr.status ||
+                prev.errorMessage != curr.errorMessage ||
+                prev.undoable?.token != curr.undoable?.token,
             listener: (context, state) {
               if (state.status == AssistantStatus.responding ||
                   state.status == AssistantStatus.idle ||
                   state.status == AssistantStatus.navigate) {
                 _scrollToBottom();
+              }
+              if (state.undoable != null &&
+                  state.undoable!.token != _lastShownUndoableToken) {
+                final undoable = state.undoable!;
+                _lastShownUndoableToken = undoable.token;
+                final cubit = context.read<AssistantCubit>();
+                final messenger = ScaffoldMessenger.of(context);
+                _undoableDismissTimer?.cancel();
+                messenger.hideCurrentSnackBar();
+                final controller = messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      undoable.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFF2A1D08),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 4),
+                    action: SnackBarAction(
+                      label: 'Geri al',
+                      textColor: AppColors.gold,
+                      onPressed: () => cubit.undoLast(undoable.token),
+                    ),
+                  ),
+                );
+                _undoableDismissTimer = Timer(const Duration(seconds: 4), () {
+                  messenger.hideCurrentSnackBar();
+                });
+                controller.closed.then((_) {
+                  _undoableDismissTimer?.cancel();
+                  if (mounted) cubit.clearUndoable();
+                });
               }
               if (state.status == AssistantStatus.navigate && state.redirectTo != null) {
                 Future.delayed(const Duration(milliseconds: 1500), () {
@@ -261,19 +317,20 @@ class _AssistantViewState extends State<_AssistantView> {
           top: BorderSide(color: AppColors.gold.withOpacity(0.1)),
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          ImageInputButton(
-            onImageSelected: (path) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Image processing coming in Task 5.2.'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-          ),
+          if (_attachedImagePath != null) _buildAttachmentPreview(),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ImageInputButton(
+                onImageSelected: (path) {
+                  setState(() => _attachedImagePath = path);
+                  _focusNode.requestFocus();
+                },
+              ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -319,17 +376,60 @@ class _AssistantViewState extends State<_AssistantView> {
               ),
             ),
           ),
-          VoiceInputButton(
-            isListening: state.isListening,
-            onListeningChanged: (val) =>
-                context.read<AssistantCubit>().setListening(val),
-            onTranscriptionReady: (text) {
-              _textController.text = text;
-              _sendMessage(context, text);
-            },
+              VoiceInputButton(
+                isListening: state.isListening,
+                onListeningChanged: (val) =>
+                    context.read<AssistantCubit>().setListening(val),
+                onTranscriptionReady: (text) {
+                  // Fill the input field and focus it so the user can review
+                  // (and edit) the transcription before tapping Send.
+                  _textController.value = TextEditingValue(
+                    text: text,
+                    selection:
+                        TextSelection.collapsed(offset: text.length),
+                  );
+                  _focusNode.requestFocus();
+                },
+              ),
+              const SizedBox(width: 4),
+              _buildSendButton(context, isResponding),
+            ],
           ),
-          const SizedBox(width: 4),
-          _buildSendButton(context, isResponding),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentPreview() {
+    final path = _attachedImagePath;
+    if (path == null) return const SizedBox.shrink();
+    final fileName = path.split('/').last;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8, left: 4, right: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gold.withOpacity(0.25)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.image, color: AppColors.gold, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              fileName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => setState(() => _attachedImagePath = null),
+            child: Icon(Icons.close,
+                color: Colors.white.withOpacity(0.6), size: 18),
+          ),
         ],
       ),
     );

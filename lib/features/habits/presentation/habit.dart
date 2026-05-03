@@ -1,16 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-// Imports Firestore package for Timestamp and DocumentSnapshot usage
 
 class Habit {
-  final String id;          // Unique Firestore document ID
-  final String name;        // Habit name (e.g. Drink Water, Daily Study)
-  final String domainId;    // ID of the domain this habit is linked to
-  final String domainName;  // Name of the linked domain (e.g. Health, School)
-  final int streak;         // Current consecutive completion streak count
-  final DateTime? lastCompleted; // Last time the habit was marked as complete
-  final bool isPaused;      // Whether the habit is paused (health guardrail)
-  final String userId;      // ID of the user who owns this habit
-  final DateTime createdAt; // When the habit was first created
+  final String id;
+  final String name;
+  final String domainId;
+  final String domainName;
+  final int streak;
+  final DateTime? lastCompleted;
+  final bool isPaused;
+  final String userId;
+  final DateTime createdAt;
+  final List<String> completedDates;
 
   Habit({
     required this.id,
@@ -22,9 +22,9 @@ class Habit {
     required this.isPaused,
     required this.userId,
     required this.createdAt,
+    this.completedDates = const [],
   });
 
-  // Converts a Firestore document snapshot into a Habit object
   factory Habit.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Habit(
@@ -33,7 +33,6 @@ class Habit {
       domainId: data['domain_id'] ?? '',
       domainName: data['domain_name'] ?? '',
       streak: data['streak'] ?? 0,
-      // last_completed can be null if habit was never completed
       lastCompleted: data['last_completed'] != null
           ? (data['last_completed'] as Timestamp).toDate()
           : null,
@@ -42,10 +41,13 @@ class Habit {
       createdAt: data['created_at'] != null
           ? (data['created_at'] as Timestamp).toDate()
           : DateTime.now(),
+      completedDates: (data['completed_dates'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 
-  // Converts the Habit object into a Map to save to Firestore
   Map<String, dynamic> toMap() {
     return {
       'name': name,
@@ -58,10 +60,10 @@ class Habit {
       'is_paused': isPaused,
       'user_id': userId,
       'created_at': Timestamp.fromDate(createdAt),
+      'completed_dates': completedDates,
     };
   }
 
-  // Checks if the habit has already been completed today
   bool get isCompletedToday {
     if (lastCompleted == null) return false;
     final now = DateTime.now();
@@ -70,11 +72,10 @@ class Habit {
         lastCompleted!.day == now.day;
   }
 
-  // Checks if the streak should be reset after missing at least one day.
   bool get shouldResetStreak {
     if (lastCompleted == null) return false;
     final now = DateTime.now();
     final difference = now.difference(lastCompleted!).inDays;
-    return difference > 1;
+    return difference > 2;
   }
 }

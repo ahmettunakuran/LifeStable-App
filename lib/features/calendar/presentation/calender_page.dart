@@ -703,39 +703,82 @@ class _CalendarViewState extends State<_CalendarView>
     List<CalendarEventEntity> events,
     Function(List<CalendarEventEntity>) onConfirm,
   ) {
+    final selected = List<bool>.filled(events.length, true);
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cardBg,
-        title: const Text('Confirm Schedule', style: TextStyle(color: Colors.white)),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: events.length,
-            itemBuilder: (c, i) => ListTile(
-              title: Text(events[i].title, style: const TextStyle(color: AppColors.gold)),
-              subtitle: Text(
-                '${DateFormat('EEEE HH:mm').format(events[i].startAt)}',
-                style: const TextStyle(color: Colors.white70),
-              ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.cardBg,
+          title: const Text('Confirm Schedule',
+              style: TextStyle(color: Colors.white)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Toggle events you want to import:',
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: events.length,
+                    itemBuilder: (c, i) => CheckboxListTile(
+                      value: selected[i],
+                      onChanged: (v) =>
+                          setDialogState(() => selected[i] = v ?? true),
+                      activeColor: AppColors.gold,
+                      checkColor: Colors.black,
+                      title: Text(events[i].title,
+                          style: TextStyle(
+                              color: selected[i]
+                                  ? AppColors.gold
+                                  : Colors.white38,
+                              fontSize: 13)),
+                      subtitle: Text(
+                        DateFormat('EEEE HH:mm').format(events[i].startAt),
+                        style: TextStyle(
+                            color: selected[i]
+                                ? Colors.white70
+                                : Colors.white24,
+                            fontSize: 11),
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child:
+                  const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold),
+              onPressed: () {
+                final confirmed = [
+                  for (var i = 0; i < events.length; i++)
+                    if (selected[i]) events[i],
+                ];
+                Navigator.pop(ctx);
+                if (confirmed.isNotEmpty) onConfirm(confirmed);
+              },
+              child: const Text('Add to Calendar',
+                  style: TextStyle(color: Colors.black)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold),
-            onPressed: () {
-              Navigator.pop(ctx);
-              onConfirm(events);
-            },
-            child: const Text('Add to Calendar', style: TextStyle(color: Colors.black)),
-          ),
-        ],
       ),
     );
   }
