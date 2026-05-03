@@ -92,6 +92,22 @@ service cloud.firestore {
       allow update, delete: if isSignedIn();
     }
 
+    // ── RAG: global knowledge base ───────────────────────────────────────
+    // FAQ chunks are public-read for all authenticated users.
+    // Writes come only from the seedKnowledgeBase Cloud Function (admin SDK
+    // bypasses these rules), so clients are blocked from writing.
+    match /doc_embeddings/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ── RAG: query cache ─────────────────────────────────────────────────
+    // Any authenticated user may read and write cached query results.
+    // Documents contain only anonymous FAQ hit data — no user PII.
+    match /query_cache/{cacheId} {
+      allow read, write: if isSignedIn();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

@@ -2,33 +2,29 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import '../domain/entities/chat_message.dart';
-import '../domain/repositories/assistant_repository.dart';
 import '../../tasks/domain/repositories/task_repository.dart';
 import '../../calendar/domain/repositories/calendar_repository.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../../calendar/domain/entities/calendar_event_entity.dart';
 import '../../dashboard/domain/repositories/domain_repository.dart';
-import '../../dashboard/domain/entities/domain_entity.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/logic/ai_pipeline_service.dart';
+import '../../../services/help_bot_service.dart';
 
 part 'assistant_state.dart';
 
 class AssistantCubit extends Cubit<AssistantState> {
-  final AssistantRepository _repository;
   final TaskRepository _taskRepository;
   final CalendarRepository _calendarRepository;
   final DomainRepository _domainRepository;
   final AiPipelineService _aiPipeline;
 
   AssistantCubit({
-    required AssistantRepository repository,
     required TaskRepository taskRepository,
     required CalendarRepository calendarRepository,
     required DomainRepository domainRepository,
     required AiPipelineService aiPipeline,
-  })  : _repository = repository,
-        _taskRepository = taskRepository,
+  })  : _taskRepository = taskRepository,
         _calendarRepository = calendarRepository,
         _domainRepository = domainRepository,
         _aiPipeline = aiPipeline,
@@ -66,6 +62,30 @@ class AssistantCubit extends Cubit<AssistantState> {
     ));
 
     try {
+      // ── Help Bot intercept ──────────────────────────────────────────────
+      // Route "how / what / explain / help" style questions to the semantic
+      // FAQ retriever before hitting the Groq action pipeline.
+      if (_isHelpQuery(content)) {
+        final helpResponse = await HelpBotService().ask(content.trim());
+        if (!helpResponse.usedFallback ||
+            helpResponse.confidenceScore >= 0.60) {
+          final finalMessages = [
+            ...withLoading.where((m) => !m.isLoading),
+            ChatMessage(
+              content: helpResponse.answer,
+              sender: MessageSender.assistant,
+            ),
+          ];
+          emit(state.copyWith(
+            messages: finalMessages,
+            status: AssistantStatus.idle,
+          ));
+          return;
+        }
+        // Low-confidence fallback — let Groq handle it normally
+      }
+      // ── End Help Bot intercept ──────────────────────────────────────────
+
       final tasks = await _taskRepository.fetchTasks();
       final domains = await _domainRepository.fetchDomains();
       final now = DateTime.now();
@@ -110,7 +130,8 @@ class AssistantCubit extends Cubit<AssistantState> {
       final aiResult = await _aiPipeline.dispatch(
         content.trim(), 
         historyData,
-        appData: appData
+        appData: appData,
+        configKey: 'groq_api_key2',
       );
 
       print('AI RESPONSE: Domain: ${aiResult.domain}, Action: ${aiResult.action}, Payload: ${aiResult.payload}');
@@ -119,8 +140,8 @@ class AssistantCubit extends Cubit<AssistantState> {
       Object? redirectArgs;
       if (aiResult.domain == AppDomain.tasks && aiResult.action == 'create') {
         redirectTo = AppRoutes.tasksKanban;
-        final dueDateStr = aiResult.payload['dueDate'];
-        DateTime? dueDate;
+        final dueDateStr = aiResult.payload['dueDate']?.toString();
+        final DateTime? dueDate = dueDateStr != null ? DateTime.tryParse(dueDateStr) : null;
         String title = aiResult.payload['title'] ?? 'Yeni Görev';
         String domainId = aiResult.payload['domainId'] ?? aiResult.payload['domain_id'] ?? '';
         int matchedDomainIndex = -1;
@@ -323,4 +344,19 @@ class AssistantCubit extends Cubit<AssistantState> {
     status: AssistantStatus.idle,
     errorMessage: null,
   ));
+
+  /// Returns true when the user's message looks like a help/how-to question
+  /// rather than an action command (create, delete, update, find_gap).
+  bool _isHelpQuery(String text) {
+    final lower = text.toLowerCase().trim();
+    const helpPrefixes = [
+      'how do i', 'how to', 'how can i', 'what is', 'what are',
+      'explain', 'help me with', 'tell me about', 'where is',
+      'where can i', 'what does', 'how does', 'why does', 'why is',
+      'show me how', 'i don\'t know how',
+    ];
+    return helpPrefixes.any((p) => lower.startsWith(p)) ||
+        (lower.contains('how') && lower.contains('?')) ||
+        (lower.contains('what') && lower.contains('?'));
+  }
 }

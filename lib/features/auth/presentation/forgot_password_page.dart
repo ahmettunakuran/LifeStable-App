@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/constants/app_colors.dart';
 import '../../../core/localization/app_localizations.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -82,11 +83,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
                       color: AppColors.gold.withOpacity(0.05),
                     ),
                   ),
-                  Positioned(
-                    top: 12,
-                    right: 16,
-                    child: const LanguageSwitcher(),
-                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: AnimatedBuilder(
@@ -127,6 +123,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
                         ],
                       ),
                     ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: const LanguageSwitcher(),
                   ),
                 ],
               ),

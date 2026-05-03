@@ -13,17 +13,23 @@ class TaskEntity {
     this.dueDate,
     this.teamId,
     this.assignedTo,
+    this.version = 0,
+    this.updatedAt,
+    this.lastModifiedBy,
   });
 
   final String id;
-  final String domainId; // Added to link task to a domain
+  final String domainId;
   final String title;
   final String? description;
   final TaskStatus status;
   final TaskPriority priority;
   final DateTime? dueDate;
-  final String? teamId; // Non-null if this is a shared team task
-  final String? assignedTo; // UID of the user this task is assigned to
+  final String? teamId;
+  final String? assignedTo;
+  final int version;
+  final DateTime? updatedAt;
+  final String? lastModifiedBy;
 
   TaskEntity copyWith({
     String? id,
@@ -35,6 +41,9 @@ class TaskEntity {
     DateTime? dueDate,
     String? teamId,
     String? assignedTo,
+    int? version,
+    DateTime? updatedAt,
+    String? lastModifiedBy,
   }) {
     return TaskEntity(
       id: id ?? this.id,
@@ -46,6 +55,9 @@ class TaskEntity {
       dueDate: dueDate ?? this.dueDate,
       teamId: teamId ?? this.teamId,
       assignedTo: assignedTo ?? this.assignedTo,
+      version: version ?? this.version,
+      updatedAt: updatedAt ?? this.updatedAt,
+      lastModifiedBy: lastModifiedBy ?? this.lastModifiedBy,
     );
   }
 
@@ -76,9 +88,15 @@ class TaskEntity {
         (e) => e.name == data['priority'],
         orElse: () => TaskPriority.medium,
       ),
-      dueDate: data['dueDate'] != null ? DateTime.parse(data['dueDate'] as String) : null,
+      dueDate:
+          data['dueDate'] != null ? DateTime.parse(data['dueDate'] as String) : null,
       teamId: data['teamId'] as String?,
       assignedTo: data['assignedTo'] as String?,
+      version: data['version'] as int? ?? 0,
+      updatedAt: data['updatedAt'] != null
+          ? DateTime.tryParse(data['updatedAt'] as String)
+          : null,
+      lastModifiedBy: data['lastModifiedBy'] as String?,
     );
   }
 }

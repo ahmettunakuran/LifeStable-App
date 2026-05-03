@@ -1,0 +1,243 @@
+import 'dart:convert';
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:http/http.dart' as http;
+import '../core/models/rag_result.dart';
+
+class EmbeddingService {
+  static final EmbeddingService _instance = EmbeddingService._internal();
+  factory EmbeddingService() => _instance;
+  EmbeddingService._internal();
+
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  static const String _embeddingModel = 'text-embedding-004';
+  static const String _collection = 'doc_embeddings';
+  static const String _cacheCollection = 'query_cache';
+
+  // ── API key ───────────────────────────────────────────────────────────────
+
+  String get _geminiApiKey {
+    final v = FirebaseRemoteConfig.instance.getString('gemini_api_key');
+    assert(v.isNotEmpty, 'Remote Config: gemini_api_key is not set');
+    return v;
+  }
+
+  // ── Core: embedding generation ────────────────────────────────────────────
+
+  /// Calls Gemini text-embedding-004 and returns the 768-dim vector.
+  Future<List<double>> generateEmbedding(String text) async {
+    final uri = Uri.parse(
+      'https://generativelanguage.googleapis.com/v1beta/models/'
+      '$_embeddingModel:embedContent?key=$_geminiApiKey',
+    );
+
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'model': 'models/$_embeddingModel',
+        'content': {
+          'parts': [
+            {'text': text}
+          ],
+        },
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          'Embedding API error ${response.statusCode}: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final values = (data['embedding']['values'] as List).cast<dynamic>();
+    return values.map((v) => (v as num).toDouble()).toList();
+  }
+
+  // ── Core: cosine similarity ───────────────────────────────────────────────
+
+  double cosineSimilarity(List<double> a, List<double> b) {
+    assert(a.length == b.length, 'Vector length mismatch');
+    double dot = 0, normA = 0, normB = 0;
+    for (int i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    final denom = sqrt(normA) * sqrt(normB);
+    return denom == 0 ? 0.0 : dot / denom;
+  }
+
+  // ── Semantic search ───────────────────────────────────────────────────────
+
+  /// Hybrid search: keyword pre-filter → cosine re-rank → topK results.
+  Future<List<RagResult>> semanticSearch(
+    String query, {
+    int topK = 3,
+    String? docType,
+  }) async {
+    final queryEmbedding = await generateEmbedding(query);
+    final candidates = await _fetchCandidates(query, docType: docType);
+
+    if (candidates.isEmpty) return [];
+
+    final scored = candidates.map((doc) {
+      final raw = doc.data() as Map<String, dynamic>;
+      final stored = (raw['embedding_vector'] as List).cast<dynamic>();
+      final vec = stored.map((v) => (v as num).toDouble()).toList();
+      return RagResult(
+        docId: doc.id,
+        content: raw['content'] as String,
+        docType: raw['doc_type'] as String,
+        sourceKey: raw['source_key'] as String,
+        titleType: raw['title_type'] as String,
+        similarity: cosineSimilarity(queryEmbedding, vec),
+      );
+    }).toList()
+      ..sort((a, b) => b.similarity.compareTo(a.similarity));
+
+    return scored.take(topK).toList();
+  }
+
+  /// Fetches candidate documents using a keyword pre-filter when possible,
+  /// then fills in a full docType scan to guarantee coverage.
+  Future<List<QueryDocumentSnapshot>> _fetchCandidates(
+    String query, {
+    String? docType,
+  }) async {
+    final tokens = _tokenize(query);
+    final seen = <String>{};
+    final docs = <QueryDocumentSnapshot>[];
+
+    // 1. Keyword pre-filter (array-contains-any, max 10 tokens)
+    if (tokens.isNotEmpty) {
+      Query q = _db.collection(_collection);
+      if (docType != null) q = q.where('doc_type', isEqualTo: docType);
+      q = q.where('indexes',
+          arrayContainsAny: tokens.take(10).toList());
+
+      final snap = await q.get();
+      for (final d in snap.docs) {
+        seen.add(d.id);
+        docs.add(d);
+      }
+    }
+
+    // 2. Full docType scan to ensure nothing is missed for small corpora
+    if (docType != null) {
+      final snap = await _db
+          .collection(_collection)
+          .where('doc_type', isEqualTo: docType)
+          .get();
+      for (final d in snap.docs) {
+        if (!seen.contains(d.id)) docs.add(d);
+      }
+    }
+
+    return docs;
+  }
+
+  // ── Query cache ───────────────────────────────────────────────────────────
+
+  /// Returns cached [RagResult]s for [queryText], or null on a cache miss.
+  Future<List<RagResult>?> checkQueryCache(String queryText) async {
+    final hash = _hashQuery(queryText);
+    try {
+      final doc = await _db.collection(_cacheCollection).doc(hash).get();
+      if (!doc.exists) return null;
+
+      final data = doc.data()!;
+      // Validate the stored query matches (collision guard)
+      if ((data['query_text'] as String).toLowerCase().trim() !=
+          queryText.toLowerCase().trim()) {
+        return null;
+      }
+
+      final rawResults =
+          (data['top_results'] as List).cast<Map<String, dynamic>>();
+      final results = rawResults
+          .map((r) => RagResult(
+                docId: r['doc_id'] as String,
+                content: r['content'] as String,
+                docType: r['doc_type'] as String,
+                sourceKey: r['source_key'] as String,
+                titleType: r['title_type'] as String,
+                similarity: (r['similarity'] as num).toDouble(),
+              ))
+          .toList();
+
+      // Increment hit count without blocking the caller
+      doc.reference
+          .update({'hit_count': FieldValue.increment(1)})
+          .catchError((_) => null);
+
+      return results;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Saves a query result set to the cache for future reuse.
+  Future<void> saveQueryCache(
+    String queryText,
+    List<double> embedding,
+    List<RagResult> results,
+  ) async {
+    final hash = _hashQuery(queryText);
+    try {
+      await _db.collection(_cacheCollection).doc(hash).set({
+        'query_text': queryText.toLowerCase().trim(),
+        'embedding_vector': embedding,
+        'top_result_ids': results.map((r) => r.docId).toList(),
+        'top_results': results
+            .map((r) => {
+                  'doc_id': r.docId,
+                  'content': r.content,
+                  'doc_type': r.docType,
+                  'source_key': r.sourceKey,
+                  'title_type': r.titleType,
+                  'similarity': r.similarity,
+                })
+            .toList(),
+        'hit_count': 1,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Cache write failure is non-fatal
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /// Public alias used by HelpBotService to reference a cache document ID.
+  String hashForQuery(String text) => _hashQuery(text);
+
+  /// Deterministic document-ID-safe hash of a query string.
+  String _hashQuery(String text) {
+    final s = text.toLowerCase().trim();
+    int a = s.length;
+    int b = 0;
+    for (final c in s.codeUnits) {
+      b = ((b * 31) + c) & 0xFFFFFFFF;
+    }
+    return '${a.toRadixString(36)}_${b.toRadixString(36)}';
+  }
+
+  /// Tokenizes a query into lowercase keyword tokens for pre-filtering.
+  List<String> _tokenize(String query) {
+    final stopWords = {
+      'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been',
+      'being', 'do', 'does', 'did', 'have', 'has', 'had', 'i', 'my',
+      'me', 'to', 'in', 'on', 'at', 'for', 'of', 'and', 'or', 'but',
+    };
+    return query
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9 ]'), ' ')
+        .split(RegExp(r'\s+'))
+        .where((t) => t.length > 2 && !stopWords.contains(t))
+        .toSet()
+        .toList();
+  }
+}

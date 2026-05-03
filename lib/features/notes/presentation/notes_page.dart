@@ -1,74 +1,120 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class NotesPage extends StatefulWidget {
+import '../data/note_repository_impl.dart';
+import '../domain/entities/note_entity.dart';
+import '../logic/notes_cubit.dart';
+import '../logic/notes_state.dart';
+
+class NotesPage extends StatelessWidget {
   const NotesPage({super.key});
 
   @override
-  State<NotesPage> createState() => _NotesPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => NotesCubit(
+        NoteRepositoryImpl(FirebaseFirestore.instance),
+      )..init(),
+      child: const _NotesView(),
+    );
+  }
 }
 
-class _NotesPageState extends State<NotesPage> {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+class _NotesView extends StatelessWidget {
+  const _NotesView();
 
-  CollectionReference<Map<String, dynamic>> get _notesRef {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) {
-      throw StateError('User not signed in');
+  Stream<QuerySnapshot<Map<String, dynamic>>> _domainsStream() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const Stream.empty();
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('domains')
+        .snapshots();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return const Scaffold(
+        body: Center(child: Text('Please sign in to use notes.')),
+      );
     }
-    return _db.collection('users').doc(uid).collection('notes');
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Notes')),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _domainsStream(),
+        builder: (context, domainsSnapshot) {
+          final domains = domainsSnapshot.data?.docs ?? [];
+
+          return BlocBuilder<NotesCubit, NotesState>(
+            builder: (context, state) {
+              if (state is NotesLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state is NotesError) {
+                return Center(child: Text(state.message));
+              }
+              final notes = (state as NotesLoaded).notes;
+              if (notes.isEmpty) {
+                return const Center(child: Text('No notes yet.'));
+              }
+              return ListView.separated(
+                itemCount: notes.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final note = notes[index];
+                  return ListTile(
+                    title: Text(note.title),
+                    subtitle: Text(
+                      note.content,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () =>
+                        _showNoteDialog(context, domains: domains, note: note),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () =>
+                          context.read<NotesCubit>().deleteNote(note.id),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _domainsStream(),
+        builder: (context, snapshot) {
+          final domains = snapshot.data?.docs ?? [];
+          return FloatingActionButton(
+            onPressed: domains.isEmpty
+                ? null
+                : () => _showNoteDialog(context, domains: domains),
+            child: const Icon(Icons.add),
+          );
+        },
+      ),
+    );
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> get _domainsStream {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) {
-      return const Stream.empty();
-    }
-    return _db.collection('users').doc(uid).collection('domains').snapshots();
-  }
-
-  Stream<QuerySnapshot<Map<String, dynamic>>> _notesStream() {
-    return _notesRef.orderBy('updatedAt', descending: true).snapshots();
-  }
-
-  Future<void> _upsertNote({
-    String? noteId,
-    required String domainId,
-    required String title,
-    required String content,
-  }) async {
-    final now = FieldValue.serverTimestamp();
-    final payload = <String, dynamic>{
-      'domainId': domainId,
-      'title': title,
-      'content': content,
-      'updatedAt': now,
-      if (noteId == null) 'createdAt': now,
-    };
-
-    if (noteId == null) {
-      await _notesRef.add(payload);
-    } else {
-      await _notesRef.doc(noteId).update(payload);
-    }
-  }
-
-  Future<void> _deleteNote(String noteId) => _notesRef.doc(noteId).delete();
-
-  Future<void> _showNoteDialog({
+  Future<void> _showNoteDialog(
+    BuildContext context, {
     required List<QueryDocumentSnapshot<Map<String, dynamic>>> domains,
-    QueryDocumentSnapshot<Map<String, dynamic>>? note,
+    NoteEntity? note,
   }) async {
-    final titleController = TextEditingController(
-      text: note?.data()['title'] as String? ?? '',
-    );
-    final contentController = TextEditingController(
-      text: note?.data()['content'] as String? ?? '',
-    );
-    String? selectedDomainId = note?.data()['domainId'] as String?;
-    selectedDomainId ??= domains.isNotEmpty ? domains.first.id : null;
+    final cubit = context.read<NotesCubit>();
+    final titleCtrl =
+        TextEditingController(text: note?.title ?? '');
+    final contentCtrl =
+        TextEditingController(text: note?.content ?? '');
+    String selectedDomainId =
+        note?.domainId ?? (domains.isNotEmpty ? domains.first.id : '');
 
     await showDialog<void>(
       context: context,
@@ -80,31 +126,27 @@ class _NotesPageState extends State<NotesPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  initialValue: selectedDomainId,
+                  value: selectedDomainId.isEmpty ? null : selectedDomainId,
                   isExpanded: true,
                   items: domains
-                      .map(
-                        (domain) => DropdownMenuItem<String>(
-                          value: domain.id,
-                          child: Text(
-                            (domain.data()['name'] as String?) ?? 'Unnamed',
-                          ),
-                        ),
-                      )
+                      .map((d) => DropdownMenuItem<String>(
+                            value: d.id,
+                            child: Text(
+                                (d.data()['name'] as String?) ?? 'Unnamed'),
+                          ))
                       .toList(),
-                  onChanged: (value) => setDialogState(() {
-                    selectedDomainId = value;
-                  }),
+                  onChanged: (v) =>
+                      setDialogState(() => selectedDomainId = v ?? ''),
                   decoration: const InputDecoration(labelText: 'Domain'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: titleController,
+                  controller: titleCtrl,
                   decoration: const InputDecoration(labelText: 'Title'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: contentController,
+                  controller: contentCtrl,
                   maxLines: 5,
                   decoration: const InputDecoration(labelText: 'Content'),
                 ),
@@ -118,90 +160,31 @@ class _NotesPageState extends State<NotesPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (selectedDomainId == null ||
-                    titleController.text.trim().isEmpty ||
-                    contentController.text.trim().isEmpty) {
-                  return;
+                final title = titleCtrl.text.trim();
+                final content = contentCtrl.text.trim();
+                if (selectedDomainId.isEmpty ||
+                    title.isEmpty ||
+                    content.isEmpty) return;
+
+                if (note == null) {
+                  await cubit.createNote(
+                    domainId: selectedDomainId,
+                    title: title,
+                    content: content,
+                  );
+                } else {
+                  await cubit.updateNote(note.copyWith(
+                    domainId: selectedDomainId,
+                    title: title,
+                    content: content,
+                  ));
                 }
-                await _upsertNote(
-                  noteId: note?.id,
-                  domainId: selectedDomainId!,
-                  title: titleController.text.trim(),
-                  content: contentController.text.trim(),
-                );
-                if (mounted) {
-                  Navigator.pop(ctx);
-                }
+                if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text('Save'),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_auth.currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text('Please sign in to use notes.')),
-      );
-    }
-    return Scaffold(
-      appBar: AppBar(title: const Text('Notes')),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _domainsStream,
-        builder: (context, domainsSnapshot) {
-          final domains = domainsSnapshot.data?.docs ?? [];
-          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _notesStream(),
-            builder: (context, notesSnapshot) {
-              if (notesSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final notes = notesSnapshot.data?.docs ?? [];
-              if (notes.isEmpty) {
-                return const Center(child: Text('No notes yet.'));
-              }
-
-              return ListView.separated(
-                itemCount: notes.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final note = notes[index];
-                  final data = note.data();
-                  return ListTile(
-                    title: Text((data['title'] as String?) ?? ''),
-                    subtitle: Text(
-                      (data['content'] as String?) ?? '',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () => _showNoteDialog(domains: domains, note: note),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => _deleteNote(note.id),
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _domainsStream,
-        builder: (context, snapshot) {
-          final domains = snapshot.data?.docs ?? [];
-          return FloatingActionButton(
-            onPressed: domains.isEmpty
-                ? null
-                : () => _showNoteDialog(domains: domains),
-            child: const Icon(Icons.add),
-          );
-        },
       ),
     );
   }

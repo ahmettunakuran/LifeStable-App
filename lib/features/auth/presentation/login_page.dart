@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/constants/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
@@ -132,11 +133,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       size: 320,
                       color: AppColors.gold.withOpacity(0.05),
                     ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    right: 16,
-                    child: const LanguageSwitcher(),
                   ),
                   SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -352,6 +348,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 16,
+                    child: const LanguageSwitcher(),
                   ),
                 ],
               ),

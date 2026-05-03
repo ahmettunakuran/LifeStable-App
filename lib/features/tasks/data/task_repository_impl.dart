@@ -87,6 +87,33 @@ class TaskRepositoryImpl implements TaskRepository {
   }
 
   @override
+  Future<bool> updateTeamTaskStatus({
+    required String teamId,
+    required String taskId,
+    required int clientVersion,
+    required TaskStatus newStatus,
+    required String currentUserId,
+  }) async {
+    bool conflicted = false;
+    final ref = _teamTaskCollection(teamId).doc(taskId);
+    await _firestore.runTransaction((tx) async {
+      final doc = await tx.get(ref);
+      final serverVersion = doc.data()?['version'] as int? ?? 0;
+      if (serverVersion != clientVersion) {
+        conflicted = true;
+        return;
+      }
+      tx.update(ref, {
+        'status': newStatus.name,
+        'version': serverVersion + 1,
+        'updatedAt': DateTime.now().toIso8601String(),
+        'lastModifiedBy': currentUserId,
+      });
+    });
+    return !conflicted;
+  }
+
+  @override
   Stream<List<TaskEntity>> watchTasks() {
     final uid = _userId;
     if (uid == null) {

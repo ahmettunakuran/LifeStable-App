@@ -46,25 +46,6 @@ class TeamService {
     await domainRef.delete();
   }
 
-  /// Deletes mirrored domains for ALL members of a team (used on team deletion).
-  Future<void> _deleteAllMirrorDomains(String teamId) async {
-    final members = await _db
-        .collection('team_members')
-        .where('team_id', isEqualTo: teamId)
-        .get();
-
-    final batch = _db.batch();
-    for (final doc in members.docs) {
-      final userId = doc.data()['user_id'] as String;
-      final domainRef = _db
-          .collection('users')
-          .doc(userId)
-          .collection('domains')
-          .doc('team_$teamId');
-      batch.delete(domainRef);
-    }
-    await batch.commit();
-  }
 
   Future<String> createTeam(String name, String objective, {int? color}) async {
     final user = _auth.currentUser;

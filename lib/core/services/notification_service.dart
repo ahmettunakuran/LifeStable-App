@@ -25,19 +25,36 @@ class NotificationService {
       await _fcm.requestPermission(alert: true, badge: true, sound: true);
     }
 
+    // Create Android Notification Channel
+    const androidChannel = AndroidNotificationChannel(
+      'team_updates',
+      'Team Updates',
+      description: 'Notifications for team board changes',
+      importance: Importance.max,
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidChannel);
+
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings();
     const initSettings =
         InitializationSettings(android: androidSettings, iOS: iosSettings);
 
-    // flutter_local_notifications 21+ uses named parameters.
     await _localNotifications.initialize(
       settings: initSettings,
-      onDidReceiveNotificationResponse: (details) {},
+      onDidReceiveNotificationResponse: (details) {
+        // Handle notification tap
+      },
     );
 
-    FirebaseMessaging.onMessage.listen(_showLocalNotification);
+    FirebaseMessaging.onMessage.listen((message) {
+      print('Foreground message received: ${message.messageId}');
+      _showLocalNotification(message);
+    });
 
     FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user != null) {
@@ -54,26 +71,37 @@ class NotificationService {
   Future<void> _saveTokenToFirestore(String? token) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && token != null) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .set({'fcmToken': token}, SetOptions(merge: true));
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({'fcmToken': token}, SetOptions(merge: true));
+      } catch (e) {
+        print('Error saving FCM token: $e');
+      }
     }
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
-    if (notification != null) {
+    final data = message.data;
+
+    String? title = notification?.title ?? data['title'];
+    String? body = notification?.body ?? data['body'];
+
+    if (title != null || body != null) {
       await _localNotifications.show(
-        id: notification.hashCode,
-        title: notification.title,
-        body: notification.body,
+        id: message.hashCode,
+        title: title,
+        body: body,
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
-            'team_updates', 'Team Updates',
+            'team_updates',
+            'Team Updates',
             channelDescription: 'Notifications for team board changes',
             importance: Importance.max,
             priority: Priority.high,
+            showWhen: true,
           ),
           iOS: DarwinNotificationDetails(),
         ),
