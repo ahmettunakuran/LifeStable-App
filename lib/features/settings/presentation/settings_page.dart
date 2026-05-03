@@ -4,7 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../calendar/data/external_sync/google_calendar_sync_service.dart';
 import '../../calendar/data/external_sync/google_external_account_entity.dart';
-import '../../../core/localization/app_localizations.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -87,7 +86,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(S.of('disconnect')),
+        title: const Text('Disconnect Google Calendar'),
         content: const Text(
           'This removes the Google connection and sync mappings. Imported events already in LifeStable will stay unless you delete them manually.',
         ),
@@ -98,7 +97,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(S.of('disconnect')),
+            child: const Text('Disconnect'),
           ),
         ],
       ),
@@ -155,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 Chip(
-                  label: Text(isConnected ? S.of('connected') : S.of('not_connected')),
+                  label: Text(isConnected ? 'Connected' : 'Not connected'),
                 ),
               ],
             ),
@@ -177,75 +176,21 @@ class _SettingsPageState extends State<SettingsPage> {
                   FilledButton.icon(
                     onPressed: _busy ? null : _connectGoogle,
                     icon: const Icon(Icons.link),
-                    label: Text(S.of('connect')),
+                    label: const Text('Connect'),
                   ),
                 if (isConnected)
                   FilledButton.icon(
                     onPressed: _busy ? null : _syncGoogle,
                     icon: const Icon(Icons.sync),
-                    label: Text(S.of('sync_now')),
+                    label: const Text('Sync now'),
                   ),
                 if (isConnected)
                   OutlinedButton.icon(
                     onPressed: _busy ? null : _disconnectGoogle,
                     icon: const Icon(Icons.link_off),
-                    label: Text(S.of('disconnect')),
+                    label: const Text('Disconnect'),
                   ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.language),
-                const SizedBox(width: 10),
-                Text(
-                  S.of('language'),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ValueListenableBuilder<Locale>(
-              valueListenable: localeNotifier,
-              builder: (context, locale, _) {
-                return Column(
-                  children: [
-                    RadioListTile<String>(
-                      title: Text(S.of('english')),
-                      value: 'en',
-                      groupValue: locale.languageCode,
-                      activeColor: const Color(0xFFC9A84C),
-                      onChanged: (val) {
-                        if (val != null) S.setLocale(Locale(val));
-                      },
-                    ),
-                    RadioListTile<String>(
-                      title: Text(S.of('turkish')),
-                      value: 'tr',
-                      groupValue: locale.languageCode,
-                      activeColor: const Color(0xFFC9A84C),
-                      onChanged: (val) {
-                        if (val != null) S.setLocale(Locale(val));
-                      },
-                    ),
-                  ],
-                );
-              },
             ),
           ],
         ),
@@ -255,54 +200,39 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<Locale>(
-      valueListenable: localeNotifier,
-      builder: (context, locale, _) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(S.of('settings')),
-          ),
-          body: StreamBuilder<GoogleExternalAccountEntity?>(
-            stream: _syncService.watchGoogleConnection(),
-            builder: (context, snapshot) {
-              final account = snapshot.data;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
+      body: StreamBuilder<GoogleExternalAccountEntity?>(
+        stream: _syncService.watchGoogleConnection(),
+        builder: (context, snapshot) {
+          final account = snapshot.data;
 
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Text(
-                    S.of('language'),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildLanguageCard(),
-                  const SizedBox(height: 24),
-                  Text(
-                    S.of('calendar_sync'),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'This MVP imports events from Google Calendar into your LifeStable calendar.',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildGoogleCard(account),
-                  if (_busy) ...[
-                    const SizedBox(height: 20),
-                    const Center(child: CircularProgressIndicator()),
-                  ],
-                ],
-              );
-            },
-          ),
-        );
-      },
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text(
+                'Calendar Sync',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'This MVP imports events from Google Calendar into your LifeStable calendar.',
+              ),
+              const SizedBox(height: 16),
+              _buildGoogleCard(account),
+              if (_busy) ...[
+                const SizedBox(height: 20),
+                const Center(child: CircularProgressIndicator()),
+              ],
+            ],
+          );
+        },
+      ),
     );
   }
 }
