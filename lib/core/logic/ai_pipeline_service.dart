@@ -28,19 +28,24 @@ class AiPipelineService {
     String? appData,
     String configKey = 'groq_api_key',
   }) async {
-    try {
-      final apiKey = _remoteConfig.getString(configKey);
-      
-      if (apiKey.isEmpty) {
-        print("KRİTİK HATA: groq_api_key Remote Config'de bulunamadı!");
-        return AiResult(domain: AppDomain.unknown, action: 'none', payload: {}, responseText: "Sistem yapılandırması eksik (API Key bulunamadı).");
-      }
-          
-      final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
+    // Try primary key, then fallback to groq_api_key2 on rate-limit (429)
+    final keysToTry = [configKey];
+    if (configKey != 'groq_api_key2') keysToTry.add('groq_api_key2');
 
-      final now = DateTime.now();
-      
-      final systemInstruction = """
+    for (final key in keysToTry) {
+      try {
+        final apiKey = _remoteConfig.getString(key);
+
+        if (apiKey.isEmpty) {
+          print("KRİTİK HATA: '$key' Remote Config'de bulunamadı veya boş!");
+          continue;
+        }
+
+        final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
+
+        final now = DateTime.now();
+
+        final systemInstruction = """
       Sen LifeStable asistanısın. 24 saatlik (23:00, 21:00) dijital saat sistemini kullan.
       GÜNCEL ZAMAN (ISO): ${now.toIso8601String()}
       BUGÜN: ${_getWeekday(now.weekday)}
@@ -101,55 +106,74 @@ class AiPipelineService {
       }
       """;
 
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $apiKey"
-        },
-        body: jsonEncode({
-          "model": "llama-3.3-70b-versatile",
-          "messages": [
-            {"role": "system", "content": systemInstruction},
-            ...history.map((m) => {
-              "role": m['role'] == 'model' ? 'assistant' : 'user',
-              "content": m['text']
-            }),
-            {"role": "user", "content": prompt}
-          ],
-          "response_format": {"type": "json_object"},
-          "temperature": 0.1
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'];
-        print("RAW AI CONTENT: $content");
-        
-        final decoded = jsonDecode(content);
-        Map<String, dynamic> result;
-        
-        if (decoded is List && decoded.isNotEmpty) {
-          result = decoded[0] as Map<String, dynamic>;
-        } else if (decoded is Map) {
-          result = decoded as Map<String, dynamic>;
-        } else {
-          result = {};
-        }
-
-        return AiResult(
-          domain: _parseDomain(result['domain']),
-          action: result['action'] ?? 'none',
-          payload: result['payload'] ?? {},
-          responseText: result['responseText'] ?? "İşlem tamam.",
+        final response = await http.post(
+          url,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $apiKey"
+          },
+          body: jsonEncode({
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+              {"role": "system", "content": systemInstruction},
+              ...history.map((m) => {
+                "role": m['role'] == 'model' ? 'assistant' : 'user',
+                "content": m['text']
+              }),
+              {"role": "user", "content": prompt}
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.1
+          }),
         );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final content = data['choices'][0]['message']['content'];
+          print("RAW AI CONTENT [$key]: $content");
+
+          final decoded = jsonDecode(content);
+          Map<String, dynamic> result;
+
+          if (decoded is List && decoded.isNotEmpty) {
+            result = decoded[0] as Map<String, dynamic>;
+          } else if (decoded is Map) {
+            result = decoded as Map<String, dynamic>;
+          } else {
+            result = {};
+          }
+
+          return AiResult(
+            domain: _parseDomain(result['domain']),
+            action: result['action'] ?? 'none',
+            payload: result['payload'] ?? {},
+            responseText: result['responseText'] ?? "İşlem tamam.",
+          );
+        } else if (response.statusCode == 429) {
+          print("[dispatch] 429 Rate limit: key=$key — fallback'e geçiliyor...");
+          continue; // next key
+        } else {
+          print("[dispatch] Groq API HATA: ${response.statusCode} | key=$key | body=${response.body}");
+          return AiResult(
+            domain: AppDomain.unknown,
+            action: 'none',
+            payload: {},
+            responseText: "Sunucu hatası (${response.statusCode}). Lütfen tekrar dene.",
+          );
+        }
+      } catch (e) {
+        print("[dispatch] Pipeline Error (key=$key): $e");
       }
-    } catch (e) {
-      print("Pipeline Error: $e");
     }
-    return AiResult(domain: AppDomain.unknown, action: 'none', payload: {}, responseText: "Bir hata oluştu.");
+
+    return AiResult(
+      domain: AppDomain.unknown,
+      action: 'none',
+      payload: {},
+      responseText: "Şu an yoğun trafik var, lütfen biraz bekleyip tekrar dene.",
+    );
   }
+
 
   AppDomain _parseDomain(String? domain) {
     return AppDomain.values.firstWhere((e) => e.name == domain, orElse: () => AppDomain.unknown);
@@ -170,8 +194,8 @@ class AiPipelineService {
       if (apiKey.isEmpty) return null;
 
       final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
-      
-      final systemPrompt = languageCode == 'tr' 
+
+      final systemPrompt = languageCode == 'tr'
           ? "Sen bir verimlilik asistanısın. Kullanıcının bugünkü görevlerine ve alışkanlıklarına bakarak kısa, motive edici ve aksiyon odaklı bir günlük özet çıkar. Maksimum 2-3 cümle olsun."
           : "You are a productivity assistant. Based on the user's tasks and habits for today, provide a short, motivating, and action-oriented daily insight. Maximum 2-3 sentences.";
 
@@ -194,9 +218,11 @@ class AiPipelineService {
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         return decoded['choices'][0]['message']['content'];
+      } else {
+        print("[fetchDailyInsights] Groq API HATA: ${response.statusCode} | key=$configKey | body=${response.body}");
       }
     } catch (e) {
-      print("Insight Error: $e");
+      print("[fetchDailyInsights] Error: $e");
     }
     return null;
   }
