@@ -74,8 +74,6 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>GoogleMapsAPIKey</key>
-	<string>AIzaSyAUh99SXOp9PUP5HVrHKDBesr22MLVqtrc</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>LifeStable needs location to trigger your reminders even when the app is closed.</string>
     <key>NSLocationAlwaysUsageDescription</key>

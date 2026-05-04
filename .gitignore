@@ -46,6 +46,7 @@ app.*.map.json
 .claude/
 
 ios/Runner/Info.plist
+ios/Runner/MapSecrets.plist
 .env
 lib/core/config/api_keys.dart
 android/local.properties
