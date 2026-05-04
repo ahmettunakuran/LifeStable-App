@@ -49,14 +49,14 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
       return;
     }
 
-    final status = await Permission.microphone.request();
-    if (!status.isGranted) {
-      _snack('Microphone permission is required.');
-      return;
-    }
-
-    if (!await _recorder.hasPermission()) {
-      _snack('Microphone is not available on this device.');
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission) {
+      final status = await Permission.microphone.status;
+      if (status.isDenied || status.isPermanentlyDenied) {
+        await _showSettingsDialog('Microphone', 'record voice messages');
+      } else {
+        _snack('Microphone permission is required.');
+      }
       return;
     }
 
@@ -165,6 +165,30 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
       _phase = _Phase.idle;
       _currentPath = null;
     });
+  }
+
+  Future<void> _showSettingsDialog(String permissionName, String reason) async {
+    if (!mounted) return;
+    final goToSettings = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$permissionName Permission Required'),
+        content: Text(
+          'LifeStable needs $permissionName access to $reason. Please enable it in Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+    if (goToSettings == true) await openAppSettings();
   }
 
   void _snack(String message) {
