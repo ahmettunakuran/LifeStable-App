@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../app/router/app_routes.dart';
-import '../../../core/localization/app_localizations.dart';
+
 import '../../../shared/constants/app_colors.dart';
 
 class SplashPage extends StatefulWidget {
