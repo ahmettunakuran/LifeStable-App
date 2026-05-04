@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../shared/constants/app_colors.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -74,7 +75,7 @@ class _SplashPageState extends State<SplashPage>
                   height: 280,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.gold.withOpacity(0.06),
+                    color: AppColors.gold.withValues(alpha: 0.06),
                   ),
                 ),
               ),
@@ -86,7 +87,7 @@ class _SplashPageState extends State<SplashPage>
                   height: 320,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.gold.withOpacity(0.04),
+                    color: AppColors.gold.withValues(alpha: 0.04),
                   ),
                 ),
               ),
@@ -110,7 +111,7 @@ class _SplashPageState extends State<SplashPage>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.gold.withOpacity(0.4),
+                              color: AppColors.gold.withValues(alpha: 0.4),
                               blurRadius: 40,
                               spreadRadius: 8,
                             ),
@@ -120,7 +121,7 @@ class _SplashPageState extends State<SplashPage>
                           child: Image.asset(
                             'assets/images/logo.png',
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (_, _, _) => Container(
                               color: AppColors.cardBg,
                               child: const Icon(
                                 Icons.balance,
@@ -151,7 +152,7 @@ class _SplashPageState extends State<SplashPage>
                         'Balance your life.',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -161,7 +162,7 @@ class _SplashPageState extends State<SplashPage>
                         height: 40,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: AppColors.gold.withOpacity(0.5),
+                          color: AppColors.gold.withValues(alpha: 0.5),
                         ),
                       ),
                     ],
