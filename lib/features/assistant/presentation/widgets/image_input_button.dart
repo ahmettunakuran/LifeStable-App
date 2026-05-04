@@ -49,31 +49,45 @@ class ImageInputButton extends StatelessWidget {
 
     if (source == null || !context.mounted) return;
 
-    final permission = source == ImageSource.camera
-        ? await Permission.camera.request()
-        : await Permission.photos.request();
-
-    if (!permission.isGranted) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(source == ImageSource.camera
-                ? 'Camera permission is required.'
-                : 'Photo library permission is required.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-      return;
-    }
-
     final file = await ImagePicker().pickImage(
       source: source,
       imageQuality: 85,
     );
+
     if (file != null) {
       onImageSelected(file.path);
-      // TODO: Task 5.2 — OCR pipeline'a gönder
+      return;
+    }
+
+    // pickImage returned null — check if permission was denied
+    if (!context.mounted) return;
+    final status = source == ImageSource.camera
+        ? await Permission.camera.status
+        : await Permission.photos.status;
+
+    if (status.isDenied || status.isPermanentlyDenied) {
+      final name = source == ImageSource.camera ? 'Camera' : 'Photo Library';
+      final reason = source == ImageSource.camera ? 'take photos' : 'select photos';
+      final goToSettings = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('$name Permission Required'),
+          content: Text(
+            'LifeStable needs $name access to $reason. Please enable it in Settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+      if (goToSettings == true) await openAppSettings();
     }
   }
 

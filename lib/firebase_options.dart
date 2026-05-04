@@ -59,7 +59,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAUh99SXOp9PUP5HVrHKDBesr22MLVqtrc',
+    apiKey: 'AIzaSyAsJAdluG9F8fAdyqIDYVUoiRbpeTTCdWI',
     appId: '1:919019903604:ios:b61c582612cbd0976a0f21',
     messagingSenderId: '919019903604',
     projectId: 'lifestable-project',
@@ -68,7 +68,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAUh99SXOp9PUP5HVrHKDBesr22MLVqtrc',
+    apiKey: 'AIzaSyAsJAdluG9F8fAdyqIDYVUoiRbpeTTCdWI',
     appId: '1:919019903604:ios:b61c582612cbd0976a0f21',
     messagingSenderId: '919019903604',
     projectId: 'lifestable-project',
