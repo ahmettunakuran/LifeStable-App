@@ -26,5 +26,6 @@ class AppRoutes {
 
   static const String calendar = '/calendar';
   static const String aiAssistant = '/ai-assistant';
+  static const String appAssistant = '/app-assistant';
   static const String settings = '/settings';
 }
