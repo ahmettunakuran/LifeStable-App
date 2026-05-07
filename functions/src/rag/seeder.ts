@@ -1,4 +1,4 @@
-import { https, config } from "firebase-functions/v1";
+import { https } from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
 import { faqChunks } from "./faq_data";
@@ -24,21 +24,18 @@ const COLLECTION = "doc_embeddings";
  */
 export const seedKnowledgeBase = https.onRequest(async (req, res) => {
   // ── Auth guard ──────────────────────────────────────────────────────────
-  const cfg = config();
-  const seedSecret: string | undefined = cfg.admin?.seed_secret;
+  const seedSecret = process.env.SEED_SECRET;
   const providedSecret = req.headers["x-seed-secret"];
   if (seedSecret && providedSecret !== seedSecret) {
     res.status(403).json({ error: "Forbidden: invalid seed secret" });
     return;
   }
 
-  // ── Gemini API key from Functions config ────────────────────────────────
-  const geminiApiKey: string = cfg.gemini?.api_key ?? "";
+  // ── Gemini API key from environment variable ────────────────────────────
+  const geminiApiKey = process.env.GEMINI_API_KEY ?? "";
   if (!geminiApiKey) {
     res.status(500).json({
-      error:
-        "gemini.api_key not set. Run: " +
-        "firebase functions:config:set gemini.api_key=YOUR_KEY",
+      error: "GEMINI_API_KEY not set. Add it to functions/.env and redeploy.",
     });
     return;
   }

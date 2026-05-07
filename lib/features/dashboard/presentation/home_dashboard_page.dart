@@ -194,11 +194,25 @@ class HomeDashboardPage extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.all(20.0),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Icon(Icons.home_outlined, color: Colors.blueAccent, size: 28),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.homeDashboard,
+                      (route) => false,
+                    );
+                  },
+                  child: const Icon(
+                    Icons.home_outlined,
+                    color: AppColors.gold,
+                    size: 28,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -208,6 +222,7 @@ class HomeDashboardPage extends StatelessWidget {
             _buildDrawerButton(context, S.of('ai_bot'), AppRoutes.aiAssistant),
             _buildDrawerButton(context, S.of('habits'), AppRoutes.habitTracker),
             _buildDrawerButton(context, S.of('add_location'), AppRoutes.map),
+            _buildDrawerButton(context, S.of('app_assistant'), AppRoutes.appAssistant),
             const Spacer(),
             _buildDrawerButton(context, S.of('settings'), AppRoutes.settings),
             Padding(

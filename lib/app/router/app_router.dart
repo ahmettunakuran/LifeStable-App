@@ -8,6 +8,7 @@ import '../../features/alerts/presentation/battery_report_screen.dart';
 import '../../features/alerts/presentation/geofence_debug_screen.dart';
 import '../../features/alerts/presentation/map_screen.dart';
 import '../../features/assistant/presentation/assistant_page.dart';
+import '../../features/app_assistant/presentation/app_assistant_page.dart';
 import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
@@ -99,6 +100,8 @@ class AppRouter {
         return _buildRoute(const CalendarPage(), settings);
       case AppRoutes.aiAssistant:
         return _buildRoute(const AssistantPage(), settings);
+      case AppRoutes.appAssistant:
+        return _buildRoute(const AppAssistantPage(), settings);
       case AppRoutes.settings:
         return _buildRoute(const SettingsPage(), settings);
       default:
