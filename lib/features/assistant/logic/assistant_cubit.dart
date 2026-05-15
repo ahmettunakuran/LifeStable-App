@@ -918,6 +918,175 @@ class AssistantCubit extends Cubit<AssistantState> {
     emit(state.copyWith(messages: updated));
   }
 
+  /// WP5.3 automatic rescheduling: when the day is overloaded, move the
+  /// largest movable existing event on that day to the next day with
+  /// capacity, then create the pending new event.
+  ///
+  /// "Movable" = personal, non-recurring, non-team event that the AI
+  /// created earlier. We avoid touching team events, classes, and any
+  /// event explicitly marked recurring.
+  Future<void> rescheduleAndConfirm(String messageId) async {
+    final msg = state.messages.firstWhere(
+      (m) => m.id == messageId,
+      orElse: () => ChatMessage(content: '', sender: MessageSender.assistant),
+    );
+    final pe = msg.pendingEvent;
+    if (pe == null || msg.pendingResolved) return;
+
+    UserPreferences prefs = const UserPreferences();
+    try {
+      prefs =
+          await _preferencesService.load().timeout(const Duration(seconds: 2));
+    } catch (_) {}
+
+    final dailyMax = prefs.dailyMaxScheduledMinutes;
+
+    // Load events for the conflict day and the next 7 days.
+    List<CalendarEventEntity> events = [];
+    try {
+      events = await _calendarRepository
+          .watchEventsForMonth(pe.startAt)
+          .first
+          .timeout(const Duration(seconds: 3), onTimeout: () => []);
+      // Stretch into next month if we're near the end.
+      final nextMonth = DateTime(pe.startAt.year, pe.startAt.month + 1, 1);
+      if (pe.startAt.day > 20) {
+        final more = await _calendarRepository
+            .watchEventsForMonth(nextMonth)
+            .first
+            .timeout(const Duration(seconds: 3), onTimeout: () => []);
+        events = [...events, ...more];
+      }
+    } catch (_) {}
+
+    final dayStart = DateTime(pe.startAt.year, pe.startAt.month, pe.startAt.day);
+    final dayEnd = dayStart.add(const Duration(days: 1));
+    final sameDay = events
+        .where((e) =>
+            !e.endAt.isBefore(dayStart) &&
+            !e.startAt.isAfter(dayEnd) &&
+            !e.isRecurring &&
+            e.sourceCollection == EventSourceCollection.personal &&
+            e.eventType == CalendarEventType.personal)
+        .toList()
+      ..sort((a, b) => b.endAt
+          .difference(b.startAt)
+          .compareTo(a.endAt.difference(a.startAt)));
+
+    if (sameDay.isEmpty) {
+      final updated = state.messages.map((m) {
+        if (m.id != messageId) return m;
+        return m.copyWith(pendingResolved: true);
+      }).toList();
+      emit(state.copyWith(
+        messages: [
+          ...updated,
+          ChatMessage(
+            content:
+                'Bu gün için taşınabilir bir etkinlik bulamadım. İstersen yine de ekleyebilirim, ya da başka bir güne bakabiliriz.',
+            sender: MessageSender.assistant,
+          ),
+        ],
+      ));
+      return;
+    }
+
+    final target = sameDay.first;
+    final targetDuration = target.endAt.difference(target.startAt);
+
+    // Find the first day in the next 7 with capacity.
+    DateTime? moveTo;
+    for (int offset = 1; offset <= 7; offset++) {
+      final candidate = dayStart.add(Duration(days: offset));
+      final used = _scheduledMinutesOnDay(candidate, events);
+      if (used + targetDuration.inMinutes <= dailyMax) {
+        moveTo = DateTime(
+          candidate.year,
+          candidate.month,
+          candidate.day,
+          target.startAt.hour,
+          target.startAt.minute,
+        );
+        break;
+      }
+    }
+
+    if (moveTo == null) {
+      final updated = state.messages.map((m) {
+        if (m.id != messageId) return m;
+        return m.copyWith(pendingResolved: true);
+      }).toList();
+      emit(state.copyWith(
+        messages: [
+          ...updated,
+          ChatMessage(
+            content:
+                'Önümüzdeki 7 günde de boş kapasite kalmamış. Sağlık limitini düşürmeyi ya da bir etkinliği iptal etmeyi düşünebilirsin.',
+            sender: MessageSender.assistant,
+          ),
+        ],
+      ));
+      return;
+    }
+
+    final movedEvent = target.copyWith(
+      startAt: moveTo,
+      endAt: moveTo.add(targetDuration),
+    );
+
+    try {
+      await _calendarRepository.updateEvent(movedEvent);
+    } catch (e) {
+      emit(state.copyWith(
+        status: AssistantStatus.error,
+        errorMessage: 'Mevcut etkinlik taşınamadı: $e',
+      ));
+      return;
+    }
+
+    final newEvent = CalendarEventEntity(
+      id: const Uuid().v4(),
+      userId: FirebaseAuth.instance.currentUser?.uid ?? 'default',
+      title: pe.title,
+      description: pe.description ?? '',
+      startAt: pe.startAt,
+      endAt: pe.endAt,
+      eventType: CalendarEventType.personal,
+      sourceCollection: EventSourceCollection.personal,
+    );
+    await _calendarRepository.createPersonalEvent(newEvent);
+
+    String two(int v) => v.toString().padLeft(2, '0');
+    final movedDayLabel =
+        '${two(moveTo.day)}.${two(moveTo.month)} ${two(moveTo.hour)}:${two(moveTo.minute)}';
+
+    final updated = state.messages.map((m) {
+      if (m.id != messageId) return m;
+      return m.copyWith(pendingResolved: true);
+    }).toList();
+
+    emit(state.copyWith(
+      messages: [
+        ...updated,
+        ChatMessage(
+          content:
+              '"${target.title}" → $movedDayLabel olarak taşındı ve "${pe.title}" eklendi.',
+          sender: MessageSender.assistant,
+        ),
+      ],
+      status: AssistantStatus.navigate,
+      redirectTo: AppRoutes.calendar,
+      redirectArgs: {'initialDay': pe.startAt},
+      undoable: UndoableAction(
+        token: const Uuid().v4(),
+        kind: UndoableKind.calendarEvent,
+        entityId: newEvent.id,
+        label: 'Etkinlik "${pe.title}" eklendi',
+      ),
+    ));
+
+  }
+
   /// Materialises a pending schedule import into actual calendar events
   /// across [weeks] weeks. The first occurrence of each entry's weekday
   /// is found relative to today (skipping past times); subsequent weeks

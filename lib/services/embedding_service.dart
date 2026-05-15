@@ -233,15 +233,24 @@ class EmbeddingService {
   }
 
   /// Tokenizes a query into lowercase keyword tokens for pre-filtering.
+  /// Preserves Unicode letters so Turkish (ç ş ğ ü ö ı) and other
+  /// non-ASCII characters still produce useful tokens.
   List<String> _tokenize(String query) {
     final stopWords = {
+      // English
       'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been',
       'being', 'do', 'does', 'did', 'have', 'has', 'had', 'i', 'my',
       'me', 'to', 'in', 'on', 'at', 'for', 'of', 'and', 'or', 'but',
+      'how', 'what', 'why', 'when', 'where', 'who', 'can', 'you',
+      // Turkish
+      'bir', 'bu', 'şu', 'o', 've', 'ile', 'de', 'da', 'mi', 'mı', 'mu', 'mü',
+      'için', 'ama', 'ya', 'çok', 'gibi', 'her', 'ben', 'sen', 'biz', 'siz',
+      'ne', 'nasıl', 'neden', 'niçin', 'nerede', 'nereye', 'ne zaman', 'kim',
+      'olur', 'oldu', 'olacak', 'var', 'yok', 'değil',
     };
     return query
         .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9 ]'), ' ')
+        .replaceAll(RegExp(r'[^\p{L}\p{N} ]', unicode: true), ' ')
         .split(RegExp(r'\s+'))
         .where((t) => t.length > 2 && !stopWords.contains(t))
         .toSet()

@@ -74,6 +74,12 @@ service cloud.firestore {
       match /locations/{locationId} {
         allow read, write: if isOwner(userId);
       }
+
+      // WP5.4: AI assistant user-preference learning (quiet hours,
+      // accepted-slot histogram, daily max minutes, etc.).
+      match /settings/{settingId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // ── Top-level team collections ───────────────────────
