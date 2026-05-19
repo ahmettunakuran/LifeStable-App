@@ -3,6 +3,7 @@ import '../../../shared/constants/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../logic/auth_validators.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,15 +41,28 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     }
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> _signIn() async {
     final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.of('email_required'))),
-      );
+    // Login uses the password as-typed: legacy accounts may have whitespace.
+    final password = _passwordController.text;
+
+    final emailError = AuthValidators.email(email);
+    if (emailError != null) {
+      _showError(emailError);
       return;
     }
+    final passwordError = AuthValidators.passwordForSignIn(password);
+    if (passwordError != null) {
+      _showError(passwordError);
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -59,9 +73,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       Navigator.of(context).pushReplacementNamed(AppRoutes.homeDashboard);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_mapAuthError(e))),
-      );
+      _showError(_mapAuthError(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
