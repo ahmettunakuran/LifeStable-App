@@ -10,6 +10,7 @@ import '../../features/alerts/presentation/map_screen.dart';
 import '../../features/assistant/presentation/assistant_page.dart';
 import '../../features/app_assistant/presentation/app_assistant_page.dart';
 import '../../features/auth/presentation/forgot_password_page.dart';
+import '../../features/billing/presentation/premium_plans_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/calendar/presentation/calender_page.dart';
@@ -104,6 +105,8 @@ class AppRouter {
         return _buildRoute(const AppAssistantPage(), settings);
       case AppRoutes.settings:
         return _buildRoute(const SettingsPage(), settings);
+      case AppRoutes.premiumPlans:
+        return _buildRoute(const PremiumPlansPage(), settings);
       default:
         return _buildRoute(const SplashPage(), settings);
     }

@@ -5,6 +5,8 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
+import '../../../features/billing/data/usage_tracker.dart';
+import '../../../features/billing/domain/plan_catalog.dart';
 import '../domain/entities/calendar_event_entity.dart';
 
 class OcrService {
@@ -41,10 +43,20 @@ class OcrService {
   }
 
   Future<List<CalendarEventEntity>> processScheduleFree(String userId, XFile pickedFile) async {
+    // Reserve a quota slot before doing any network work. Throws
+    // QuotaExceededException if the user is out of monthly OCR runs — the
+    // calendar page catches it and surfaces the upgrade dialog.
+    final usage = UsageTracker.instance;
+    await usage.consume(BillableFeature.ocrScheduleImport);
+
+    var consumed = true;
     try {
       final apiKey = await _getApiKeyFromRemoteConfig();
       if (apiKey.isEmpty) {
         print("Hata: API Key bulunamadı.");
+        // Config failure isn't the user's fault — give the slot back.
+        await usage.refund(BillableFeature.ocrScheduleImport);
+        consumed = false;
         return [];
       }
 
@@ -92,9 +104,14 @@ class OcrService {
         return _parseAiResponse(content, userId);
       } else {
         print("Gemini Hatası (${response.statusCode}): ${response.body}");
+        await usage.refund(BillableFeature.ocrScheduleImport);
+        consumed = false;
       }
     } catch (e) {
       print("Kritik Hata: $e");
+      if (consumed) {
+        await usage.refund(BillableFeature.ocrScheduleImport);
+      }
     }
     return [];
   }
