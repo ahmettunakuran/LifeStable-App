@@ -28,4 +28,5 @@ class AppRoutes {
   static const String aiAssistant = '/ai-assistant';
   static const String appAssistant = '/app-assistant';
   static const String settings = '/settings';
+  static const String premiumPlans = '/premium-plans';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../logic/auth_validators.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -43,6 +44,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
     _contentController.dispose();
     _emailController.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    final email = _emailController.text.trim();
+    final emailError = AuthValidators.email(email);
+    if (emailError != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(emailError)));
+      return;
+    }
+    setState(() => _emailSent = true);
   }
 
   @override
@@ -198,7 +211,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
         ),
         const SizedBox(height: 36),
         GestureDetector(
-          onTap: () => setState(() => _emailSent = true),
+          onTap: _submit,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 18),

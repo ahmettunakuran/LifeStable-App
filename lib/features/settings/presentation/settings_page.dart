@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/router/app_routes.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../billing/presentation/widgets/usage_summary_card.dart';
 import '../../calendar/data/external_sync/google_calendar_sync_service.dart';
 import '../../calendar/data/external_sync/google_external_account_entity.dart';
 
@@ -31,8 +34,8 @@ class _SettingsPageState extends State<SettingsPage> {
           backgroundColor: AppColors.cardBg,
           content: Text(
             launched
-                ? 'Browser opened. Return here after approving access.'
-                : 'Could not open the Google sign-in page.',
+                ? S.of('browser_opened_msg')
+                : S.of('could_not_open_msg'),
             style: const TextStyle(color: Colors.white),
           ),
         ),
@@ -42,7 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.cardBg,
-          content: Text('Connect failed: $e',
+          content: Text('${S.of('connect_failed')}: $e',
               style: const TextStyle(color: Colors.white)),
         ),
       );
@@ -60,7 +63,11 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           backgroundColor: AppColors.cardBg,
           content: Text(
-            'Sync complete  •  Created: ${result.created}  Updated: ${result.updated}  Deleted: ${result.deleted}',
+            S
+                .of('sync_complete_msg')
+                .replaceAll('{c}', '${result.created}')
+                .replaceAll('{u}', '${result.updated}')
+                .replaceAll('{d}', '${result.deleted}'),
             style: const TextStyle(color: Colors.white),
           ),
         ),
@@ -70,7 +77,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.cardBg,
-          content: Text('Sync failed: $e',
+          content: Text('${S.of('sync_failed')}: $e',
               style: const TextStyle(color: Colors.white)),
         ),
       );
@@ -85,25 +92,25 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Disconnect Google Calendar',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        content: const Text(
-          'This removes the Google connection and sync mappings. '
-          'Imported events already in LifeStable will stay unless you '
-          'delete them manually.',
-          style: TextStyle(color: Colors.white70),
+        title: Text(S.of('disconnect_google_title'),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w700)),
+        content: Text(
+          S.of('disconnect_google_body'),
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.white54)),
+            child: Text(S.of('cancel'),
+                style: const TextStyle(color: Colors.white54)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.gold),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Disconnect',
-                style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+            child: Text(S.of('disconnect'),
+                style: const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -117,10 +124,10 @@ class _SettingsPageState extends State<SettingsPage> {
       await _syncService.disconnect();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           backgroundColor: AppColors.cardBg,
-          content: Text('Google Calendar disconnected.',
-              style: TextStyle(color: Colors.white)),
+          content: Text(S.of('google_disconnected'),
+              style: const TextStyle(color: Colors.white)),
         ),
       );
     } catch (e) {
@@ -128,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.cardBg,
-          content: Text('Disconnect failed: $e',
+          content: Text('${S.of('disconnect_failed')}: $e',
               style: const TextStyle(color: Colors.white)),
         ),
       );
@@ -154,9 +161,9 @@ class _SettingsPageState extends State<SettingsPage> {
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.gold, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Settings',
-          style: TextStyle(
+        title: Text(
+          S.of('settings'),
+          style: const TextStyle(
             color: AppColors.gold,
             fontWeight: FontWeight.w800,
             fontSize: 20,
@@ -171,11 +178,49 @@ class _SettingsPageState extends State<SettingsPage> {
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             children: [
-              _sectionHeader('Calendar Sync'),
+              _sectionHeader(S.of('language_section')),
               const SizedBox(height: 4),
-              const Text(
-                'Connect your Google Calendar to import events into LifeStable.',
-                style: TextStyle(color: Colors.white54, fontSize: 13),
+              Text(
+                S.of('language_section_description'),
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              _buildLanguageCard(),
+              const SizedBox(height: 28),
+              _sectionHeader(S.of('subscription')),
+              const SizedBox(height: 4),
+              Text(
+                S.of('premium_plans_subtitle'),
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              const UsageSummaryCard(),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.of(context)
+                      .pushNamed(AppRoutes.premiumPlans),
+                  icon: const Icon(Icons.workspace_premium, size: 18),
+                  label: Text(S.of('view_plans')),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              _sectionHeader(S.of('calendar_sync')),
+              const SizedBox(height: 4),
+              Text(
+                S.of('calendar_sync_description'),
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
               ),
               const SizedBox(height: 12),
               _buildGoogleCard(account),
@@ -192,6 +237,45 @@ class _SettingsPageState extends State<SettingsPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLanguageCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.gold.withOpacity(0.18),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.gold.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.translate_rounded,
+                color: AppColors.gold, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              S.of('language'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const LanguageSwitcher(),
+        ],
       ),
     );
   }
@@ -254,15 +338,19 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 14),
           if (isConnected) ...[
-            _infoRow(Icons.person_outline, 'Account', account.providerUserId),
+            _infoRow(Icons.person_outline, S.of('account_label'),
+                account.providerUserId),
             const SizedBox(height: 6),
-            _infoRow(Icons.link, 'Connected', _formatDate(account.connectedAt)),
+            _infoRow(Icons.link, S.of('connected'),
+                _formatDate(account.connectedAt)),
             const SizedBox(height: 6),
-            _infoRow(Icons.sync, 'Last sync', _formatDate(account.lastSyncAt)),
+            _infoRow(Icons.sync, S.of('last_sync_label'),
+                _formatDate(account.lastSyncAt)),
           ] else
-            const Text(
-              'No Google account connected. Tap Connect to import your events.',
-              style: TextStyle(color: Colors.white54, fontSize: 13, height: 1.4),
+            Text(
+              S.of('no_google_account_msg'),
+              style: const TextStyle(
+                  color: Colors.white54, fontSize: 13, height: 1.4),
             ),
           const SizedBox(height: 18),
           Wrap(
@@ -272,19 +360,19 @@ class _SettingsPageState extends State<SettingsPage> {
               if (!isConnected)
                 _goldButton(
                   icon: Icons.link,
-                  label: 'Connect',
+                  label: S.of('connect'),
                   onPressed: _busy ? null : _connectGoogle,
                 ),
               if (isConnected)
                 _goldButton(
                   icon: Icons.sync,
-                  label: 'Sync now',
+                  label: S.of('sync_now'),
                   onPressed: _busy ? null : _syncGoogle,
                 ),
               if (isConnected)
                 _outlineButton(
                   icon: Icons.link_off,
-                  label: 'Disconnect',
+                  label: S.of('disconnect'),
                   onPressed: _busy ? null : _disconnectGoogle,
                 ),
             ],
@@ -310,7 +398,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       child: Text(
-        connected ? 'Connected' : 'Not connected',
+        connected ? S.of('connected') : S.of('not_connected'),
         style: TextStyle(
           color: connected ? AppColors.gold : Colors.white54,
           fontSize: 11,

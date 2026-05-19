@@ -485,9 +485,10 @@ class HomeDashboardPage extends StatelessWidget {
           _buildCompactHeader(S.of('fast_summary')),
           const SizedBox(height: 12),
           if (count == 0)
-            const Expanded(
+            Expanded(
               child: Center(
-                child: Text('All clear today!', style: TextStyle(color: Colors.white24, fontSize: 12)),
+                child: Text(S.of('all_clear_today'),
+                    style: const TextStyle(color: Colors.white24, fontSize: 12)),
               ),
             )
           else
@@ -497,12 +498,16 @@ class HomeDashboardPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'You have $count task${count == 1 ? '' : 's'} today.',
+                    S
+                        .of('you_have_tasks_today')
+                        .replaceAll('{n}', '$count'),
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   if (nextTask != null) ...[
                     const SizedBox(height: 10),
-                    const Text('Next up:', style: TextStyle(color: Colors.white38, fontSize: 10)),
+                    Text(S.of('next_up'),
+                        style: const TextStyle(
+                            color: Colors.white38, fontSize: 10)),
                     const SizedBox(height: 4),
                     Text(
                       nextTask.title,
@@ -577,7 +582,11 @@ class HomeDashboardPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (incomplete.isEmpty)
-            const Expanded(child: Center(child: Text('All clear!', style: TextStyle(color: Colors.white24, fontSize: 12))))
+            Expanded(
+                child: Center(
+                    child: Text(S.of('all_clear'),
+                        style: const TextStyle(
+                            color: Colors.white24, fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
@@ -691,7 +700,11 @@ class HomeDashboardPage extends StatelessWidget {
           _buildCompactHeader(S.of('todays_focus')),
           const SizedBox(height: 12),
           if (events.isEmpty)
-            const Expanded(child: Center(child: Text('No events today', style: TextStyle(color: Colors.white24, fontSize: 12))))
+            Expanded(
+                child: Center(
+                    child: Text(S.of('no_events_today'),
+                        style: const TextStyle(
+                            color: Colors.white24, fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
@@ -780,7 +793,12 @@ class HomeDashboardPage extends StatelessWidget {
           const VerticalDivider(width: 1, color: AppColors.black, indent: 14, endIndent: 14),
           Expanded(
             child: domains.isEmpty
-                ? const Center(child: Text('No domains yet', style: TextStyle(color: AppColors.black, fontSize: 12, fontWeight: FontWeight.w600)))
+                ? Center(
+                    child: Text(S.of('no_domains_yet'),
+                        style: const TextStyle(
+                            color: AppColors.black,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)))
                 : ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),

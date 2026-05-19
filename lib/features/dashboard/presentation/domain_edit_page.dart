@@ -58,7 +58,7 @@ class _DomainEditPageState extends State<DomainEditPage> {
         backgroundColor: Colors.transparent, elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.gold),
         title: isEditing
-            ? const Text('Edit Domain', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
+            ? Text(S.of('edit_domain'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
             : null,
         actions: isEditing
             ? [IconButton(icon: const Icon(Icons.check, color: AppColors.gold), onPressed: _save)]
@@ -79,19 +79,19 @@ class _DomainEditPageState extends State<DomainEditPage> {
                 if (!isEditing) ...[
                   ShaderMask(
                     shaderCallback: (b) => const LinearGradient(colors: [AppColors.goldLight, AppColors.gold]).createShader(b),
-                    child: const Text('New Domain', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
+                    child: Text(S.of('new_domain'), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
                   ),
                   const SizedBox(height: 8),
-                  Text('Create a new life domain to organize your tasks.', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14)),
+                  Text(S.of('new_domain_subtitle'), style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14)),
                   const SizedBox(height: 28),
                 ],
-                _label('Domain Name'), const SizedBox(height: 8),
-                _field(_nameController, 'e.g., School, Health, Work', validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                _label(S.of('domain_name')), const SizedBox(height: 8),
+                _field(_nameController, S.of('domain_name_hint'), validator: (v) => v == null || v.isEmpty ? S.of('required_field') : null),
                 const SizedBox(height: 20),
-                _label('Description (Optional)'), const SizedBox(height: 8),
-                _field(_descriptionController, 'What is this domain about?', maxLines: 2),
+                _label(S.of('description_optional_label')), const SizedBox(height: 8),
+                _field(_descriptionController, S.of('domain_description_hint'), maxLines: 2),
                 const SizedBox(height: 28),
-                _label('Icon'), const SizedBox(height: 12),
+                _label(S.of('icon_label')), const SizedBox(height: 12),
                 Wrap(spacing: 10, runSpacing: 10, children: _icons.map((icon) {
                   final sel = icon == _selectedIcon;
                   return GestureDetector(
@@ -108,7 +108,7 @@ class _DomainEditPageState extends State<DomainEditPage> {
                   );
                 }).toList()),
                 const SizedBox(height: 28),
-                _label('Color'), const SizedBox(height: 12),
+                _label(S.of('color_label')), const SizedBox(height: 12),
                 Wrap(spacing: 10, runSpacing: 10, children: _colors.map((c) {
                   final sel = c == _selectedColor;
                   return GestureDetector(
@@ -130,7 +130,7 @@ class _DomainEditPageState extends State<DomainEditPage> {
                       gradient: const LinearGradient(colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark]),
                       boxShadow: [BoxShadow(color: AppColors.gold.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))],
                     ),
-                    child: const Center(child: Text('Create Domain', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black))),
+                    child: Center(child: Text(S.of('create_domain'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black))),
                   ),
                 ),
               ],

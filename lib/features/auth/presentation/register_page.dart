@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../logic/auth_validators.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -39,22 +40,39 @@ class _RegisterPageState extends State<RegisterPage>
     }
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> _register() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
+    // Do NOT trim the password — leading/trailing whitespace is rejected by
+    // the validator, but trimming silently would mask the user's mistake.
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.of('fill_all_fields'))),
-      );
+    final nameError = AuthValidators.displayName(name);
+    if (nameError != null) {
+      _showError(nameError);
       return;
     }
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.of('passwords_no_match'))),
-      );
+    final emailError = AuthValidators.email(email);
+    if (emailError != null) {
+      _showError(emailError);
+      return;
+    }
+    final passwordError = AuthValidators.passwordForRegister(password);
+    if (passwordError != null) {
+      _showError(passwordError);
+      return;
+    }
+    final confirmError =
+        AuthValidators.confirmPassword(password, confirmPassword);
+    if (confirmError != null) {
+      _showError(confirmError);
       return;
     }
 
@@ -81,8 +99,7 @@ class _RegisterPageState extends State<RegisterPage>
       Navigator.of(context).pushReplacementNamed(AppRoutes.login);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_mapAuthError(e))));
+      _showError(_mapAuthError(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -237,6 +254,7 @@ class _RegisterPageState extends State<RegisterPage>
                             hint: '••••••••',
                             icon: Icons.lock_outline_rounded,
                             obscureText: _obscurePassword,
+                            maxLength: AuthValidators.passwordMaxLength,
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -249,7 +267,31 @@ class _RegisterPageState extends State<RegisterPage>
                                       () => _obscurePassword = !_obscurePassword),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 13,
+                                  color: AppColors.gold.withOpacity(0.55),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    S.of('password_requirements_hint'),
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.45),
+                                      fontSize: 12,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
                           _buildLabel(S.of('confirm_password')),
                           const SizedBox(height: 8),
                           _buildTextField(
@@ -257,6 +299,7 @@ class _RegisterPageState extends State<RegisterPage>
                             hint: '••••••••',
                             icon: Icons.lock_outline_rounded,
                             obscureText: _obscureConfirm,
+                            maxLength: AuthValidators.passwordMaxLength,
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscureConfirm
@@ -335,6 +378,7 @@ class _RegisterPageState extends State<RegisterPage>
     bool obscureText = false,
     TextInputType? keyboardType,
     Widget? suffixIcon,
+    int? maxLength,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -346,6 +390,7 @@ class _RegisterPageState extends State<RegisterPage>
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
+        maxLength: maxLength,
         style: const TextStyle(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
@@ -355,6 +400,7 @@ class _RegisterPageState extends State<RegisterPage>
           Icon(icon, color: AppColors.gold.withOpacity(0.5), size: 20),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
+          counterText: '',
           contentPadding:
           const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
