@@ -2,9 +2,14 @@
 
 ## Overview
 
-This document describes all 50 automated test cases for the LifeStable project.
+This document describes all **150 automated test cases** (TC01–TC150) for the LifeStable project.
 Tests are implemented in Dart using `flutter_test`, `bloc_test`, and `mocktail`.
 No Firebase emulator or live connection is required to run the test suite.
+
+**TC01–TC50** form the original baseline suite.  
+**TC51–TC150** are the extended suite added in the second phase, covering edge
+cases, copyWith mutations, sorting, grouping, Firestore map shape, and security
+isolation.
 
 ```
 flutter test
@@ -31,6 +36,8 @@ dev_dependencies:
 
 ## Test File Index
 
+### Baseline Suite (TC01–TC50)
+
 | File | Test IDs |
 |------|----------|
 | `test/features/auth/auth_validation_test.dart` | TC01–TC05 |
@@ -44,6 +51,20 @@ dev_dependencies:
 | `test/features/calendar/calendar_event_test.dart` | TC44–TC48 |
 | `test/core/lru_cache_test.dart` | LRU cache (supports TC49) |
 | `test/core/offline_task_cache_test.dart` | TC49–TC50 |
+
+### Extended Suite (TC51–TC150)
+
+| File | Test IDs |
+|------|----------|
+| `test/features/auth/auth_extended_test.dart` | TC51–TC60 |
+| `test/features/tasks/task_extended_test.dart` | TC61–TC75 |
+| `test/features/notes/note_extended_test.dart` | TC76–TC85 |
+| `test/features/habits/habit_extended_test.dart` | TC86–TC95 |
+| `test/features/calendar/calendar_extended_test.dart` | TC96–TC105 |
+| `test/features/domain/domain_extended_test.dart` | TC106–TC115 |
+| `test/features/teams/team_extended_test.dart` | TC116–TC125 |
+| `test/core/lru_cache_extended_test.dart` | TC126–TC135 |
+| `test/core/security_extended_test.dart` | TC136–TC150 |
 
 ---
 
@@ -684,25 +705,1194 @@ dev_dependencies:
 
 ---
 
+---
+
+## Section 9 — Authentication Extended (TC51–TC60)
+
+**File:** `test/features/auth/auth_extended_test.dart`  
+**Layer tested:** Validation logic (format rules), gamification profile defaults
+
+---
+
+### TC51 — Long TLD email passes validation
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication |
+| **Layer** | Validation |
+| **Test Steps** | 1. Pass `user@example.museum` and `contact@company.online` to `isValidEmail` |
+| **Expected Outcome** | Both return `true` — TLDs of 4+ chars are valid |
+
+---
+
+### TC52 — Email with hyphen in domain passes validation
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication |
+| **Layer** | Validation |
+| **Test Steps** | 1. Pass `user@my-company.com` and `user@sub-domain.example.org` |
+| **Expected Outcome** | Both return `true` — hyphens in domain labels are RFC-valid |
+
+---
+
+### TC53 — Email with underscore in local part passes validation
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication |
+| **Layer** | Validation |
+| **Test Steps** | 1. Pass `first_last@example.com` and `_admin@example.org` |
+| **Expected Outcome** | Both return `true` — `\w` in the regex includes `_` |
+
+---
+
+### TC54 — Empty string fails email validation
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication |
+| **Layer** | Validation |
+| **Test Steps** | 1. Pass `''` to `isValidEmail` |
+| **Expected Outcome** | Returns `false` |
+
+---
+
+### TC55 — Empty string fails password validation
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication |
+| **Layer** | Validation |
+| **Test Steps** | 1. Pass `''` to `isValidPassword` |
+| **Expected Outcome** | Returns `false` — empty password is 0 chars, below the 8-char minimum |
+
+---
+
+### TC56 — Password of 9 characters passes validation
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication |
+| **Layer** | Validation |
+| **Test Steps** | 1. Pass `'abcdefghi'` (9 chars) |
+| **Expected Outcome** | Returns `true` — 9 > 8 |
+
+---
+
+### TC57 — Very long password (100 chars) passes validation
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication |
+| **Layer** | Validation |
+| **Test Steps** | 1. Pass a 100-char string |
+| **Expected Outcome** | Returns `true` — no maximum length constraint |
+
+---
+
+### TC58 — New user profile map contains all required gamification keys
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication / Gamification |
+| **Layer** | Data model |
+| **Test Steps** | 1. Build profile map with `uid`, `points`, `level`, `streak`<br>2. Assert all keys present |
+| **Expected Outcome** | All 4 keys (`uid`, `points`, `level`, `streak`) are present in the map |
+
+---
+
+### TC59 — Initial user level is exactly 1
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Gamification |
+| **Layer** | Data model |
+| **Test Steps** | 1. Assert `profile['level'] == 1` |
+| **Expected Outcome** | Level is `1`, not `0` or `2` — level 0 would be an invalid starting state |
+
+---
+
+### TC60 — Distinct auth error types are distinguishable by message content
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Authentication |
+| **Layer** | Error handling |
+| **Test Steps** | 1. Create `wrong-password`, `email-already-in-use`, and `user-not-found` exceptions<br>2. Compare `.toString()` output |
+| **Expected Outcome** | Each exception's message is unique and contains its error code |
+
+---
+
+## Section 10 — Task Management Extended (TC61–TC75)
+
+**File:** `test/features/tasks/task_extended_test.dart`  
+**Layer tested:** `TaskEntity` copyWith mutations, sorting, grouping, and Firestore map shape
+
+---
+
+### TC61 — copyWith updates title field
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Management |
+| **Layer** | Data model (copyWith) |
+| **Test Steps** | 1. Create task with `title='Original Title'`<br>2. Call `copyWith(title: 'Updated Title')` |
+| **Expected Outcome** | `title` updated; `id`, `domainId`, `status`, `priority` unchanged |
+
+---
+
+### TC62 — copyWith updates priority field
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(priority: TaskPriority.high)` on a low-priority task<br>2. Call `copyWith(priority: TaskPriority.low)` on a medium-priority task |
+| **Expected Outcome** | Priority changes as requested; other fields unchanged |
+
+---
+
+### TC63 — copyWith updates domainId field
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(domainId: 'domain-new')` on a task in `'domain-old'` |
+| **Expected Outcome** | `domainId` updated; `id` unchanged |
+
+---
+
+### TC64 — copyWith updates version field
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Real-time Sync |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(version: original.version + 1)` on a version-3 task |
+| **Expected Outcome** | New version is `4`; original version remains `3` |
+
+---
+
+### TC65 — copyWith updates lastModifiedBy field
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Audit Trail |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(lastModifiedBy: 'user-editor-1')` on a task with `null` lastModifiedBy |
+| **Expected Outcome** | `lastModifiedBy` set; original remains `null` |
+
+---
+
+### TC66 — Tasks sorted by priority (high first)
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Filtering |
+| **Layer** | Data model (list operations) |
+| **Test Steps** | 1. Create tasks with `low`, `high`, `medium` priority<br>2. Sort using a `priorityOrder` map |
+| **Expected Outcome** | `high` first, `low` last |
+
+---
+
+### TC67 — Tasks sorted by dueDate ascending (null dates last)
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Filtering |
+| **Layer** | Data model |
+| **Test Steps** | 1. Sort tasks with different dueDates<br>2. Verify null dates are placed last |
+| **Expected Outcome** | Earliest dueDate first; `null` dueDate tasks are at the end |
+
+---
+
+### TC68 — Tasks grouped by status
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Kanban Board |
+| **Layer** | Data model |
+| **Test Steps** | 1. Group 6 tasks (2 todo, 1 inProgress, 3 done) by `status` |
+| **Expected Outcome** | `todo` bucket: 2, `inProgress` bucket: 1, `done` bucket: 3 |
+
+---
+
+### TC69 — Filter tasks by done status
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Filtering |
+| **Layer** | Data model |
+| **Test Steps** | 1. Filter list by `status == TaskStatus.done` |
+| **Expected Outcome** | Only `done` tasks returned; count is 2 |
+
+---
+
+### TC70 — Filter tasks by assignedTo
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Tasks |
+| **Layer** | Data model |
+| **Test Steps** | 1. Filter list by `assignedTo == 'member-alice'` |
+| **Expected Outcome** | Only Alice's tasks returned; unassigned tasks excluded |
+
+---
+
+### TC71 — toFirestore omits teamId when null
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` on a personal task (no `teamId`) |
+| **Expected Outcome** | Map does NOT contain `teamId` key |
+
+---
+
+### TC72 — toFirestore omits assignedTo when null
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` on an unassigned task |
+| **Expected Outcome** | Map does NOT contain `assignedTo` key |
+
+---
+
+### TC73 — toFirestore includes description when set / null when not set
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Detail |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` with non-null description<br>2. Call with `null` description |
+| **Expected Outcome** | Non-null → map value equals the description; null → map value is `null` |
+
+---
+
+### TC74 — fromFirestore parses version field
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Real-time Sync |
+| **Layer** | Data model |
+| **Test Steps** | 1. Parse map with `version: 7`<br>2. Parse map with missing `version` |
+| **Expected Outcome** | Explicit version → `7`; missing version → `0` |
+
+---
+
+### TC75 — fromFirestore parses lastModifiedBy field
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Audit Trail |
+| **Layer** | Data model |
+| **Test Steps** | 1. Parse map with `lastModifiedBy: 'user-auditor-99'`<br>2. Parse map without the field |
+| **Expected Outcome** | Present → `'user-auditor-99'`; absent → `null` |
+
+---
+
+## Section 11 — Notes Extended (TC76–TC85)
+
+**File:** `test/features/notes/note_extended_test.dart`  
+**Layer tested:** `NoteEntity` copyWith, filtering, grouping, and Firestore map shape
+
+---
+
+### TC76 — NoteEntity copyWith updates title
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(title: 'Revised Title')` |
+| **Expected Outcome** | `title` updated; `id`, `userId`, `content`, `createdAt` unchanged |
+
+---
+
+### TC77 — NoteEntity copyWith updates domainId
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(domainId: 'domain-personal')` on a work-domain note |
+| **Expected Outcome** | `domainId` updated; `id` unchanged |
+
+---
+
+### TC78 — Filter notes by domainId
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes |
+| **Layer** | Data model |
+| **Test Steps** | 1. Filter 4 notes by `domainId == 'domain-health'`<br>2. Filter for a domain with no notes |
+| **Expected Outcome** | Returns 2 matching notes; empty domain returns empty list |
+
+---
+
+### TC79 — Combined title OR content search
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes Search |
+| **Layer** | Data model |
+| **Test Steps** | 1. Search for `'quarterly'` across `title` and `content` fields |
+| **Expected Outcome** | Matches note whose title contains the query AND note whose content contains it |
+
+---
+
+### TC80 — Note with empty content is valid
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create `NoteEntity` with `content: ''` |
+| **Expected Outcome** | Entity is valid; `content` is empty; `title` is non-empty |
+
+---
+
+### TC81 — NoteEntity toFirestore includes userId field
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes / Security |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` and inspect the map |
+| **Expected Outcome** | Map contains `userId` key with correct value |
+
+---
+
+### TC82 — NoteEntity toFirestore contains all required fields
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` and check for all 6 required keys |
+| **Expected Outcome** | Map contains `userId`, `domainId`, `title`, `content`, `createdAt`, `updatedAt` |
+
+---
+
+### TC83 — Multiple notes under same domain can coexist
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes |
+| **Layer** | Data model |
+| **Test Steps** | 1. Filter 3 notes all sharing `domainId='shared-domain'` |
+| **Expected Outcome** | All 3 notes returned; no truncation |
+
+---
+
+### TC84 — Note with very long content round-trips correctly
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create note with 10 000-char content<br>2. `toFirestore()` → `fromFirestore()` |
+| **Expected Outcome** | `content.length == 10000` after deserialization |
+
+---
+
+### TC85 — Notes sorted by updatedAt for edit-time ordering
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Notes |
+| **Layer** | Data model |
+| **Test Steps** | 1. Sort 3 notes by `b.updatedAt.compareTo(a.updatedAt)` (descending) |
+| **Expected Outcome** | Most recently edited note appears first; oldest-edited note is last |
+
+---
+
+## Section 12 — Habit Tracker Extended (TC86–TC95)
+
+**File:** `test/features/habits/habit_extended_test.dart`  
+**Layer tested:** `Habit` edge cases — large streaks, completedDates, boundary conditions
+
+---
+
+### TC86 — Habit with large streak value (365)
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create habit with `streak: 365`<br>2. Check `toMap()` and fire-icon condition |
+| **Expected Outcome** | `streak == 365`; `toMap()['streak'] == 365`; fire icon shows |
+
+---
+
+### TC87 — completedDates count matches expected length
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create habit with 7 date strings<br>2. Add a new date to get 3-entry list |
+| **Expected Outcome** | Lengths are 7 and 3 respectively |
+
+---
+
+### TC88 — Habit name is preserved in toMap
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toMap()` on habit with `name='Evening meditation'` |
+| **Expected Outcome** | `map['name'] == 'Evening meditation'` |
+
+---
+
+### TC89 — Habit domainId is preserved in toMap
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toMap()` on habit with `domainId='domain-wellness'` |
+| **Expected Outcome** | `map['domain_id'] == 'domain-wellness'` |
+
+---
+
+### TC90 — Habit userId is preserved in toMap
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker / Security |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toMap()` on habit with `userId='user-owner-7'` |
+| **Expected Outcome** | `map['user_id'] == 'user-owner-7'` |
+
+---
+
+### TC91 — shouldResetStreak boundary — exactly 2-day gap
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker |
+| **Layer** | Data model |
+| **Test Steps** | 1. Set `lastCompleted` to 2 days ago → check `shouldResetStreak`<br>2. Set to 3 days ago → check again |
+| **Expected Outcome** | 2-day gap → `false` (within grace window); 3-day gap → `true` |
+
+---
+
+### TC92 — Consecutive completion dates build streak
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker |
+| **Layer** | Data model |
+| **Test Steps** | 1. Add today's date to `completedDates` for a running habit |
+| **Expected Outcome** | Today's date-string is in `completedDates`; length is 3 |
+
+---
+
+### TC93 — Paused habit retains its streak
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker / Guardrails |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create paused habit with `streak: 42` |
+| **Expected Outcome** | `streak == 42` is preserved while `isPaused == true` |
+
+---
+
+### TC94 — created_at field appears in toMap as Timestamp
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toMap()` and check for `created_at` key |
+| **Expected Outcome** | `created_at` is present and non-null (Firestore Timestamp type) |
+
+---
+
+### TC95 — Empty completedDates serializes to empty list in toMap
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Habit Tracker |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toMap()` on a brand-new habit with no completions |
+| **Expected Outcome** | `map['completed_dates']` is an empty `List`, not `null` |
+
+---
+
+## Section 13 — Calendar Extended (TC96–TC105)
+
+**File:** `test/features/calendar/calendar_extended_test.dart`  
+**Layer tested:** `CalendarEventEntity` copyWith, duration edge cases, Firestore round-trip
+
+---
+
+### TC96 — CalendarEventEntity copyWith updates title
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(title: 'New Title')` |
+| **Expected Outcome** | `title` updated; `id`, `userId`, `startAt`, `endAt` unchanged |
+
+---
+
+### TC97 — copyWith updates eventType
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(eventType: CalendarEventType.task)` on a personal event |
+| **Expected Outcome** | `eventType` updated; original remains `personal` |
+
+---
+
+### TC98 — Event spanning midnight has correct duration
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model computed property |
+| **Test Steps** | 1. Create event from `23:00` to `01:00` next day |
+| **Expected Outcome** | `duration == Duration(hours: 2)` |
+
+---
+
+### TC99 — Recurring event flag serialized to Firestore
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Set `isRecurring: true`; call `toFirestore()`<br>2. Verify default `false` also serializes |
+| **Expected Outcome** | `map['isRecurring']` reflects the flag in both cases |
+
+---
+
+### TC100 — Event colorHex preserved in toFirestore
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Set `colorHex: '#FF5722'`; call `toFirestore()`<br>2. Verify key absent when `null` |
+| **Expected Outcome** | Present → key with `'#FF5722'`; absent → key not in map |
+
+---
+
+### TC101 — Event externalEventId preserved in toFirestore
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar (external sync) |
+| **Layer** | Data model |
+| **Test Steps** | 1. Set `externalEventId: 'google-evt-xyz'`; call `toFirestore()` |
+| **Expected Outcome** | Map contains `externalEventId: 'google-evt-xyz'` |
+
+---
+
+### TC102 — CalendarEventEntity fromFirestore round-trip
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. `toFirestore()` then `fromFirestore()` on a team event with members |
+| **Expected Outcome** | `id`, `userId`, `title`, `eventType`, `teamId`, `assignedMemberIds`, `startAt` all preserved |
+
+---
+
+### TC103 — Filter events by eventType
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Filter 4 events (2 personal, 1 task, 1 classSchedule) by `personal` |
+| **Expected Outcome** | Returns 2 personal events |
+
+---
+
+### TC104 — Event with multiple assigned members
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create event with 4 `assignedMemberIds`<br>2. Verify `toFirestore()` round-trip |
+| **Expected Outcome** | All 4 member UIDs preserved; `assignedMemberIds` in map is a `List` |
+
+---
+
+### TC105 — sourceCollection is preserved via copyWith
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(sourceCollection: EventSourceCollection.team)` |
+| **Expected Outcome** | `sourceCollection` updated; original remains `personal` |
+
+---
+
+## Section 14 — Domain Management Extended (TC106–TC115)
+
+**File:** `test/features/domain/domain_extended_test.dart`  
+**Layer tested:** `DomainEntity` copyWith mutations, sorting, and Firestore defaults
+
+---
+
+### TC106 — DomainEntity copyWith updates name
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(name: 'Wellness')` on a `'Health'` domain |
+| **Expected Outcome** | `name` updated; `id`, `colorHex`, `iconCode` unchanged |
+
+---
+
+### TC107 — DomainEntity copyWith updates colorHex
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(colorHex: '#E91E63')` |
+| **Expected Outcome** | `colorHex` updated; `name`, `id` unchanged |
+
+---
+
+### TC108 — DomainEntity copyWith updates iconCode
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(iconCode: 0xe52f)` on a domain with code `0xe1af` |
+| **Expected Outcome** | `iconCode` updated to `0xe52f` |
+
+---
+
+### TC109 — DomainEntity copyWith updates description
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(description: 'Tracks health habits')` on a domain with `null` description |
+| **Expected Outcome** | `description` set; original remains `null` |
+
+---
+
+### TC110 — Domains sorted alphabetically by name
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Dashboard |
+| **Layer** | Data model |
+| **Test Steps** | 1. Sort `['Fitness', 'Career', 'Education']` domains by `name.compareTo` |
+| **Expected Outcome** | Order: `Career`, `Education`, `Fitness` |
+
+---
+
+### TC111 — Domain with description includes it in toFirestore
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` on domain with `description: 'Personal wellness tracking'` |
+| **Expected Outcome** | Map contains `description` key with the correct value |
+
+---
+
+### TC112 — Domain without description serializes description as null
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` on domain with `description: null` |
+| **Expected Outcome** | Map contains `description` key with `null` value |
+
+---
+
+### TC113 — fromFirestore uses default iconCode when missing
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Parse map without `iconCode` field |
+| **Expected Outcome** | `iconCode` defaults to `0xe1af` |
+
+---
+
+### TC114 — fromFirestore uses default colorHex when missing
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Parse map without `colorHex` field |
+| **Expected Outcome** | `colorHex` defaults to `'#7C4DFF'` (brand purple) |
+
+---
+
+### TC115 — Multiple domains with same colorHex can coexist
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create two domains with `colorHex: '#E91E63'` but different `id` and `name` |
+| **Expected Outcome** | Entities are distinct (different `id`); `colorHex` is the same |
+
+---
+
+## Section 15 — Team Collaboration Extended (TC116–TC125)
+
+**File:** `test/features/teams/team_extended_test.dart`  
+**Layer tested:** Invite code edge cases, task assignment mutations, version handling
+
+---
+
+### TC116 — Invite code with lowercase letters is rejected
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Collaboration |
+| **Layer** | Input validation |
+| **Test Steps** | 1. Validate `'abc123'` and `'Abc123'` against `^[A-Z0-9]{6}$` |
+| **Expected Outcome** | Both fail — lowercase is not permitted |
+
+---
+
+### TC117 — Invite code with special characters is rejected
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Collaboration |
+| **Layer** | Input validation |
+| **Test Steps** | 1. Validate `'AB-123'`, `'ABC 23'`, `'AB!123'` |
+| **Expected Outcome** | All fail — hyphens, spaces, punctuation are not valid |
+
+---
+
+### TC118 — All-digit invite code is valid
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Collaboration |
+| **Layer** | Input validation |
+| **Test Steps** | 1. Validate `'123456'` |
+| **Expected Outcome** | Passes — digits satisfy `[A-Z0-9]{6}` |
+
+---
+
+### TC119 — Team tasks can be filtered from a combined list
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Tasks |
+| **Layer** | Data model |
+| **Test Steps** | 1. Filter 5 tasks (2 personal + 3 team) by `teamId != null` |
+| **Expected Outcome** | 3 team tasks returned; all have non-null `teamId` |
+
+---
+
+### TC120 — Personal task count in combined list is correct
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Unified Task View |
+| **Layer** | Data model |
+| **Test Steps** | 1. Filter combined list by `teamId == null` |
+| **Expected Outcome** | Exactly 2 personal tasks |
+
+---
+
+### TC121 — Task reassignment changes assignedTo via copyWith
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Collaboration |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(assignedTo: 'member-B')` on a task assigned to `'member-A'` |
+| **Expected Outcome** | `assignedTo` updated to `member-B`; original unchanged |
+
+---
+
+### TC122 — Task lastModifiedBy field can be set
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Audit Trail |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create task with `lastModifiedBy: 'user-editor-55'`<br>2. Create task with no modifier |
+| **Expected Outcome** | Present → correct uid; absent → `null` |
+
+---
+
+### TC123 — Team task with null assignedTo is a valid unassigned team task
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Collaboration |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create task with `teamId` set but `assignedTo: null` |
+| **Expected Outcome** | `teamId != null` (is a team task); `assignedTo == null` (unassigned, claimable) |
+
+---
+
+### TC124 — Version 0 is the default initial version
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Real-time Sync |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create `TaskEntity` without specifying version<br>2. Increment from 0 to 1 |
+| **Expected Outcome** | Default `version == 0`; after increment `version == 1` |
+
+---
+
+### TC125 — Large version numbers increment correctly
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Real-time Sync |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `copyWith(version: 1000)` on a task at `version: 999` |
+| **Expected Outcome** | `version == 1000` — no integer overflow |
+
+---
+
+## Section 16 — LRU Cache Extended (TC126–TC135)
+
+**File:** `test/core/lru_cache_extended_test.dart`  
+**Layer tested:** `LruCache<K,V>` edge cases and value types
+
+---
+
+### TC126 — Cache with capacity 1 evicts previous entry on every put
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Put `'a'` then `'b'` into capacity-1 cache |
+| **Expected Outcome** | `'a'` evicted after `'b'` inserted; only `'b'` retrievable |
+
+---
+
+### TC127 — keys() returns all currently cached keys
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Insert 3 entries; call `keys()` |
+| **Expected Outcome** | All 3 keys present; `keys().length == 3` |
+
+---
+
+### TC128 — remove on a non-existent key returns null
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Call `cache.remove('ghost')` on an empty cache |
+| **Expected Outcome** | Returns `null` without throwing |
+
+---
+
+### TC129 — Removed entry can be re-inserted without side effects
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Put `'a'` and `'b'`; remove `'a'`; re-insert `'a'` with new value |
+| **Expected Outcome** | `cache.get('a') == 99`; `'b'` still present; `length == 2` |
+
+---
+
+### TC130 — Repeated get on same key does not grow the cache
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Put one entry; call `get` 100 times |
+| **Expected Outcome** | `length == 1` — reads never increase cache size |
+
+---
+
+### TC131 — Evicted key can be re-inserted after eviction
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Fill capacity-2 cache; evict `'a'`; re-insert `'a'` |
+| **Expected Outcome** | `cache.get('a') == 100`; `length == 2` |
+
+---
+
+### TC132 — Cache handles boolean values correctly
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Put `true` and `false` values; retrieve both |
+| **Expected Outcome** | `false` is distinguishable from a cache miss (`null`) |
+
+---
+
+### TC133 — Capacity-1 cache always holds exactly one entry
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Put 10 entries sequentially into a capacity-1 cache |
+| **Expected Outcome** | `length == 1`; only key `9` (last inserted) is retrievable |
+
+---
+
+### TC134 — values() on an empty cache returns an empty iterable
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Call `values()` on a freshly created empty cache |
+| **Expected Outcome** | Returns an empty iterable (not `null`) |
+
+---
+
+### TC135 — containsKey returns false after the entry is removed
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Offline Mode |
+| **Layer** | Data (LruCache) |
+| **Test Steps** | 1. Insert entry; verify `containsKey == true`<br>2. Remove it; verify `containsKey == false` |
+| **Expected Outcome** | `containsKey` immediately reflects the removal |
+
+---
+
+## Section 17 — Security & Data Integrity Extended (TC136–TC150)
+
+**File:** `test/core/security_extended_test.dart`  
+**Layer tested:** Firestore path isolation, field-level ownership markers, structural integrity
+
+---
+
+### TC136 — NoteEntity includes userId in toFirestore for ownership
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Security |
+| **Layer** | Data model |
+| **Test Steps** | 1. Check `toFirestore()['userId']` on notes for Alice and Bob |
+| **Expected Outcome** | Each note's map carries its owner's uid; the two values differ |
+
+---
+
+### TC137 — Domain collection path is isolated by user uid
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Security |
+| **Layer** | Data (Firestore path) |
+| **Test Steps** | 1. Build `users/{uid}/domains` path<br>2. Compare paths for two users |
+| **Expected Outcome** | Path starts with `users/` and ends with `/domains`; two users produce distinct paths |
+
+---
+
+### TC138 — Habit toMap includes user_id for ownership
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Security |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toMap()` and inspect `user_id` field |
+| **Expected Outcome** | `user_id` matches the Habit model's `userId` |
+
+---
+
+### TC139 — CalendarEventEntity includes userId in toFirestore
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Security |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` and inspect `userId` field |
+| **Expected Outcome** | `userId` is present with the correct owner value |
+
+---
+
+### TC140 — Merging personal and team tasks produces no duplicates
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Unified Task View |
+| **Layer** | Data model |
+| **Test Steps** | 1. Merge 3 personal + 2 team tasks<br>2. Check for duplicate ids |
+| **Expected Outcome** | `combined.length == 5`; all 5 ids are unique |
+
+---
+
+### TC141 — Team task collection path uses teams namespace
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Security |
+| **Layer** | Data (Firestore path) |
+| **Test Steps** | 1. Build `teams/{teamId}/tasks` path<br>2. Verify prefix |
+| **Expected Outcome** | Starts with `teams/`; does NOT start with `users/`; two teams produce distinct paths |
+
+---
+
+### TC142 — Note collection path uses personal namespace
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Security |
+| **Layer** | Data (Firestore path) |
+| **Test Steps** | 1. Build `users/{uid}/notes` path |
+| **Expected Outcome** | Path contains `uid` and ends with `/notes` |
+
+---
+
+### TC143 — TaskEntity toFirestore does not expose raw userId
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Security |
+| **Layer** | Data model |
+| **Test Steps** | 1. Call `toFirestore()` on a task; check for `userId` key |
+| **Expected Outcome** | Map does NOT contain `userId` — ownership enforced by path, not document content |
+
+---
+
+### TC144 — Tasks from different domains do not share domainId
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Domain Isolation |
+| **Layer** | Data model |
+| **Test Steps** | 1. Filter all-tasks list by `domainId == 'health'` |
+| **Expected Outcome** | Only health tasks returned; no career tasks in result |
+
+---
+
+### TC145 — Task version increment is always positive
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Real-time Sync |
+| **Layer** | Data model |
+| **Test Steps** | 1. For versions `0, 1, 5, 42, 999` — bump each by +1 and assert result is strictly greater |
+| **Expected Outcome** | `updated.version > original.version` for all starting values |
+
+---
+
+### TC146 — CalendarEvent assignedMemberIds is always a list type
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create event with empty `assignedMemberIds: []`; check type |
+| **Expected Outcome** | `assignedMemberIds` is `List<String>`, never `null` |
+
+---
+
+### TC147 — Empty assignedMemberIds is a valid event state
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create personal event with no members |
+| **Expected Outcome** | `assignedMemberIds.isEmpty == true`; `isTeamEvent == false` |
+
+---
+
+### TC148 — Team event with empty assignedMemberIds is still valid
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Team Calendar |
+| **Layer** | Data model |
+| **Test Steps** | 1. Create team event with `assignedMemberIds: []` and `teamId` set |
+| **Expected Outcome** | `isTeamEvent == true` (based on `eventType + teamId`); `assignedMemberIds` empty |
+
+---
+
+### TC149 — Task domainId is preserved through Firestore round-trip
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. `toFirestore()` then `fromFirestore()` on task with `domainId='domain-career'` |
+| **Expected Outcome** | `domainId == 'domain-career'` after deserialization; field is never empty |
+
+---
+
+### TC150 — Task priority enum ordering (high > medium > low)
+
+| Field | Value |
+|-------|-------|
+| **Feature** | Task Management |
+| **Layer** | Data model |
+| **Test Steps** | 1. Compare `priorityOrder` indices for all three values<br>2. Assert all enum values are distinct |
+| **Expected Outcome** | `high` has lower index than `medium`; `medium` lower than `low`; all three are distinct |
+
+---
+
 ## Appendix — Architecture Coverage Matrix
 
 | Architecture Layer | Covered By |
 |--------------------|-----------|
-| **Data Layer — Entity serialization** | TC15, TC25, TC30, TC39, TC43 |
-| **Data Layer — Offline cache** | TC49 |
-| **Data Layer — Firestore path security** | TC50 |
+| **Data Layer — Entity serialization** | TC15, TC25, TC30, TC39, TC43, TC73–TC75, TC82, TC84, TC94, TC99–TC102, TC111–TC115, TC149 |
+| **Data Layer — copyWith mutations** | TC09, TC17, TC61–TC65, TC76–TC77, TC96–TC98, TC105–TC109, TC121 |
+| **Data Layer — Offline cache (LruCache)** | TC49, TC126–TC135 |
+| **Data Layer — Firestore path security** | TC50, TC136–TC143 |
 | **Business Logic — BLoC (TasksBloc)** | TC11, TC12, TC13, TC19 |
 | **Business Logic — Cubit (DomainCubit)** | TC06, TC07, TC08, TC10 |
 | **Business Logic — Cubit (NotesCubit)** | TC21, TC22 |
-| **Business Logic — Habit model logic** | TC26–TC33 |
+| **Business Logic — Habit model logic** | TC26–TC33, TC86–TC95 |
 | **Presentation State** | TC10, TC19 (state assertions) |
-| **Domain Model — Filtering / Sorting** | TC14, TC18, TC20, TC23, TC24, TC48 |
-| **Domain Model — Computed properties** | TC16, TC26–TC29, TC31, TC36, TC38, TC44–TC47 |
-| **Validation** | TC01, TC04, TC05, TC34 |
-| **Error Handling** | TC02, TC03 |
-| **Team Collaboration** | TC34–TC43 |
-| **Calendar** | TC44–TC48 |
-| **Gamification** | TC03, TC27, TC30, TC31 |
+| **Domain Model — Filtering / Sorting** | TC14, TC18, TC20, TC23, TC24, TC48, TC66–TC70, TC78, TC79, TC85, TC103, TC110, TC119, TC120, TC144 |
+| **Domain Model — Computed properties** | TC16, TC26–TC29, TC31, TC36, TC38, TC44–TC47, TC91, TC93, TC146–TC148 |
+| **Validation** | TC01, TC04, TC05, TC34, TC51–TC57, TC116–TC118 |
+| **Error Handling** | TC02, TC03, TC60 |
+| **Team Collaboration** | TC34–TC43, TC116–TC125 |
+| **Calendar** | TC44–TC48, TC96–TC105 |
+| **Gamification** | TC03, TC27, TC30, TC31, TC58, TC59 |
+| **Security / Ownership** | TC50, TC81, TC88–TC90, TC136–TC150 |
+| **Audit Trail** | TC65, TC75, TC122 |
+| **Version / Conflict Detection** | TC40, TC64, TC74, TC124, TC125, TC145 |
 
 ---
 
