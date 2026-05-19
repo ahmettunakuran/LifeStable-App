@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 
 import '../../../app/router/app_routes.dart';
 import '../../../shared/constants/app_colors.dart';
+import '../../billing/data/usage_tracker.dart';
+import '../../billing/domain/plan_catalog.dart';
 import '../data/calender_repository_impl.dart';
 import '../domain/entities/calendar_event_entity.dart';
 import '../logic/calender_cubit.dart';
@@ -346,18 +348,21 @@ class _CalendarViewState extends State<_CalendarView>
               children: [
                 if (count > 0)
                   _DotBadge(
-                      label: '$count event${count > 1 ? 's' : ''}',
+                      label: (count > 1
+                              ? S.of('event_count_many')
+                              : S.of('event_count_one'))
+                          .replaceAll('{n}', '$count'),
                       color: AppColors.gold),
                 if (teamCount > 0) ...[
                   const SizedBox(width: 6),
                   _DotBadge(
-                      label: '$teamCount team',
+                      label: S.of('team_count').replaceAll('{n}', '$teamCount'),
                       color: const Color(0xFFBA68C8)),
                 ],
                 if (conflictCount > 0) ...[
                   const SizedBox(width: 6),
                   _DotBadge(
-                      label: '$conflictCount conflict',
+                      label: S.of('conflict_count').replaceAll('{n}', '$conflictCount'),
                       color: Colors.orange),
                 ],
               ],
@@ -622,11 +627,13 @@ class _CalendarViewState extends State<_CalendarView>
                     fontSize: 18,
                     fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
+              const _OcrRemainingHint(),
+              const SizedBox(height: 12),
               ListTile(
                 leading: const Icon(Icons.photo_library, color: AppColors.gold),
-                title: const Text('Choose from Gallery',
-                    style: TextStyle(color: Colors.white)),
+                title: Text(S.of('choose_from_gallery'),
+                    style: const TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickAndProcessImage(context, ImageSource.gallery);
@@ -634,8 +641,8 @@ class _CalendarViewState extends State<_CalendarView>
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: AppColors.gold),
-                title: const Text('Take a Photo',
-                    style: TextStyle(color: Colors.white)),
+                title: Text(S.of('take_a_photo'),
+                    style: const TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickAndProcessImage(context, ImageSource.camera);
@@ -649,8 +656,18 @@ class _CalendarViewState extends State<_CalendarView>
   }
 
   Future<void> _pickAndProcessImage(BuildContext context, ImageSource source) async {
+    // Pre-flight quota check — saves the user from picking an image only to
+    // hit the limit afterwards. The OCR service still gates the call, so
+    // racing imports also fail closed.
+    final canRun = await UsageTracker.instance
+        .canConsume(BillableFeature.ocrScheduleImport);
+    if (!canRun) {
+      if (!context.mounted) return;
+      _showQuotaReachedDialog(context);
+      return;
+    }
+
     final picker = ImagePicker();
-    // Emülatör uyumluluğu için resmi küçültüyoruz
     final XFile? pickedFile = await picker.pickImage(
       source: source,
       maxWidth: 1024,
@@ -658,12 +675,11 @@ class _CalendarViewState extends State<_CalendarView>
       imageQuality: 80,
     );
     if (pickedFile == null) return;
+    if (!context.mounted) return;
 
     final ocrService = OcrService();
     final cubit = context.read<CalendarCubit>();
     final userId = FirebaseAuth.instance.currentUser?.uid ?? "anonymous";
-
-    if (!context.mounted) return;
 
     showDialog(
       context: context,
@@ -675,33 +691,95 @@ class _CalendarViewState extends State<_CalendarView>
     try {
       final events = await ocrService.processScheduleFree(userId, pickedFile);
       if (!context.mounted) return;
-      Navigator.pop(context); // Yükleme animasyonunu kapat.
+      Navigator.pop(context);
 
       if (events.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No courses found in image.')),
+          SnackBar(content: Text(S.of('no_courses_found'))),
         );
         return;
       }
 
-      // Kullanıcıya bulunan dersleri onayla
       _showConfirmationDialog(context, events, (confirmedEvents, weeks) async {
         await ocrService.saveScheduleEvents(confirmedEvents, userId, weeks: weeks);
-        cubit.init(); // Takvimi yenile.
+        cubit.init();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${confirmedEvents.length} courses added to calendar!')),
+            SnackBar(
+              content: Text(
+                S.of('courses_added_count').replaceAll(
+                    '{n}', confirmedEvents.length.toString()),
+              ),
+            ),
           );
         }
       });
+    } on QuotaExceededException {
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showQuotaReachedDialog(context);
+      }
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('${S.of('generic_error')}: $e')),
         );
       }
     }
+  }
+
+  void _showQuotaReachedDialog(BuildContext context) {
+    final plan = UsageTracker.instance.currentPlan;
+    final limit = plan.limitFor(BillableFeature.ocrScheduleImport) ?? 0;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBg,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.lock_clock_outlined,
+                color: AppColors.gold, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                S.of('quota_reached_title'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          S.of('quota_reached_ocr').replaceAll('{limit}', '$limit'),
+          style: const TextStyle(color: Colors.white70, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(S.of('maybe_later'),
+                style: const TextStyle(color: Colors.white54)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.of(context).pushNamed(AppRoutes.premiumPlans);
+            },
+            child: Text(S.of('see_plans'),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showConfirmationDialog(
@@ -795,7 +873,7 @@ class _CalendarViewState extends State<_CalendarView>
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child:
-                  const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                  Text(S.of('cancel'), style: const TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -808,8 +886,8 @@ class _CalendarViewState extends State<_CalendarView>
                 Navigator.pop(ctx);
                 if (confirmed.isNotEmpty) onConfirm(confirmed, selectedWeeks);
               },
-              child: const Text('Add to Calendar',
-                  style: TextStyle(color: Colors.black)),
+              child: Text(S.of('add_to_calendar'),
+                  style: const TextStyle(color: Colors.black)),
             ),
           ],
         ),
@@ -985,7 +1063,7 @@ class _EventCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                event.linkedTaskTitle ?? 'Linked task',
+                                event.linkedTaskTitle ?? S.of('linked_task'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -1021,17 +1099,17 @@ class _EventCard extends StatelessWidget {
         backgroundColor: AppColors.cardBg,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete event?',
-            style: TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(S.of('delete_event_q'),
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
         content: Text(
-          'Remove "${event.title}"?${event.isTeamEvent ? '\n\nThis is a team event — it will be removed for everyone.' : ''}',
+          '"${event.title}"${event.isTeamEvent ? '' : ''}',
           style: TextStyle(
               color: Colors.white.withValues(alpha: 0.55), fontSize: 13),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel',
+              child: Text(S.of('cancel'),
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5)))),
           TextButton(
@@ -1039,8 +1117,8 @@ class _EventCard extends StatelessWidget {
               Navigator.pop(context);
               onDelete();
             },
-            child: const Text('Delete',
-                style: TextStyle(color: Colors.redAccent)),
+            child: Text(S.of('delete'),
+                style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -1227,11 +1305,13 @@ class _TypeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (type) {
-      CalendarEventType.personal => ('Personal', AppColors.gold),
-      CalendarEventType.task => ('Task', const Color(0xFF4FC3F7)),
+      CalendarEventType.personal => (S.of('event_type_personal'), AppColors.gold),
+      CalendarEventType.task =>
+        (S.of('event_type_task'), const Color(0xFF4FC3F7)),
       CalendarEventType.classSchedule =>
-      ('Class', const Color(0xFF81C784)),
-      CalendarEventType.team => ('Team', const Color(0xFFBA68C8)),
+        (S.of('event_type_class'), const Color(0xFF81C784)),
+      CalendarEventType.team =>
+        (S.of('event_type_team'), const Color(0xFFBA68C8)),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -1298,6 +1378,79 @@ class _FormatToggle extends StatelessWidget {
             fontSize: 12,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Tiny status line inside the "Import Schedule" sheet that shows the user
+/// how many OCR runs they have left this month, or that they're out.
+class _OcrRemainingHint extends StatefulWidget {
+  const _OcrRemainingHint();
+
+  @override
+  State<_OcrRemainingHint> createState() => _OcrRemainingHintState();
+}
+
+class _OcrRemainingHintState extends State<_OcrRemainingHint> {
+  UsageSnapshot? _snapshot;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final s = await UsageTracker.instance
+        .snapshot(BillableFeature.ocrScheduleImport);
+    if (!mounted) return;
+    setState(() => _snapshot = s);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = _snapshot;
+    if (s == null) return const SizedBox.shrink();
+
+    final isOut = s.isExhausted;
+    final isUnlimited = s.isUnlimited;
+    final color = isOut
+        ? const Color(0xFFE57373)
+        : AppColors.gold.withValues(alpha: 0.85);
+    final text = isUnlimited
+        ? S.of('usage_unlimited')
+        : isOut
+            ? S.of('usage_exhausted')
+            : S
+                .of('usage_remaining')
+                .replaceAll('{used}', s.used.toString())
+                .replaceAll('{limit}', s.limit.toString());
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isOut ? Icons.error_outline : Icons.info_outline_rounded,
+            size: 13,
+            color: color,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

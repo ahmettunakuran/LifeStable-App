@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../domain/entities/calendar_event_entity.dart';
@@ -258,11 +259,11 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                       const SizedBox(height: 16),
                       _buildDescriptionField(),
                       const SizedBox(height: 20),
-                      _buildSectionLabel('Event Type'),
+                      _buildSectionLabel(S.of('event_section_type')),
                       const SizedBox(height: 10),
                       _buildTypeSelector(),
                       const SizedBox(height: 20),
-                      _buildSectionLabel('Time'),
+                      _buildSectionLabel(S.of('event_section_time')),
                       const SizedBox(height: 10),
                       _buildTimeRow(),
                       if (_conflicts.isNotEmpty) ...[
@@ -272,13 +273,13 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                       // ── Team section ─────────────────────────────────────
                       if (_type == CalendarEventType.team) ...[
                         const SizedBox(height: 20),
-                        _buildSectionLabel('Team'),
+                        _buildSectionLabel(S.of('event_section_team')),
                         const SizedBox(height: 10),
                         _buildTeamPicker(),
                         if (_selectedTeam != null &&
                             _teamMembers.isNotEmpty) ...[
                           const SizedBox(height: 20),
-                          _buildSectionLabel('Assign Members'),
+                          _buildSectionLabel(S.of('event_section_assign_members')),
                           const SizedBox(height: 10),
                           _buildMemberChips(),
                         ],
@@ -286,7 +287,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                       // ── Task link (personal/task only) ───────────────────
                       if (_type != CalendarEventType.team) ...[
                         const SizedBox(height: 20),
-                        _buildSectionLabel('Link to Task (optional)'),
+                        _buildSectionLabel(S.of('event_section_link_task')),
                         const SizedBox(height: 10),
                         _buildTaskLinker(),
                       ],
@@ -333,7 +334,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
               colors: [AppColors.goldLight, AppColors.gold],
             ).createShader(b),
             child: Text(
-              widget.isEditing ? 'EDIT EVENT' : 'NEW EVENT',
+              widget.isEditing ? S.of('edit_event_title') : S.of('new_event_title'),
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
@@ -366,8 +367,8 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
     style: const TextStyle(color: Colors.white, fontSize: 16),
     cursorColor: AppColors.gold,
     validator: (v) =>
-    (v == null || v.trim().isEmpty) ? 'Title is required' : null,
-    decoration: _inputDeco('Event title', Icons.title_outlined),
+    (v == null || v.trim().isEmpty) ? S.of('title_required') : null,
+    decoration: _inputDeco(S.of('event_title_hint'), Icons.title_outlined),
   );
 
   Widget _buildDescriptionField() => TextFormField(
@@ -377,7 +378,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
         color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
     cursorColor: AppColors.gold,
     decoration:
-    _inputDeco('Description (optional)', Icons.notes_outlined),
+    _inputDeco(S.of('event_description_hint'), Icons.notes_outlined),
   );
 
   InputDecoration _inputDeco(String hint, IconData icon) => InputDecoration(
@@ -445,13 +446,13 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
       children: [
         Expanded(
             child: _TimeTile(
-                label: 'Start',
+                label: S.of('time_start'),
                 dateTime: _startAt,
                 onTap: () => _pickDateTime(isStart: true))),
         const SizedBox(width: 12),
         Expanded(
             child: _TimeTile(
-                label: 'End',
+                label: S.of('time_end'),
                 dateTime: _endAt,
                 onTap: () => _pickDateTime(isStart: false))),
       ],
@@ -473,8 +474,11 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Conflicts with ${_conflicts.length} event${_conflicts.length > 1 ? 's' : ''}: '
-                  '${_conflicts.map((e) => e.title).join(', ')}',
+              (_conflicts.length > 1
+                      ? S.of('conflicts_label_many')
+                      : S.of('conflicts_label_one'))
+                  .replaceAll('{n}', '${_conflicts.length}')
+                  .replaceAll('{titles}', _conflicts.map((e) => e.title).join(', ')),
               style: const TextStyle(
                   color: Colors.orange,
                   fontSize: 12,
@@ -518,7 +522,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
         if (result.isAfter(_startAt)) {
           _endAt = result;
         } else {
-          _showSnack('End time must be after start time');
+          _showSnack(S.of('end_after_start'));
           return;
         }
       }
@@ -543,11 +547,10 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
 
   Widget _buildTeamPicker() {
     if (_teamsLoading) {
-      return _loadingRow('Loading your teams…');
+      return _loadingRow(S.of('loading_teams'));
     }
     if (_userTeams.isEmpty) {
-      return _emptyHint(
-          'You are not in any team yet. Create or join one from the Teams screen.');
+      return _emptyHint(S.of('no_teams_hint'));
     }
 
     return Container(
@@ -562,7 +565,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           value: _selectedTeam,
           isExpanded: true,
           dropdownColor: AppColors.cardBg,
-          hint: Text('Select a team',
+          hint: Text(S.of('select_a_team'),
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.3), fontSize: 13)),
           icon: Icon(Icons.expand_more,
@@ -570,7 +573,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           items: [
             DropdownMenuItem<Map<String, dynamic>?>(
               value: null,
-              child: Text('— No team —',
+              child: Text(S.of('no_team_option'),
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 13)),
@@ -598,7 +601,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                       ),
                     ),
                     Text(
-                      '${t['member_count'] ?? ''} members',
+                      '${t['member_count'] ?? ''} ${S.of('members_suffix')}',
                       style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.35),
                           fontSize: 11),
@@ -631,7 +634,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tap to toggle assignment',
+          S.of('tap_toggle_assignment'),
           style: TextStyle(
               color: Colors.white.withValues(alpha: 0.3), fontSize: 11),
         ),
@@ -727,7 +730,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              '⚠ No members assigned — at least one is required',
+              S.of('no_members_assigned_warning'),
               style: TextStyle(
                   color: Colors.orange.withValues(alpha: 0.8),
                   fontSize: 11),
@@ -740,10 +743,9 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
   // ── Task linker ───────────────────────────────────────────────────────────
 
   Widget _buildTaskLinker() {
-    if (_tasksLoading) return _loadingRow('Loading tasks…');
+    if (_tasksLoading) return _loadingRow(S.of('loading_tasks'));
     if (_availableTasks.isEmpty) {
-      return _emptyHint(
-          'No pending tasks found. Add tasks from the Domains screen.');
+      return _emptyHint(S.of('no_pending_tasks_hint'));
     }
 
     return Container(
@@ -758,7 +760,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           value: _linkedTask,
           isExpanded: true,
           dropdownColor: AppColors.cardBg,
-          hint: Text('Select a task to link',
+          hint: Text(S.of('select_task_to_link'),
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.3), fontSize: 13)),
           icon: Icon(Icons.expand_more,
@@ -766,7 +768,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           items: [
             DropdownMenuItem<TaskEntity?>(
               value: null,
-              child: Text('— No linked task —',
+              child: Text(S.of('no_linked_task_option'),
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 13)),
@@ -826,13 +828,13 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           border:
           Border.all(color: Colors.redAccent.withValues(alpha: 0.25)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
-            SizedBox(width: 8),
-            Text('Delete Event',
-                style: TextStyle(
+            const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+            const SizedBox(width: 8),
+            Text(S.of('delete_event_btn'),
+                style: const TextStyle(
                     color: Colors.redAccent,
                     fontWeight: FontWeight.w600,
                     fontSize: 14)),
@@ -849,15 +851,15 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
         backgroundColor: AppColors.cardBg,
         shape:
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete event?',
-            style: TextStyle(color: Colors.white, fontSize: 16)),
-        content: Text('This action cannot be undone.',
+        title: Text(S.of('delete_event_q'),
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
+        content: Text(S.of('delete_event_undone'),
             style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel',
+              child: Text(S.of('cancel'),
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5)))),
           TextButton(
@@ -868,8 +870,8 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
               }
               if (mounted) Navigator.pop(context);
             },
-            child: const Text('Delete',
-                style: TextStyle(color: Colors.redAccent)),
+            child: Text(S.of('delete'),
+                style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -920,7 +922,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                 child: CircularProgressIndicator(
                     color: AppColors.gold, strokeWidth: 2))
                 : Text(
-                widget.isEditing ? 'Save Changes' : 'Create Event',
+                widget.isEditing ? S.of('save_changes') : S.of('create_event'),
                 style: const TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.w800,
@@ -936,11 +938,11 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
 
     // Validate team selection
     if (_type == CalendarEventType.team && _selectedTeam == null) {
-      _showSnack('Please select a team for this event');
+      _showSnack(S.of('select_team_required'));
       return;
     }
     if (_type == CalendarEventType.team && _assignedMemberIds.isEmpty) {
-      _showSnack('Please assign at least one member');
+      _showSnack(S.of('assign_member_required'));
       return;
     }
 
@@ -952,23 +954,24 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           backgroundColor: AppColors.cardBg,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
-          title: const Text('Time Conflict',
-              style: TextStyle(color: Colors.white)),
+          title: Text(S.of('time_conflict_title'),
+              style: const TextStyle(color: Colors.white)),
           content: Text(
-            'This event overlaps with: ${_conflicts.map((e) => e.title).join(', ')}. Save anyway?',
+            S.of('time_conflict_body').replaceAll(
+                '{titles}', _conflicts.map((e) => e.title).join(', ')),
             style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.55), fontSize: 13),
           ),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: Text('Cancel',
+                child: Text(S.of('cancel'),
                     style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5)))),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Save Anyway',
-                  style: TextStyle(color: AppColors.gold)),
+              child: Text(S.of('save_anyway'),
+                  style: const TextStyle(color: AppColors.gold)),
             ),
           ],
         ),
@@ -1016,7 +1019,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
       await widget.cubit.saveEvent(event);
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) _showSnack('Failed to save: $e');
+      if (mounted) _showSnack('${S.of('save_failed')}: $e');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -1081,15 +1084,15 @@ class _TypeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = switch (type) {
+    final (icon, color, labelKey) = switch (type) {
       CalendarEventType.personal =>
-      (Icons.person_outline, AppColors.gold),
+      (Icons.person_outline, AppColors.gold, 'event_type_personal'),
       CalendarEventType.task =>
-      (Icons.check_box_outlined, const Color(0xFF4FC3F7)),
+      (Icons.check_box_outlined, const Color(0xFF4FC3F7), 'event_type_task'),
       CalendarEventType.classSchedule =>
-      (Icons.school_outlined, const Color(0xFF81C784)),
+      (Icons.school_outlined, const Color(0xFF81C784), 'event_type_class'),
       CalendarEventType.team =>
-      (Icons.groups_outlined, const Color(0xFFBA68C8)),
+      (Icons.groups_outlined, const Color(0xFFBA68C8), 'event_type_team'),
     };
 
     return GestureDetector(
@@ -1118,7 +1121,7 @@ class _TypeOption extends StatelessWidget {
                     ? color
                     : Colors.white.withValues(alpha: 0.4)),
             const SizedBox(width: 6),
-            Text(type.label,
+            Text(S.of(labelKey),
                 style: TextStyle(
                     color: selected
                         ? color

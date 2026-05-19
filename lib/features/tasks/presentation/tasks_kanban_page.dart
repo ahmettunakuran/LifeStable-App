@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../app/router/app_routes.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../calendar/domain/repositories/calendar_repository.dart';
 import '../../calendar/domain/entities/calendar_event_entity.dart';
@@ -28,7 +29,7 @@ class TasksKanbanPage extends StatelessWidget {
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       appBar: AppBar(
         title: Text(
-          'BOARD',
+          S.of('board_title'),
           style: TextStyle(
             fontWeight: FontWeight.w800,
             letterSpacing: 2,
@@ -49,7 +50,7 @@ class TasksKanbanPage extends StatelessWidget {
           } else if (state is TasksError) {
             return Center(child: Text(state.message));
           }
-          return const Center(child: Text('No tasks found.'));
+          return Center(child: Text(S.of('no_tasks_found')));
         },
       ),
       floatingActionButton: Column(
@@ -67,7 +68,9 @@ class TasksKanbanPage extends StatelessWidget {
             onPressed: () => Navigator.of(context).pushNamed(AppRoutes.taskEdit),
             backgroundColor: goldColor,
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Add Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: Text(S.of('add_task'),
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -86,10 +89,14 @@ class TasksKanbanPage extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navBtn(context, Icons.group_outlined, 'Team', AppRoutes.teamDashboard),
-            _navBtn(context, Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
-            _navBtn(context, Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard),
-            _navBtn(context, Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+            _navBtn(context, Icons.group_outlined, S.of('nav_team'),
+                AppRoutes.teamDashboard),
+            _navBtn(context, Icons.calendar_month_outlined,
+                S.of('nav_calendar'), AppRoutes.calendar),
+            _navBtn(context, Icons.dashboard_outlined,
+                S.of('nav_dashboard'), AppRoutes.homeDashboard),
+            _navBtn(context, Icons.local_fire_department_outlined,
+                S.of('nav_habit'), AppRoutes.habitTracker),
           ],
         ),
       ),
@@ -122,26 +129,26 @@ class TasksKanbanPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('AI Magic Task'),
+        title: Text(S.of('ai_magic_task')),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'e.g. Yarın akşam 8 için markete gitmeyi ekle',
+          decoration: InputDecoration(
+            hintText: S.of('ai_prompt_hint'),
           ),
           maxLines: 3,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(S.of('cancel'))),
           ElevatedButton(
             onPressed: () async {
               final prompt = controller.text;
               if (prompt.isEmpty) return;
 
               Navigator.pop(context);
-              
+
               // Loading show
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('AI is thinking...'), duration: Duration(seconds: 2)),
+                SnackBar(content: Text(S.of('ai_thinking')), duration: const Duration(seconds: 2)),
               );
 
               final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -151,7 +158,7 @@ class TasksKanbanPage extends StatelessWidget {
                 if (context.mounted) {
                   context.read<TasksBloc>().add(AddTask(result.entity as TaskEntity));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Task created by AI! ✨')),
+                    SnackBar(content: Text(S.of('ai_task_created'))),
                   );
                 }
               } else if (result.type == AiActionType.createEvent && result.entity is CalendarEventEntity) {
@@ -160,24 +167,24 @@ class TasksKanbanPage extends StatelessWidget {
                     final calendarRepo = context.read<CalendarRepository>();
                     await calendarRepo.createPersonalEvent(result.entity as CalendarEventEntity);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Calendar event created by AI! 📅')),
+                      SnackBar(content: Text(S.of('ai_event_created'))),
                     );
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to create event: $e')),
+                      SnackBar(content: Text('${S.of('ai_event_failed')}: $e')),
                     );
                   }
                 }
               } else {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('AI could not understand or created an event.')),
+                    SnackBar(content: Text(S.of('ai_could_not_understand'))),
                   );
                 }
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: goldColor),
-            child: const Text('Magic!'),
+            child: Text(S.of('magic_btn')),
           ),
         ],
       ),
@@ -190,9 +197,9 @@ class TasksKanbanPage extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildKanbanColumn(context, 'TO DO', TaskStatus.todo, tasks),
-          _buildKanbanColumn(context, 'DOING', TaskStatus.inProgress, tasks),
-          _buildKanbanColumn(context, 'DONE', TaskStatus.done, tasks),
+          _buildKanbanColumn(context, S.of('col_todo'), TaskStatus.todo, tasks),
+          _buildKanbanColumn(context, S.of('col_doing'), TaskStatus.inProgress, tasks),
+          _buildKanbanColumn(context, S.of('col_done'), TaskStatus.done, tasks),
         ],
       ),
     );
@@ -494,17 +501,17 @@ class _TaskActions extends StatelessWidget {
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         itemBuilder: (context) => [
-          _buildMenuItem(TaskStatus.todo, 'To-Do', Icons.radio_button_unchecked),
-          _buildMenuItem(TaskStatus.inProgress, 'Doing', Icons.sync),
-          _buildMenuItem(TaskStatus.done, 'Done', Icons.check_circle_outline),
+          _buildMenuItem(TaskStatus.todo, S.of('col_todo'), Icons.radio_button_unchecked),
+          _buildMenuItem(TaskStatus.inProgress, S.of('col_doing'), Icons.sync),
+          _buildMenuItem(TaskStatus.done, S.of('col_done'), Icons.check_circle_outline),
           const PopupMenuDivider(),
           PopupMenuItem(
             value: 'delete',
             child: Row(
-              children: const [
-                Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                SizedBox(width: 8),
-                Text('Delete', style: TextStyle(color: Colors.redAccent, fontSize: 15)),
+              children: [
+                const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                const SizedBox(width: 8),
+                Text(S.of('delete'), style: const TextStyle(color: Colors.redAccent, fontSize: 15)),
               ],
             ),
           ),
