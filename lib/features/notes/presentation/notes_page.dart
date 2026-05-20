@@ -64,7 +64,7 @@ class _NotesView extends StatelessWidget {
               }
               return ListView.separated(
                 itemCount: notes.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, __) => Divider(height: 1),
                 itemBuilder: (context, index) {
                   final note = notes[index];
                   return ListTile(
@@ -77,7 +77,7 @@ class _NotesView extends StatelessWidget {
                     onTap: () =>
                         _showNoteDialog(context, domains: domains, note: note),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
+                      icon: Icon(Icons.delete_outline),
                       onPressed: () =>
                           context.read<NotesCubit>().deleteNote(note.id),
                     ),
@@ -96,7 +96,7 @@ class _NotesView extends StatelessWidget {
             onPressed: domains.isEmpty
                 ? null
                 : () => _showNoteDialog(context, domains: domains),
-            child: const Icon(Icons.add),
+            child: Icon(Icons.add),
           );
         },
       ),

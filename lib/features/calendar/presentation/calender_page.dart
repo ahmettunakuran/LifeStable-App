@@ -70,7 +70,7 @@ class _CalendarViewState extends State<_CalendarView>
         return Scaffold(
           backgroundColor: AppColors.black,
           body: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -127,7 +127,7 @@ class _CalendarViewState extends State<_CalendarView>
                 border:
                 Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
               ),
-              child: const Icon(Icons.arrow_back,
+              child: Icon(Icons.arrow_back,
                   color: AppColors.gold, size: 18),
             ),
           ),
@@ -183,7 +183,7 @@ class _CalendarViewState extends State<_CalendarView>
           dividerHeight: 0,
           labelColor: Colors.black,
           unselectedLabelColor: Colors.white.withValues(alpha: 0.4),
-          labelStyle: const TextStyle(
+          labelStyle: TextStyle(
               fontWeight: FontWeight.w700, fontSize: 12),
           tabs: [
             Tab(text: S.of('month_week')),
@@ -232,18 +232,18 @@ class _CalendarViewState extends State<_CalendarView>
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.gold, width: 1.5),
         ),
-        todayTextStyle: const TextStyle(
+        todayTextStyle: TextStyle(
             color: AppColors.gold, fontWeight: FontWeight.w700),
-        selectedDecoration: const BoxDecoration(
+        selectedDecoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
               colors: [AppColors.goldLight, AppColors.goldDark]),
         ),
-        selectedTextStyle: const TextStyle(
+        selectedTextStyle: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.w800,
             fontSize: 13),
-        markerDecoration: const BoxDecoration(
+        markerDecoration: BoxDecoration(
             color: AppColors.gold, shape: BoxShape.circle),
         markerSize: 5,
         markersMaxCount: 3,
@@ -271,7 +271,7 @@ class _CalendarViewState extends State<_CalendarView>
                     width: 5,
                     height: 5,
                     margin: const EdgeInsets.symmetric(horizontal: 1),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                         color: Colors.orange,
                         shape: BoxShape.circle),
                   ),
@@ -280,7 +280,7 @@ class _CalendarViewState extends State<_CalendarView>
                     width: 5,
                     height: 5,
                     margin: const EdgeInsets.symmetric(horizontal: 1),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                         color: Color(0xFFBA68C8),
                         shape: BoxShape.circle),
                   ),
@@ -289,7 +289,7 @@ class _CalendarViewState extends State<_CalendarView>
                     width: 5,
                     height: 5,
                     margin: const EdgeInsets.symmetric(horizontal: 1),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                         color: AppColors.gold,
                         shape: BoxShape.circle),
                   ),
@@ -301,7 +301,7 @@ class _CalendarViewState extends State<_CalendarView>
       headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
             color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
         leftChevronIcon: Icon(Icons.chevron_left,
             color: AppColors.gold.withValues(alpha: 0.8)),
@@ -309,7 +309,7 @@ class _CalendarViewState extends State<_CalendarView>
             color: AppColors.gold.withValues(alpha: 0.8)),
         headerPadding:
         const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-        decoration: const BoxDecoration(color: Colors.transparent),
+        decoration: BoxDecoration(color: Colors.transparent),
       ),
       daysOfWeekStyle: DaysOfWeekStyle(
         weekdayStyle: TextStyle(
@@ -508,10 +508,10 @@ class _CalendarViewState extends State<_CalendarView>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.add, color: Colors.black, size: 20),
+                Icon(Icons.add, color: Colors.black, size: 20),
                 const SizedBox(width: 8),
                 Text(S.of('new_event'),
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.w700,
                         fontSize: 15)),
@@ -601,7 +601,7 @@ class _CalendarViewState extends State<_CalendarView>
           color: Colors.white.withValues(alpha: 0.05),
           border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
         ),
-        child: const Icon(Icons.document_scanner_outlined,
+        child: Icon(Icons.document_scanner_outlined,
             color: AppColors.gold, size: 18),
       ),
     );
@@ -622,7 +622,7 @@ class _CalendarViewState extends State<_CalendarView>
             children: [
               Text(
                 S.of('import_schedule'),
-                style: const TextStyle(
+                style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold),
@@ -631,18 +631,18 @@ class _CalendarViewState extends State<_CalendarView>
               const _OcrRemainingHint(),
               const SizedBox(height: 12),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: AppColors.gold),
+                leading: Icon(Icons.photo_library, color: AppColors.gold),
                 title: Text(S.of('choose_from_gallery'),
-                    style: const TextStyle(color: Colors.white)),
+                    style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickAndProcessImage(context, ImageSource.gallery);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.gold),
+                leading: Icon(Icons.camera_alt, color: AppColors.gold),
                 title: Text(S.of('take_a_photo'),
-                    style: const TextStyle(color: Colors.white)),
+                    style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickAndProcessImage(context, ImageSource.camera);
@@ -740,13 +740,13 @@ class _CalendarViewState extends State<_CalendarView>
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.lock_clock_outlined,
+            Icon(Icons.lock_clock_outlined,
                 color: AppColors.gold, size: 22),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 S.of('quota_reached_title'),
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
                   fontSize: 17,
@@ -757,13 +757,13 @@ class _CalendarViewState extends State<_CalendarView>
         ),
         content: Text(
           S.of('quota_reached_ocr').replaceAll('{limit}', '$limit'),
-          style: const TextStyle(color: Colors.white70, height: 1.4),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.70), height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(S.of('maybe_later'),
-                style: const TextStyle(color: Colors.white54)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.54))),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -775,7 +775,7 @@ class _CalendarViewState extends State<_CalendarView>
               Navigator.of(context).pushNamed(AppRoutes.premiumPlans);
             },
             child: Text(S.of('see_plans'),
-                style: const TextStyle(fontWeight: FontWeight.w700)),
+                style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -796,7 +796,7 @@ class _CalendarViewState extends State<_CalendarView>
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.cardBg,
           title: Text(S.of('confirm_schedule'),
-              style: const TextStyle(color: Colors.white)),
+              style: TextStyle(color: Colors.white)),
           content: SizedBox(
             width: double.maxFinite,
             child: Column(
@@ -808,12 +808,12 @@ class _CalendarViewState extends State<_CalendarView>
                   children: [
                     Text(
                       S.of('number_of_weeks'),
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 13),
                     ),
                     DropdownButton<int>(
                       value: selectedWeeks,
                       dropdownColor: AppColors.cardBg,
-                      style: const TextStyle(color: AppColors.gold),
+                      style: TextStyle(color: AppColors.gold),
                       underline: Container(),
                       items: [1, 2, 4, 8, 10, 12, 14, 16]
                           .map((e) => DropdownMenuItem(
@@ -829,7 +829,7 @@ class _CalendarViewState extends State<_CalendarView>
                     ),
                   ],
                 ),
-                const Divider(color: Colors.white12),
+                Divider(color: Colors.white.withValues(alpha: 0.12)),
                 Text(
                   'Toggle events you want to import:',
                   style: TextStyle(
@@ -851,14 +851,14 @@ class _CalendarViewState extends State<_CalendarView>
                           style: TextStyle(
                               color: selected[i]
                                   ? AppColors.gold
-                                  : Colors.white38,
+                                  : Colors.white.withValues(alpha: 0.38),
                               fontSize: 13)),
                       subtitle: Text(
                         DateFormat('EEEE HH:mm').format(events[i].startAt),
                         style: TextStyle(
                             color: selected[i]
-                                ? Colors.white70
-                                : Colors.white24,
+                                ? Colors.white.withValues(alpha: 0.70)
+                                : Colors.white.withValues(alpha: 0.24),
                             fontSize: 11),
                       ),
                       controlAffinity: ListTileControlAffinity.leading,
@@ -873,7 +873,7 @@ class _CalendarViewState extends State<_CalendarView>
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child:
-                  Text(S.of('cancel'), style: const TextStyle(color: Colors.grey)),
+                  Text(S.of('cancel'), style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -887,7 +887,7 @@ class _CalendarViewState extends State<_CalendarView>
                 if (confirmed.isNotEmpty) onConfirm(confirmed, selectedWeeks);
               },
               child: Text(S.of('add_to_calendar'),
-                  style: const TextStyle(color: Colors.black)),
+                  style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
@@ -982,13 +982,13 @@ class _EventCard extends StatelessWidget {
                       Row(
                         children: [
                           if (hasConflict) ...[
-                            const Icon(Icons.warning_amber_rounded,
+                            Icon(Icons.warning_amber_rounded,
                                 size: 14, color: Colors.orange),
                             const SizedBox(width: 6),
                           ],
                           Expanded(
                             child: Text(event.title,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14)),
@@ -1015,7 +1015,7 @@ class _EventCard extends StatelessWidget {
                                     .withValues(alpha: 0.8)),
                             const SizedBox(width: 4),
                             Text(event.teamName!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     color: Color(0xFFBA68C8),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600)),
@@ -1062,8 +1062,8 @@ class _EventCard extends StatelessWidget {
                                 color: AppColors.gold.withValues(alpha: 0.7)),
                             const SizedBox(width: 4),
                             Flexible(
-                              child: Text(
-                                event.linkedTaskTitle ?? S.of('linked_task'),
+                                child: Text(
+                                  event.linkedTaskTitles.isNotEmpty ? event.linkedTaskTitles.join(', ') : S.of('linked_task'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -1100,7 +1100,7 @@ class _EventCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16)),
         title: Text(S.of('delete_event_q'),
-            style: const TextStyle(color: Colors.white, fontSize: 16)),
+            style: TextStyle(color: Colors.white, fontSize: 16)),
         content: Text(
           '"${event.title}"${event.isTeamEvent ? '' : ''}',
           style: TextStyle(
@@ -1118,7 +1118,7 @@ class _EventCard extends StatelessWidget {
               onDelete();
             },
             child: Text(S.of('delete'),
-                style: const TextStyle(color: Colors.redAccent)),
+                style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -1347,14 +1347,14 @@ class _FormatToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _btn('M', CalendarFormat.month),
-          _btn('W', CalendarFormat.week),
+          _btn(context, 'M', CalendarFormat.month),
+          _btn(context, 'W', CalendarFormat.week),
         ],
       ),
     );
   }
 
-  Widget _btn(String label, CalendarFormat f) {
+  Widget _btn(BuildContext context, String label, CalendarFormat f) {
     final active = format == f;
     return GestureDetector(
       onTap: () => onChanged(f),

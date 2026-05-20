@@ -74,7 +74,7 @@ class DomainKanbanView extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 11,
                       letterSpacing: 0.8,
@@ -90,7 +90,7 @@ class DomainKanbanView extends StatelessWidget {
                     ),
                     child: Text(
                       '${columnTasks.length}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: AppColors.gold,
@@ -100,7 +100,7 @@ class DomainKanbanView extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 1, thickness: 1.5, color: Colors.white10),
+            Divider(height: 1, thickness: 1.5, color: Colors.white.withValues(alpha: 0.10)),
             Expanded(
               child: DragTarget<TaskEntity>(
                 onWillAcceptWithDetails: (details) => details.data.status != status,
@@ -217,7 +217,7 @@ class _TaskCard extends StatelessWidget {
                                   task.title,
                                   maxLines: 4,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 14,
                                     height: 1.2,
@@ -333,9 +333,9 @@ class _TaskActions extends StatelessWidget {
         color: AppColors.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         itemBuilder: (context) => [
-          _buildMenuItem(TaskStatus.todo, 'To-Do', Icons.radio_button_unchecked),
-          _buildMenuItem(TaskStatus.inProgress, 'Doing', Icons.sync),
-          _buildMenuItem(TaskStatus.done, 'Done', Icons.check_circle_outline),
+          _buildMenuItem(context, TaskStatus.todo, 'To-Do', Icons.radio_button_unchecked),
+          _buildMenuItem(context, TaskStatus.inProgress, 'Doing', Icons.sync),
+          _buildMenuItem(context, TaskStatus.done, 'Done', Icons.check_circle_outline),
           const PopupMenuDivider(),
           const PopupMenuItem(
             value: 'delete',
@@ -350,14 +350,14 @@ class _TaskActions extends StatelessWidget {
     );
   }
 
-  PopupMenuItem _buildMenuItem(TaskStatus status, String text, IconData icon) {
+  PopupMenuItem _buildMenuItem(BuildContext context, TaskStatus status, String text, IconData icon) {
     final isSelected = currentStatus == status;
     return PopupMenuItem(
       value: status,
       child: Row(children: [
-        Icon(icon, size: 20, color: isSelected ? AppColors.gold : Colors.white38),
+        Icon(icon, size: 20, color: isSelected ? AppColors.gold : Colors.white.withValues(alpha: 0.38)),
         const SizedBox(width: 8),
-        Text(text, style: TextStyle(fontSize: 15, color: isSelected ? AppColors.gold : Colors.white70, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+        Text(text, style: TextStyle(fontSize: 15, color: isSelected ? AppColors.gold : Colors.white.withValues(alpha: 0.70), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
       ]),
     );
   }

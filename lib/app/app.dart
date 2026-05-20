@@ -15,9 +15,9 @@ import '../features/tasks/data/task_repository_impl.dart';
 import '../features/tasks/domain/repositories/task_repository.dart';
 import '../features/tasks/presentation/bloc/tasks_bloc.dart';
 import '../features/tasks/presentation/bloc/tasks_event.dart';
-import '../shared/theme/app_theme.dart';
 import 'router/app_router.dart';
 import 'router/app_routes.dart';
+import '../shared/constants/app_colors.dart';
 
 class LifeStableApp extends StatelessWidget {
   const LifeStableApp({super.key});
@@ -62,9 +62,23 @@ class LifeStableApp extends StatelessWidget {
               title: 'LifeStable',
               debugShowCheckedModeBanner: false,
               locale: locale,
-              theme: AppTheme.light,
-              darkTheme: AppTheme.dark,
-              themeMode: ThemeMode.dark,
+              theme: ThemeData(
+                brightness: Brightness.dark,
+                scaffoldBackgroundColor: AppColors.black,
+                canvasColor: AppColors.black,
+                dialogBackgroundColor: AppColors.cardBg,
+                colorScheme: const ColorScheme.dark(
+                  primary: AppColors.gold,
+                  secondary: AppColors.gold,
+                  surface: AppColors.black,
+                ),
+                pageTransitionsTheme: const PageTransitionsTheme(
+                  builders: {
+                    TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                  },
+                ),
+              ),
               initialRoute: AppRoutes.splash,
               onGenerateRoute: AppRouter.onGenerateRoute,
             );

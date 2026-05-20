@@ -63,7 +63,7 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -83,7 +83,7 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     backgroundColor: AppColors.cardBg,
-                    content: const Text(
+                    content: Text(
                       'Could not get an answer. Please try again.',
                       style: TextStyle(color: Colors.white),
                     ),
@@ -126,7 +126,7 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back, color: AppColors.gold),
+            child: Icon(Icons.arrow_back, color: AppColors.gold),
           ),
           const SizedBox(width: 12),
           Container(
@@ -136,7 +136,7 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
               color: AppColors.gold.withOpacity(0.08),
               border: Border.all(color: AppColors.gold.withOpacity(0.2)),
             ),
-            child: const Icon(Icons.menu_book_outlined,
+            child: Icon(Icons.menu_book_outlined,
                 color: AppColors.gold, size: 18),
           ),
           const SizedBox(width: 10),
@@ -147,7 +147,7 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
                 shaderCallback: (bounds) => const LinearGradient(
                   colors: [AppColors.goldLight, AppColors.gold],
                 ).createShader(bounds),
-                child: const Text(
+                child: Text(
                   'App Assistant',
                   style: TextStyle(
                     fontSize: 16,
@@ -189,10 +189,10 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
           shaderCallback: (b) => const LinearGradient(
             colors: [AppColors.goldLight, AppColors.gold],
           ).createShader(b),
-          child: const Icon(Icons.quiz_outlined, color: Colors.white, size: 52),
+          child: Icon(Icons.quiz_outlined, color: Colors.white, size: 52),
         ),
         const SizedBox(height: 18),
-        const Text(
+        Text(
           'App Assistant',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -267,7 +267,7 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
                 controller: _controller,
                 focusNode: _focusNode,
                 enabled: !state.isResponding,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
+                style: TextStyle(color: Colors.white, fontSize: 15),
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
@@ -338,7 +338,7 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
                   color: AppColors.gold.withOpacity(0.6),
                 ),
               )
-            : const Icon(Icons.arrow_upward_rounded,
+            : Icon(Icons.arrow_upward_rounded,
                 color: Colors.black, size: 20),
       ),
     );
@@ -410,7 +410,7 @@ class _SuggestionChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppColors.gold,
             fontSize: 12,
             fontWeight: FontWeight.w500,

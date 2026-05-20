@@ -36,7 +36,7 @@ class _SettingsPageState extends State<SettingsPage> {
             launched
                 ? S.of('browser_opened_msg')
                 : S.of('could_not_open_msg'),
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white),
           ),
         ),
       );
@@ -46,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           backgroundColor: AppColors.cardBg,
           content: Text('${S.of('connect_failed')}: $e',
-              style: const TextStyle(color: Colors.white)),
+              style: TextStyle(color: Colors.white)),
         ),
       );
     } finally {
@@ -68,7 +68,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 .replaceAll('{c}', '${result.created}')
                 .replaceAll('{u}', '${result.updated}')
                 .replaceAll('{d}', '${result.deleted}'),
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white),
           ),
         ),
       );
@@ -78,7 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           backgroundColor: AppColors.cardBg,
           content: Text('${S.of('sync_failed')}: $e',
-              style: const TextStyle(color: Colors.white)),
+              style: TextStyle(color: Colors.white)),
         ),
       );
     } finally {
@@ -93,23 +93,23 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: AppColors.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(S.of('disconnect_google_title'),
-            style: const TextStyle(
+            style: TextStyle(
                 color: Colors.white, fontWeight: FontWeight.w700)),
         content: Text(
           S.of('disconnect_google_body'),
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(S.of('cancel'),
-                style: const TextStyle(color: Colors.white54)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.54))),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.gold),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(S.of('disconnect'),
-                style: const TextStyle(
+                style: TextStyle(
                     color: Colors.black, fontWeight: FontWeight.w700)),
           ),
         ],
@@ -127,7 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           backgroundColor: AppColors.cardBg,
           content: Text(S.of('google_disconnected'),
-              style: const TextStyle(color: Colors.white)),
+              style: TextStyle(color: Colors.white)),
         ),
       );
     } catch (e) {
@@ -136,7 +136,7 @@ class _SettingsPageState extends State<SettingsPage> {
         SnackBar(
           backgroundColor: AppColors.cardBg,
           content: Text('${S.of('disconnect_failed')}: $e',
-              style: const TextStyle(color: Colors.white)),
+              style: TextStyle(color: Colors.white)),
         ),
       );
     } finally {
@@ -158,12 +158,12 @@ class _SettingsPageState extends State<SettingsPage> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.gold, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, color: AppColors.gold, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           S.of('settings'),
-          style: const TextStyle(
+          style: TextStyle(
             color: AppColors.gold,
             fontWeight: FontWeight.w800,
             fontSize: 20,
@@ -182,7 +182,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 4),
               Text(
                 S.of('language_section_description'),
-                style: const TextStyle(color: Colors.white54, fontSize: 13),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
               ),
               const SizedBox(height: 12),
               _buildLanguageCard(),
@@ -191,7 +191,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 4),
               Text(
                 S.of('premium_plans_subtitle'),
-                style: const TextStyle(color: Colors.white54, fontSize: 13),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
               ),
               const SizedBox(height: 12),
               const UsageSummaryCard(),
@@ -201,7 +201,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: FilledButton.icon(
                   onPressed: () => Navigator.of(context)
                       .pushNamed(AppRoutes.premiumPlans),
-                  icon: const Icon(Icons.workspace_premium, size: 18),
+                  icon: Icon(Icons.workspace_premium, size: 18),
                   label: Text(S.of('view_plans')),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.gold,
@@ -210,7 +210,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    textStyle: const TextStyle(
+                    textStyle: TextStyle(
                         fontWeight: FontWeight.w800, fontSize: 14),
                   ),
                 ),
@@ -220,7 +220,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 4),
               Text(
                 S.of('calendar_sync_description'),
-                style: const TextStyle(color: Colors.white54, fontSize: 13),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
               ),
               const SizedBox(height: 12),
               _buildGoogleCard(account),
@@ -260,14 +260,14 @@ class _SettingsPageState extends State<SettingsPage> {
               color: AppColors.gold.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.translate_rounded,
+            child: Icon(Icons.translate_rounded,
                 color: AppColors.gold, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               S.of('language'),
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -285,7 +285,7 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.only(top: 8, bottom: 2),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           color: AppColors.gold,
           fontWeight: FontWeight.w800,
           fontSize: 11,
@@ -319,11 +319,11 @@ class _SettingsPageState extends State<SettingsPage> {
                   color: AppColors.gold.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.calendar_month,
+                child: Icon(Icons.calendar_month,
                     color: AppColors.gold, size: 22),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Google Calendar',
                   style: TextStyle(
@@ -349,8 +349,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ] else
             Text(
               S.of('no_google_account_msg'),
-              style: const TextStyle(
-                  color: Colors.white54, fontSize: 13, height: 1.4),
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.54), fontSize: 13, height: 1.4),
             ),
           const SizedBox(height: 18),
           Wrap(
@@ -393,14 +393,14 @@ class _SettingsPageState extends State<SettingsPage> {
         border: Border.all(
           color: connected
               ? AppColors.gold.withOpacity(0.5)
-              : Colors.white24,
+              : Colors.white.withValues(alpha: 0.24),
           width: 1,
         ),
       ),
       child: Text(
         connected ? S.of('connected') : S.of('not_connected'),
         style: TextStyle(
-          color: connected ? AppColors.gold : Colors.white54,
+          color: connected ? AppColors.gold : Colors.white.withValues(alpha: 0.54),
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -412,14 +412,14 @@ class _SettingsPageState extends State<SettingsPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Colors.white38, size: 15),
+        Icon(icon, color: Colors.white.withValues(alpha: 0.38), size: 15),
         const SizedBox(width: 8),
         Text('$label: ',
-            style: const TextStyle(color: Colors.white38, fontSize: 12)),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.38), fontSize: 12)),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 12),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -439,7 +439,7 @@ class _SettingsPageState extends State<SettingsPage> {
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.gold,
         foregroundColor: Colors.black,
-        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        textStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       ),
@@ -456,9 +456,9 @@ class _SettingsPageState extends State<SettingsPage> {
       icon: Icon(icon, size: 16),
       label: Text(label),
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white54,
-        side: const BorderSide(color: Colors.white24),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        foregroundColor: Colors.white.withValues(alpha: 0.54),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.24)),
+        textStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       ),

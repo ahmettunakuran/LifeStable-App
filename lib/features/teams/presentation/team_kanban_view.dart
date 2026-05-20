@@ -65,22 +65,22 @@ class TeamKanbanView extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w900, 
                       fontSize: 8, 
                       letterSpacing: 0.5, 
-                      color: Colors.white38
+                      color: Colors.white.withValues(alpha: 0.38)
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${columnTasks.length}', 
-                    style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white24)
+                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white.withValues(alpha: 0.24))
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, thickness: 0.5, color: Colors.white10),
+            Divider(height: 1, thickness: 0.5, color: Colors.white.withValues(alpha: 0.10)),
             Expanded(
               child: DragTarget<TaskEntity>(
                 onWillAcceptWithDetails: (details) => details.data.status != status,
@@ -186,7 +186,7 @@ class _TaskCard extends StatelessWidget {
                           task.title, 
                           maxLines: 4,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, height: 1.2, color: Colors.white)
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, height: 1.2, color: Colors.white)
                         ),
                       ),
                       _TaskActions(currentStatus: task.status, onStatusChanged: onStatusChanged ?? (_) {}, onDelete: onDelete),
@@ -198,7 +198,7 @@ class _TaskCard extends StatelessWidget {
                       task.description!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 9, color: Colors.white38, height: 1.2),
+                      style: TextStyle(fontSize: 9, color: Colors.white.withValues(alpha: 0.38), height: 1.2),
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -209,7 +209,7 @@ class _TaskCard extends StatelessWidget {
                       if (task.dueDate != null)
                         Text(
                           DateFormat('d MMM').format(task.dueDate!),
-                          style: const TextStyle(fontSize: 8, color: Colors.white24, fontWeight: FontWeight.w600)
+                          style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.24), fontWeight: FontWeight.w600)
                         ),
                     ],
                   ),
@@ -230,8 +230,19 @@ class _AssigneeChip extends StatelessWidget {
   final String? userId;
 
   Future<String> _getUsername(String uid) async {
-    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-    return doc.data()?['displayName'] ?? uid.substring(0, 4);
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
+      if (data != null) {
+        final displayName = data['displayName'] as String?;
+        if (displayName != null && displayName.isNotEmpty) return displayName;
+        final name = data['name'] as String?;
+        if (name != null && name.isNotEmpty) return name;
+        final email = data['email'] as String?;
+        if (email != null && email.isNotEmpty) return email.split('@').first;
+      }
+    } catch (_) {}
+    return '...';
   }
 
   @override
@@ -246,13 +257,13 @@ class _AssigneeChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.person, size: 7, color: Colors.white24),
+              Icon(Icons.person, size: 7, color: Colors.white.withValues(alpha: 0.24)),
               const SizedBox(width: 2),
               Flexible(
                 child: Text(
                   snapshot.data ?? '...', 
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white24, fontSize: 7)
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.24), fontSize: 7)
                 ),
               ),
             ],
@@ -303,13 +314,13 @@ class _TaskActions extends StatelessWidget {
             onDelete?.call();
           }
         },
-        icon: const Icon(Icons.more_vert, size: 14, color: Colors.white24),
+        icon: Icon(Icons.more_vert, size: 14, color: Colors.white.withValues(alpha: 0.24)),
         color: AppColors.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         itemBuilder: (context) => [
-          _buildMenuItem(TaskStatus.todo, 'To-Do', Icons.radio_button_unchecked),
-          _buildMenuItem(TaskStatus.inProgress, 'Doing', Icons.sync),
-          _buildMenuItem(TaskStatus.done, 'Done', Icons.check_circle_outline),
+          _buildMenuItem(context, TaskStatus.todo, 'To-Do', Icons.radio_button_unchecked),
+          _buildMenuItem(context, TaskStatus.inProgress, 'Doing', Icons.sync),
+          _buildMenuItem(context, TaskStatus.done, 'Done', Icons.check_circle_outline),
           const PopupMenuDivider(),
           const PopupMenuItem(
             value: 'delete',
@@ -324,14 +335,14 @@ class _TaskActions extends StatelessWidget {
     );
   }
 
-  PopupMenuItem _buildMenuItem(TaskStatus status, String text, IconData icon) {
+  PopupMenuItem _buildMenuItem(BuildContext context, TaskStatus status, String text, IconData icon) {
     final isSelected = currentStatus == status;
     return PopupMenuItem(
       value: status,
       child: Row(children: [
-        Icon(icon, size: 16, color: isSelected ? AppColors.gold : Colors.white38),
+        Icon(icon, size: 16, color: isSelected ? AppColors.gold : Colors.white.withValues(alpha: 0.38)),
         const SizedBox(width: 8),
-        Text(text, style: TextStyle(fontSize: 14, color: isSelected ? AppColors.gold : Colors.white70, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+        Text(text, style: TextStyle(fontSize: 14, color: isSelected ? AppColors.gold : Colors.white.withValues(alpha: 0.70), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
       ]),
     );
   }

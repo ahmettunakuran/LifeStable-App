@@ -5,6 +5,8 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:http/http.dart' as http;
 import '../core/models/help_bot_response.dart';
 import '../core/models/rag_result.dart';
+import '../features/billing/data/usage_tracker.dart';
+import '../features/billing/domain/plan_catalog.dart';
 import 'embedding_service.dart';
 
 class HelpBotService {
@@ -27,6 +29,12 @@ class HelpBotService {
   ///   3. If top result similarity ≥ threshold → return FAQ answer
   ///   4. Otherwise → fall back to generative Gemini response
   Future<HelpBotResponse> ask(String userQuestion) async {
+    try {
+      await UsageTracker.instance.consume(BillableFeature.helpBotQuestion);
+    } catch (e) {
+      // Ignoring usage errors as requested for now.
+    }
+
     final normalised = userQuestion.trim();
 
     // 1. Cache hit (hash-based, no embedding needed)

@@ -35,7 +35,7 @@ class HomeDashboardPage extends StatelessWidget {
             backgroundColor: AppColors.black,
             drawer: _buildDrawer(context),
             body: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -58,7 +58,7 @@ class HomeDashboardPage extends StatelessWidget {
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.menu, color: AppColors.gold),
+                                    icon: Icon(Icons.menu, color: AppColors.gold),
                                     onPressed: () => scaffoldKey.currentState?.openDrawer(),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
@@ -71,20 +71,20 @@ class HomeDashboardPage extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 16),
-                              _buildSkeletonBox(height: 110, radius: 27),
+                              _buildSkeletonBox(context, height: 110, radius: 27),
                               const SizedBox(height: 16),
                               Expanded(
                                 flex: 4,
                                 child: Row(
                                   children: [
-                                    Expanded(child: _buildSkeletonBox()),
+                                    Expanded(child: _buildSkeletonBox(context, )),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
                                         children: [
-                                          Expanded(child: _buildSkeletonBox()),
+                                          Expanded(child: _buildSkeletonBox(context, )),
                                           const SizedBox(height: 12),
-                                          Expanded(child: _buildSkeletonBox()),
+                                          Expanded(child: _buildSkeletonBox(context, )),
                                         ],
                                       ),
                                     ),
@@ -92,7 +92,7 @@ class HomeDashboardPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Expanded(flex: 1, child: _buildSkeletonBox()),
+                              Expanded(flex: 1, child: _buildSkeletonBox(context, )),
                               const SizedBox(height: 8),
                             ],
                           ),
@@ -116,7 +116,7 @@ class HomeDashboardPage extends StatelessWidget {
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.menu, color: AppColors.gold),
+                                    icon: Icon(Icons.menu, color: AppColors.gold),
                                     onPressed: () => scaffoldKey.currentState?.openDrawer(),
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
@@ -139,7 +139,7 @@ class HomeDashboardPage extends StatelessWidget {
                               _buildSlidableDomainAccess(context, state.domains, state.tasks, state.habits),
                               const SizedBox(height: 16),
                               if (state.deadlineCount > 0) ...[
-                                _buildDeadlineAlert(state.deadlineCount),
+                                _buildDeadlineAlert(context, state.deadlineCount),
                                 const SizedBox(height: 16),
                               ],
                               Expanded(
@@ -147,7 +147,7 @@ class HomeDashboardPage extends StatelessWidget {
                                 child: Row(
                                   children: [
                                     Expanded(
-                                      child: _buildSummaryCard(state.todayTasks),
+                                      child: _buildSummaryCard(context, state.todayTasks),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -165,7 +165,7 @@ class HomeDashboardPage extends StatelessWidget {
                               const SizedBox(height: 12),
                                 Expanded(
                                   flex: 1,
-                                  child: _buildAIRecommendations(state),
+                                  child: _buildAIRecommendations(context, state),
                                 ),
                               const SizedBox(height: 8),
                             ],
@@ -207,7 +207,7 @@ class HomeDashboardPage extends StatelessWidget {
                       (route) => false,
                     );
                   },
-                  child: const Icon(
+                  child: Icon(
                     Icons.home_outlined,
                     color: AppColors.gold,
                     size: 28,
@@ -232,11 +232,11 @@ class HomeDashboardPage extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
-                    icon: const Icon(Icons.logout, color: Colors.white70, size: 18),
-                    label: Text(S.of('logout'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                    icon: Icon(Icons.logout, color: Colors.white.withValues(alpha: 0.70), size: 18),
+                    label: Text(S.of('logout'), style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 14)),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   ),
-                  const Icon(Icons.help_outline, color: Colors.white70, size: 28),
+                  Icon(Icons.help_outline, color: Colors.white.withValues(alpha: 0.70), size: 28),
                 ],
               ),
             ),
@@ -265,7 +265,7 @@ class HomeDashboardPage extends StatelessWidget {
           ),
           child: Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
         ),
       ),
@@ -296,7 +296,7 @@ class HomeDashboardPage extends StatelessWidget {
               children: [
                 Text(
                   '$totalStreak ${S.of('days')}',
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppColors.gold,
                       fontSize: 12,
                       fontWeight: FontWeight.w900),
@@ -339,7 +339,7 @@ class HomeDashboardPage extends StatelessWidget {
                 const Text('🔥', style: TextStyle(fontSize: 20)),
                 const SizedBox(width: 8),
                 Text(S.of('streak_tracker'),
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: AppColors.gold,
                         fontSize: 16,
                         fontWeight: FontWeight.w900)),
@@ -379,7 +379,7 @@ class HomeDashboardPage extends StatelessWidget {
                           h.name,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                              color: h.isPaused ? Colors.white38 : Colors.white,
+                              color: h.isPaused ? Colors.white.withValues(alpha: 0.38) : Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w600),
                         ),
@@ -417,7 +417,7 @@ class HomeDashboardPage extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         '${h.streak}🔥',
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.gold,
                             fontSize: 12,
                             fontWeight: FontWeight.w900),
@@ -445,14 +445,14 @@ class HomeDashboardPage extends StatelessWidget {
               color: Colors.white.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.auto_awesome, color: Colors.blueAccent, size: 24),
+            child: Icon(Icons.auto_awesome, color: Colors.blueAccent, size: 24),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildDeadlineAlert(int count) {
+  Widget _buildDeadlineAlert(BuildContext context, int count) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -463,12 +463,12 @@ class HomeDashboardPage extends StatelessWidget {
       child: Text(
         S.of('deadlines_today').replaceFirst('{}', count == 2 ? "Two" : count.toString()),
         textAlign: TextAlign.center,
-        style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold, fontSize: 13),
+        style: TextStyle(color: AppColors.black, fontWeight: FontWeight.bold, fontSize: 13),
       ),
     );
   }
 
-  Widget _buildSummaryCard(List<TaskEntity> todayTasks) {
+  Widget _buildSummaryCard(BuildContext context, List<TaskEntity> todayTasks) {
     final count = todayTasks.length;
     final nextTask = todayTasks.isNotEmpty ? todayTasks.first : null;
 
@@ -482,13 +482,13 @@ class HomeDashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCompactHeader(S.of('fast_summary')),
+          _buildCompactHeader(context, S.of('fast_summary')),
           const SizedBox(height: 12),
           if (count == 0)
             Expanded(
               child: Center(
                 child: Text(S.of('all_clear_today'),
-                    style: const TextStyle(color: Colors.white24, fontSize: 12)),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.24), fontSize: 12)),
               ),
             )
           else
@@ -501,19 +501,19 @@ class HomeDashboardPage extends StatelessWidget {
                     S
                         .of('you_have_tasks_today')
                         .replaceAll('{n}', '$count'),
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 12),
                   ),
                   if (nextTask != null) ...[
                     const SizedBox(height: 10),
                     Text(S.of('next_up'),
-                        style: const TextStyle(
-                            color: Colors.white38, fontSize: 10)),
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.38), fontSize: 10)),
                     const SizedBox(height: 4),
                     Text(
                       nextTask.title,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ],
@@ -524,7 +524,7 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildListItem(String text, IconData icon, Color color) {
+  Widget _buildListItem(BuildContext context, String text, IconData icon, Color color) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -536,7 +536,7 @@ class HomeDashboardPage extends StatelessWidget {
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -571,7 +571,7 @@ class HomeDashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCompactHeader(S.of('close_deadlines')),
+          _buildCompactHeader(context, S.of('close_deadlines')),
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress,
@@ -585,8 +585,8 @@ class HomeDashboardPage extends StatelessWidget {
             Expanded(
                 child: Center(
                     child: Text(S.of('all_clear'),
-                        style: const TextStyle(
-                            color: Colors.white24, fontSize: 12))))
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.24), fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
@@ -621,18 +621,18 @@ class HomeDashboardPage extends StatelessWidget {
                                   task.title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
                                 ),
                                 if (task.dueDate != null)
                                   Text(
                                     DateFormat('MMM d').format(task.dueDate!),
-                                    style: const TextStyle(color: Colors.white38, fontSize: 9),
+                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.38), fontSize: 9),
                                   ),
                               ],
                             ),
                           ),
                           const SizedBox(width: 4),
-                          _buildPriorityBadge(task.priority),
+                          _buildPriorityBadge(context, task.priority),
                         ],
                       ),
                     ),
@@ -645,7 +645,7 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPriorityBadge(TaskPriority priority) {
+  Widget _buildPriorityBadge(BuildContext context, TaskPriority priority) {
     final Color color;
     final String label;
     switch (priority) {
@@ -670,7 +670,7 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactHeader(String title, {double? height}) {
+  Widget _buildCompactHeader(BuildContext context, String title, {double? height}) {
     return Container(
       width: double.infinity,
       height: height,
@@ -682,7 +682,7 @@ class HomeDashboardPage extends StatelessWidget {
       child: title.isEmpty ? null : Text(
         title.toUpperCase(),
         textAlign: TextAlign.center,
-        style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1),
+        style: TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1),
       ),
     );
   }
@@ -697,14 +697,14 @@ class HomeDashboardPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildCompactHeader(S.of('todays_focus')),
+          _buildCompactHeader(context, S.of('todays_focus')),
           const SizedBox(height: 12),
           if (events.isEmpty)
             Expanded(
                 child: Center(
                     child: Text(S.of('no_events_today'),
-                        style: const TextStyle(
-                            color: Colors.white24, fontSize: 12))))
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.24), fontSize: 12))))
           else
             Expanded(
               child: ListView.builder(
@@ -714,7 +714,7 @@ class HomeDashboardPage extends StatelessWidget {
                   final event = events[index];
                   return GestureDetector(
                     onTap: () => Navigator.pushNamed(context, AppRoutes.calendar),
-                    child: _buildListItem(event.title, Icons.calendar_today, Colors.blueAccent),
+                    child: _buildListItem(context, event.title, Icons.calendar_today, Colors.blueAccent),
                   );
                 },
               ),
@@ -724,7 +724,7 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAIRecommendations(HomeDashboardLoaded state) {
+  Widget _buildAIRecommendations(BuildContext context, HomeDashboardLoaded state) {
     Widget content;
 
     if (state.isInsightLoading) {
@@ -739,14 +739,14 @@ class HomeDashboardPage extends StatelessWidget {
       content = SingleChildScrollView(
         child: Text(
           state.aiInsight!,
-          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 13, height: 1.4),
         ),
       );
     } else {
-      content = const Center(
+      content = Center(
         child: Text(
           'Özet bulunamadı.',
-          style: TextStyle(color: Colors.white38, fontSize: 12, fontStyle: FontStyle.italic),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.38), fontSize: 12, fontStyle: FontStyle.italic),
         ),
       );
     }
@@ -761,7 +761,7 @@ class HomeDashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildCompactHeader(S.of('recommendations_ai')),
+          _buildCompactHeader(context, S.of('recommendations_ai')),
           const SizedBox(height: 8),
           Expanded(child: content),
         ],
@@ -787,15 +787,15 @@ class HomeDashboardPage extends StatelessWidget {
                 color: AppColors.black.withOpacity(0.1),
                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(27), bottomLeft: Radius.circular(27)),
               ),
-              child: const Icon(Icons.add, color: AppColors.black, size: 28),
+              child: Icon(Icons.add, color: AppColors.black, size: 28),
             ),
           ),
-          const VerticalDivider(width: 1, color: AppColors.black, indent: 14, endIndent: 14),
+          VerticalDivider(width: 1, color: AppColors.black, indent: 14, endIndent: 14),
           Expanded(
             child: domains.isEmpty
                 ? Center(
                     child: Text(S.of('no_domains_yet'),
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: AppColors.black,
                             fontSize: 12,
                             fontWeight: FontWeight.w600)))
@@ -821,15 +821,15 @@ class HomeDashboardPage extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(domain.name.toUpperCase(), style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5)),
+                            Text(domain.name.toUpperCase(), style: TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5)),
                             const SizedBox(height: 4),
-                            Text('$incompleteTasks task${incompleteTasks == 1 ? '' : 's'}', style: const TextStyle(color: AppColors.black, fontSize: 10, fontWeight: FontWeight.w600)),
+                            Text('$incompleteTasks task${incompleteTasks == 1 ? '' : 's'}', style: TextStyle(color: AppColors.black, fontSize: 10, fontWeight: FontWeight.w600)),
                             if (maxStreak > 0) ...[
                               const SizedBox(height: 4),
                               Row(children: [
-                                const Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 12),
+                                Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 12),
                                 const SizedBox(width: 2),
-                                Text('$maxStreak day${maxStreak == 1 ? '' : 's'}', style: const TextStyle(color: AppColors.black, fontSize: 10))
+                                Text('$maxStreak day${maxStreak == 1 ? '' : 's'}', style: TextStyle(color: AppColors.black, fontSize: 10))
                               ])
                             ],
                           ],
@@ -841,13 +841,13 @@ class HomeDashboardPage extends StatelessWidget {
               },
             ),
           ),
-          const Padding(padding: EdgeInsets.only(right: 18), child: Icon(Icons.arrow_forward_ios, color: AppColors.black, size: 14)),
+          Padding(padding: EdgeInsets.only(right: 18), child: Icon(Icons.arrow_forward_ios, color: AppColors.black, size: 14)),
         ],
       ),
     );
   }
 
-  Widget _buildSkeletonBox({double? height, double radius = 16}) {
+  Widget _buildSkeletonBox(context, {double? height, double radius = 16}) {
     return Container(
       height: height,
       decoration: BoxDecoration(

@@ -136,20 +136,20 @@ class _SlotsPanel extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.event_available,
+                      Icon(Icons.event_available,
                           color: AppColors.gold, size: 18),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           _label(s),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      const Icon(Icons.add_circle_outline,
+                      Icon(Icons.add_circle_outline,
                           color: AppColors.gold, size: 18),
                     ],
                   ),
@@ -160,7 +160,7 @@ class _SlotsPanel extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: () =>
               context.read<AssistantCubit>().requestLighterDay(),
-          icon: const Icon(Icons.refresh, size: 16, color: AppColors.gold),
+          icon: Icon(Icons.refresh, size: 16, color: AppColors.gold),
           label: const Text(
             'Find a lighter day',
             style: TextStyle(
@@ -186,12 +186,12 @@ class _SlotsPanel extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1608),
-        title: const Text('Etkinlik Başlığı',
+        title: Text('Etkinlik Başlığı',
             style: TextStyle(color: Colors.white)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           decoration: InputDecoration(
             hintText: 'Örn: Çalışma bloğu',
             hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
@@ -206,8 +206,8 @@ class _SlotsPanel extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal',
-                style: TextStyle(color: Colors.white60)),
+            child: Text('İptal',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.60))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, controller.text),
@@ -344,7 +344,7 @@ class _GuardrailPanel extends StatelessWidget {
                   onPressed: () => context
                       .read<AssistantCubit>()
                       .requestBreakInstead(messageId),
-                  icon: const Icon(Icons.coffee,
+                  icon: Icon(Icons.coffee,
                       size: 14, color: AppColors.gold),
                   label: const Text(
                     'Find lighter day',
@@ -368,7 +368,7 @@ class _GuardrailPanel extends StatelessWidget {
                   onPressed: () => context
                       .read<AssistantCubit>()
                       .confirmPendingEvent(messageId),
-                  icon: const Icon(Icons.check, size: 14),
+                  icon: Icon(Icons.check, size: 14),
                   label: const Text(
                     'Confirm anyway',
                     style: TextStyle(
@@ -392,7 +392,7 @@ class _GuardrailPanel extends StatelessWidget {
               onPressed: () => context
                   .read<AssistantCubit>()
                   .rescheduleAndConfirm(messageId),
-              icon: const Icon(Icons.swap_horiz,
+              icon: Icon(Icons.swap_horiz,
                   size: 14, color: AppColors.gold),
               label: const Text(
                 'Move an existing event & add this',
@@ -445,7 +445,7 @@ class _ScheduleScopePanel extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,

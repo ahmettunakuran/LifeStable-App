@@ -46,7 +46,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
 
   // ── Task link ─────────────────────────────────────────────────────────────
   List<TaskEntity> _availableTasks = [];
-  TaskEntity? _linkedTask;
+  Set<String> _linkedTaskIds = {};
   bool _tasksLoading = false;
 
   // ── Team fields ───────────────────────────────────────────────────────────
@@ -98,28 +98,45 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
 
-      final snap = await FirebaseFirestore.instance
-          .collectionGroup('tasks')
-          .where('userId', isEqualTo: uid)
-          .where('status', whereNotIn: ['done'])
-          .limit(50)
-          .get();
+      final tasks = <TaskEntity>[];
 
-      final tasks =
-      snap.docs.map((d) => TaskEntity.fromFirestore(d.id, d.data())).toList();
+      try {
+        final personalSnap = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('tasks')
+            .where('status', whereNotIn: ['done'])
+            .limit(50)
+            .get();
+        tasks.addAll(personalSnap.docs.map((d) => TaskEntity.fromFirestore(d.id, d.data())));
+      } catch (e) {
+        print('Error loading personal tasks: $e');
+      }
 
-      TaskEntity? linked;
-      if (widget.existingEvent?.linkedTaskId != null) {
-        linked = tasks.cast<TaskEntity?>().firstWhere(
-              (t) => t?.id == widget.existingEvent!.linkedTaskId,
-          orElse: () => null,
-        );
+      try {
+        final teamSnap = await FirebaseFirestore.instance
+            .collectionGroup('tasks')
+            .where('assignedTo', isEqualTo: uid)
+            .get();
+        for (final doc in teamSnap.docs) {
+          final task = TaskEntity.fromFirestore(doc.id, doc.data());
+          if (task.status != TaskStatus.done) {
+            tasks.add(task);
+          }
+        }
+      } catch (e) {
+        print('Error loading team tasks: $e');
+      }
+
+      Set<String> linkedIds = {};
+      if (widget.existingEvent != null && widget.existingEvent!.linkedTaskIds.isNotEmpty) {
+        linkedIds.addAll(widget.existingEvent!.linkedTaskIds);
       }
 
       if (mounted) {
         setState(() {
           _availableTasks = tasks;
-          _linkedTask = linked;
+          _linkedTaskIds = linkedIds;
           _tasksLoading = false;
         });
       }
@@ -202,7 +219,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           final data = userDoc.data()!;
           members.add({
             'uid': uid,
-            'displayName': data['display_name'] ?? data['email'] ?? uid,
+            'displayName': data['displayName'] ?? data['display_name'] ?? data['name'] ?? data['fullName'] ?? data['email'] ?? '...',
             'role': memberSnap.docs
                 .firstWhere((d) => d.data()['user_id'] == uid)
                 .data()['role'],
@@ -219,7 +236,9 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           }
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      print('Error selecting team: $e');
+    }
   }
 
   void _checkConflicts() {
@@ -238,7 +257,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
     return Scaffold(
       backgroundColor: AppColors.black,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -284,8 +303,8 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                           _buildMemberChips(),
                         ],
                       ],
-                      // ── Task link (personal/task only) ───────────────────
-                      if (_type != CalendarEventType.team) ...[
+                      // ── Task link (task only) ───────────────────
+                      if (_type == CalendarEventType.task) ...[
                         const SizedBox(height: 20),
                         _buildSectionLabel(S.of('event_section_link_task')),
                         const SizedBox(height: 10),
@@ -325,7 +344,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                 Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
               ),
               child:
-              const Icon(Icons.close, color: AppColors.gold, size: 18),
+              Icon(Icons.close, color: AppColors.gold, size: 18),
             ),
           ),
           const SizedBox(width: 14),
@@ -335,7 +354,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
             ).createShader(b),
             child: Text(
               widget.isEditing ? S.of('edit_event_title') : S.of('new_event_title'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.8,
@@ -364,7 +383,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
 
   Widget _buildTitleField() => TextFormField(
     controller: _titleCtrl,
-    style: const TextStyle(color: Colors.white, fontSize: 16),
+    style: TextStyle(color: Colors.white, fontSize: 16),
     cursorColor: AppColors.gold,
     validator: (v) =>
     (v == null || v.trim().isEmpty) ? S.of('title_required') : null,
@@ -402,15 +421,15 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide:
-      const BorderSide(color: AppColors.gold, width: 1.5),
+      BorderSide(color: AppColors.gold, width: 1.5),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Colors.redAccent),
+      borderSide: BorderSide(color: Colors.redAccent),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Colors.redAccent),
+      borderSide: BorderSide(color: Colors.redAccent),
     ),
     contentPadding:
     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -432,6 +451,9 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
             _selectedTeam = null;
             _teamMembers = [];
             _assignedMemberIds = {};
+          }
+          if (t != CalendarEventType.task) {
+            _linkedTaskIds.clear();
           }
         }),
       ))
@@ -469,7 +491,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded,
+          Icon(Icons.warning_amber_rounded,
               color: Colors.orange, size: 18),
           const SizedBox(width: 10),
           Expanded(
@@ -479,7 +501,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                       : S.of('conflicts_label_one'))
                   .replaceAll('{n}', '${_conflicts.length}')
                   .replaceAll('{titles}', _conflicts.map((e) => e.title).join(', ')),
-              style: const TextStyle(
+              style: TextStyle(
                   color: Colors.orange,
                   fontSize: 12,
                   fontWeight: FontWeight.w500),
@@ -595,7 +617,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                     Expanded(
                       child: Text(
                         t['name'] as String? ?? '',
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: Colors.white, fontSize: 13),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -679,14 +701,14 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                       radius: 10,
                       backgroundColor: assigned
                           ? const Color(0xFFBA68C8)
-                          : Colors.white24,
+                          : Colors.white.withValues(alpha: 0.24),
                       child: Text(
                         name.isNotEmpty ? name[0].toUpperCase() : '?',
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
                           color:
-                          assigned ? Colors.black : Colors.white60,
+                          assigned ? Colors.black : Colors.white.withValues(alpha: 0.60),
                         ),
                       ),
                     ),
@@ -717,7 +739,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                     ),
                     if (assigned) ...[
                       const SizedBox(width: 6),
-                      const Icon(Icons.check,
+                      Icon(Icons.check,
                           size: 12, color: Color(0xFFBA68C8)),
                     ],
                   ],
@@ -748,58 +770,66 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
       return _emptyHint(S.of('no_pending_tasks_hint'));
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: Colors.white.withValues(alpha: 0.04),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.12)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<TaskEntity?>(
-          value: _linkedTask,
-          isExpanded: true,
-          dropdownColor: AppColors.cardBg,
-          hint: Text(S.of('select_task_to_link'),
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3), fontSize: 13)),
-          icon: Icon(Icons.expand_more,
-              color: AppColors.gold.withValues(alpha: 0.5), size: 20),
-          items: [
-            DropdownMenuItem<TaskEntity?>(
-              value: null,
-              child: Text(S.of('no_linked_task_option'),
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 13)),
-            ),
-            ..._availableTasks.map(
-                  (t) => DropdownMenuItem<TaskEntity?>(
-                value: t,
-                child: Row(
-                  children: [
-                    Icon(_priorityIcon(t.priority),
-                        size: 14, color: _priorityColor(t.priority)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(t.title,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13)),
-                    ),
-                    if (t.dueDate != null)
-                      Text(DateFormat('MMM d').format(t.dueDate!),
-                          style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
-                              fontSize: 11)),
-                  ],
-                ),
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _availableTasks.map((t) {
+        final selected = _linkedTaskIds.contains(t.id);
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              if (selected) {
+                _linkedTaskIds.remove(t.id);
+              } else {
+                _linkedTaskIds.add(t.id);
+              }
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: selected
+                  ? AppColors.gold.withValues(alpha: 0.15)
+                  : Colors.transparent,
+              border: Border.all(
+                color: selected
+                    ? AppColors.gold
+                    : Colors.white.withValues(alpha: 0.2),
               ),
             ),
-          ],
-          onChanged: (t) => setState(() => _linkedTask = t),
-        ),
-      ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  selected ? Icons.check_circle : Icons.circle_outlined,
+                  size: 16,
+                  color: selected ? AppColors.gold : Colors.white.withValues(alpha: 0.54),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  t.title,
+                  style: TextStyle(
+                    color: selected ? AppColors.gold : Colors.white.withValues(alpha: 0.70),
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 13,
+                  ),
+                ),
+                if (t.dueDate != null) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    DateFormat('MMM d').format(t.dueDate!),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -831,10 +861,10 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+            Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
             const SizedBox(width: 8),
             Text(S.of('delete_event_btn'),
-                style: const TextStyle(
+                style: TextStyle(
                     color: Colors.redAccent,
                     fontWeight: FontWeight.w600,
                     fontSize: 14)),
@@ -852,7 +882,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
         shape:
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(S.of('delete_event_q'),
-            style: const TextStyle(color: Colors.white, fontSize: 16)),
+            style: TextStyle(color: Colors.white, fontSize: 16)),
         content: Text(S.of('delete_event_undone'),
             style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
@@ -871,7 +901,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
               if (mounted) Navigator.pop(context);
             },
             child: Text(S.of('delete'),
-                style: const TextStyle(color: Colors.redAccent)),
+                style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -903,7 +933,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
               AppColors.gold,
               AppColors.goldDark,
             ]),
-            color: _saving ? Colors.white12 : null,
+            color: _saving ? Colors.white.withValues(alpha: 0.12) : null,
             boxShadow: _saving
                 ? null
                 : [
@@ -923,7 +953,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
                     color: AppColors.gold, strokeWidth: 2))
                 : Text(
                 widget.isEditing ? S.of('save_changes') : S.of('create_event'),
-                style: const TextStyle(
+                style: TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.w800,
                     fontSize: 16)),
@@ -955,7 +985,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
           title: Text(S.of('time_conflict_title'),
-              style: const TextStyle(color: Colors.white)),
+              style: TextStyle(color: Colors.white)),
           content: Text(
             S.of('time_conflict_body').replaceAll(
                 '{titles}', _conflicts.map((e) => e.title).join(', ')),
@@ -971,7 +1001,7 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: Text(S.of('save_anyway'),
-                  style: const TextStyle(color: AppColors.gold)),
+                  style: TextStyle(color: AppColors.gold)),
             ),
           ],
         ),
@@ -994,10 +1024,15 @@ class _EventCreateEditPageState extends State<EventCreateEditPage> {
         startAt: _startAt,
         endAt: _endAt,
         eventType: _type,
-        linkedTaskId:
-        _type != CalendarEventType.team ? _linkedTask?.id : null,
-        linkedTaskTitle:
-        _type != CalendarEventType.team ? _linkedTask?.title : null,
+        linkedTaskIds:
+        _type == CalendarEventType.task ? _linkedTaskIds.toList() : const [],
+        linkedTaskTitles:
+        _type == CalendarEventType.task
+            ? _availableTasks
+                .where((t) => _linkedTaskIds.contains(t.id))
+                .map((t) => t.title)
+                .toList()
+            : const [],
         colorHex: existing?.colorHex,
         isRecurring: existing?.isRecurring ?? false,
         externalEventId: existing?.externalEventId,
@@ -1172,7 +1207,7 @@ class _TimeTile extends StatelessWidget {
                     letterSpacing: 0.8)),
             const SizedBox(height: 6),
             Text(DateFormat('HH:mm').format(dateTime),
-                style: const TextStyle(
+                style: TextStyle(
                     color: AppColors.gold,
                     fontWeight: FontWeight.w700,
                     fontSize: 20)),

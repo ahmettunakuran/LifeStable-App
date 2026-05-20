@@ -84,13 +84,17 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       final doc = await _db.collection('users').doc(userId).get();
       final data = doc.data();
       if (data != null) {
-        final name = data['displayName'] as String?;
+        final displayName = data['displayName'] as String?;
+        if (displayName != null && displayName.isNotEmpty) return displayName;
+        final name = data['name'] as String?;
         if (name != null && name.isNotEmpty) return name;
+        final fullName = data['fullName'] as String?;
+        if (fullName != null && fullName.isNotEmpty) return fullName;
         final email = data['email'] as String?;
         if (email != null && email.isNotEmpty) return email.split('@').first;
       }
     } catch (_) {}
-    return userId.length > 8 ? userId.substring(0, 8) : userId;
+    return '...';
   }
 
   Stream<QuerySnapshot> get _membersStream => _db.collection('team_members').where('team_id', isEqualTo: widget.teamId).snapshots();
@@ -107,7 +111,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
     switch (role) {
       case 'owner': return AppColors.gold;
       case 'admin': return Colors.blueAccent;
-      default: return Colors.white38;
+      default: return Colors.white.withValues(alpha: 0.38);
     }
   }
 
@@ -169,7 +173,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1500),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        title: Text(title, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         content: Text(message, style: TextStyle(color: Colors.white.withValues(alpha: 0.65))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
@@ -192,7 +196,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1500),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('New Team Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          title: Text('New Team Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -208,7 +212,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
                     final data = m.data() as Map<String, dynamic>;
                     return DropdownMenuItem(value: data['user_id'] as String, child: FutureBuilder<String>(
                       future: _getUsernameForId(data['user_id']),
-                      builder: (context, snap) => Text(snap.data ?? '...', style: const TextStyle(color: Colors.white, fontSize: 14)),
+                      builder: (context, snap) => Text(snap.data ?? '...', style: TextStyle(color: Colors.white, fontSize: 14)),
                     ));
                   }).toList(),
                   onChanged: (v) => setDialogState(() => selectedAssigneeId = v),
@@ -217,7 +221,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
                 _dialogDropdown<TaskPriority>(
                   label: 'Priority',
                   value: selectedPriority,
-                  items: TaskPriority.values.map((p) => DropdownMenuItem(value: p, child: Text(p.name.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
+                  items: TaskPriority.values.map((p) => DropdownMenuItem(value: p, child: Text(p.name.toUpperCase(), style: TextStyle(color: Colors.white, fontSize: 14)))).toList(),
                   onChanged: (v) => setDialogState(() => selectedPriority = v!),
                 ),
               ],
@@ -258,7 +262,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.white.withValues(alpha: 0.05), border: Border.all(color: AppColors.gold.withValues(alpha: 0.2))),
       child: TextField(
         controller: ctrl, maxLines: maxLines,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: Colors.white, fontSize: 14),
         decoration: InputDecoration(
           hintText: hint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
           prefixIcon: Icon(icon, color: AppColors.gold.withValues(alpha: 0.5), size: 18),
@@ -294,10 +298,10 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       builder: (ctx) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const SizedBox(height: 8),
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
-          const Padding(padding: EdgeInsets.all(16), child: Text('Member Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.24), borderRadius: BorderRadius.circular(2))),
+          Padding(padding: EdgeInsets.all(16), child: Text('Member Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))),
           if (canMakeAdmin) _bottomSheetTile(ctx, icon: Icons.shield, color: Colors.blueAccent, label: 'Make Admin', onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'admin')),
-          if (canDemote) _bottomSheetTile(ctx, icon: Icons.person, color: Colors.white54, label: 'Remove Admin', onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'member')),
+          if (canDemote) _bottomSheetTile(ctx, icon: Icons.person, color: Colors.white.withValues(alpha: 0.54), label: 'Remove Admin', onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'member')),
           if (canTransfer) _bottomSheetTile(ctx, icon: Icons.star, color: AppColors.gold, label: 'Transfer Ownership', onTap: () async {
             final confirm = await _showConfirmDialog(title: 'Transfer Ownership', message: 'You will become an admin. The selected user will become the new owner.', confirmLabel: 'Transfer', confirmColor: AppColors.gold);
             if (confirm) await _teamService.updateMemberRole(widget.teamId, targetUserId, 'owner');
@@ -333,15 +337,15 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
           backgroundColor: AppColors.black,
           appBar: AppBar(
             backgroundColor: AppColors.black, iconTheme: const IconThemeData(color: AppColors.gold),
-            title: Text(widget.teamName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            title: Text(widget.teamName, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
             bottom: TabBar(
               controller: _tabController,
-              indicatorColor: AppColors.gold, labelColor: AppColors.gold, unselectedLabelColor: Colors.white38,
+              indicatorColor: AppColors.gold, labelColor: AppColors.gold, unselectedLabelColor: Colors.white.withValues(alpha: 0.38),
               tabs: const [Tab(text: 'KANBAN'), Tab(text: 'MEMBERS')],
             ),
           ),
           body: Container(
-            decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)])),
+            decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)])),
             child: TabBarView(
               controller: _tabController,
               children: [
@@ -354,7 +358,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
               ? FloatingActionButton(
                   onPressed: () => _showAddTaskDialog(context, docs),
                   backgroundColor: AppColors.gold,
-                  child: const Icon(Icons.add, color: Colors.black),
+                  child: Icon(Icons.add, color: Colors.black),
                 )
               : null,
         );
@@ -373,11 +377,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: Colors.black, border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 1.2)),
               child: Row(children: [
-                Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.gold.withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.key_rounded, color: AppColors.gold, size: 18)),
+                Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.gold.withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(Icons.key_rounded, color: AppColors.gold, size: 18)),
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Invite Code', style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 11)),
-                  Text(_inviteCode!, style: const TextStyle(color: AppColors.goldLight, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: 5)),
+                  Text(_inviteCode!, style: TextStyle(color: AppColors.goldLight, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: 5)),
                 ]),
                 const Spacer(),
                 if (canManage) IconButton(icon: Icon(Icons.refresh, color: AppColors.gold.withValues(alpha: 0.6), size: 18), tooltip: 'New Code', onPressed: _regenerateCode),
