@@ -12,17 +12,41 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'domain_management',
     'content':
-        'How do I create a new domain? Tap the + button on the Home Dashboard, '
-        'enter a name, pick an icon and color, then tap Save. Domains are '
-        'personal workspaces that group your tasks and notes (e.g. "University", '
-        '"Part-time Job", "Personal"). '
+        'How do I create a new domain? Tap the + button at the top of the Home '
+        'Dashboard to create a domain. You can also long-press an empty area on the '
+        'dashboard and select "New Domain". Enter a name, pick an icon and color, '
+        'then tap Save. Domains are personal workspaces that group your tasks and '
+        'notes (e.g. "University", "Part-time Job", "Personal"). Each domain gets '
+        'its own Kanban board. You can create as many domains as you need. '
         // TR
-        'Yeni bir alan nasıl oluşturulur? Ana Ekranda sağ alttaki + düğmesine '
-        'basın, bir isim girin, ikon ve renk seçin, ardından Kaydet\'e dokunun. '
-        'Alanlar görevlerinizi ve notlarınızı gruplandıran kişisel çalışma '
-        'alanlarıdır (örn. "Üniversite", "Yarı Zamanlı İş", "Kişisel").',
-    'indexes': ['domain', 'create', 'add', 'workspace', 'new', 'how',
-                'alan', 'oluştur', 'ekle', 'nasıl'],
+        'Yeni bir alan nasıl oluşturulur? Ana Ekranın üst kısmındaki + düğmesine '
+        'dokunarak alan oluşturabilirsiniz. Ayrıca boş bir alana uzun basıp "Yeni '
+        'Alan" seçeneğini de kullanabilirsiniz. Bir isim girin, ikon ve renk seçin, '
+        'ardından Kaydet\'e dokunun. Alanlar görevlerinizi ve notlarınızı '
+        'gruplandıran kişisel çalışma alanlarıdır (örn. "Üniversite", '
+        '"Yarı Zamanlı İş", "Kişisel"). Her alanın kendine ait Kanban panosu '
+        'vardır. İstediğiniz kadar alan oluşturabilirsiniz.',
+    'indexes': ['domain', 'create', 'add', 'workspace', 'new', 'how', 'plus',
+                'alan', 'oluştur', 'ekle', 'nasıl', 'yeni', 'artı'],
+  },
+  {
+    'title_type': 'domain_create_ways',
+    'doc_type': 'faq',
+    'source_key': 'domain_management',
+    'content':
+        'What are the different ways to create a domain in LifeStable? '
+        '1. Tap the + button at the top of the Home Dashboard. '
+        '2. Long-press any domain card and select "New Domain". '
+        'After choosing either method, fill in the domain name, select an icon '
+        'and color, add an optional description, then tap Save. '
+        // TR
+        'LifeStable\'da alan oluşturmanın farklı yolları nelerdir? '
+        '1. Ana Ekranın üstündeki + düğmesine dokunun. '
+        '2. Herhangi bir alan kartına uzun basıp "Yeni Alan" seçin. '
+        'Her iki yöntemden sonra alan adını girin, ikon ve renk seçin, '
+        'isteğe bağlı açıklama ekleyin ve Kaydet\'e dokunun.',
+    'indexes': ['domain', 'create', 'ways', 'method', 'how', 'different',
+                'alan', 'oluştur', 'yol', 'yöntem', 'nasıl'],
   },
   {
     'title_type': 'domain_edit',
@@ -79,16 +103,19 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'task_creation',
     'content':
-        'How do I create a task? Open a domain, tap the + button, fill in the '
-        'title, optional description, priority, and due date, then tap Save. '
-        'You can also tell the AI assistant "Add task [title] by [date]". '
-        'You can find the domain list on the Home Dashboard via the Sidebar menu. '
+        'How do I create a task? How do I add a task? Open a domain from the '
+        'Home Dashboard, tap the + button inside the domain, fill in the title, '
+        'optional description, priority (Low/Medium/High), and due date, then '
+        'tap Save. You can also tell the AI assistant: "Add task [title] by [date]". '
+        'Tasks appear on the Kanban board under the "To Do" column. '
         // TR
-        'Görev nasıl oluşturulur? Bir alanı açın, + düğmesine dokunun, başlığı, '
-        'açıklamayı, önceliği ve bitiş tarihini doldurup Kaydet\'e basın. '
-        'Yapay zeka asistanına "Görev ekle [başlık] [tarih]" de de ekleyebilirsiniz.',
+        'Görev nasıl oluşturulur? Nasıl görev eklerim? Ana Ekrandan bir alanı '
+        'açın, alan içindeki + düğmesine dokunun, başlığı, açıklamayı, önceliği '
+        '(Düşük/Orta/Yüksek) ve bitiş tarihini doldurup Kaydet\'e basın. '
+        'Yapay zeka asistanına "Görev ekle [başlık] [tarih]" de de ekleyebilirsiniz. '
+        'Görevler Kanban panosunda "Yapılacak" sütununda görünür.',
     'indexes': ['task', 'create', 'add', 'new', 'how',
-                'görev', 'oluştur', 'ekle', 'nasıl'],
+                'görev', 'oluştur', 'ekle', 'nasıl', 'yeni'],
   },
   {
     'title_type': 'task_priority',
@@ -177,45 +204,79 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'habit_tracker',
     'content':
-        'How do I create a habit? Go to the Habit Tracker tab via the Sidebar '
-        'menu, tap +, enter a habit name, set the frequency, and optionally set '
-        'a reminder time. Tap Save to start tracking. '
+        'How do I create a habit? How do I add a new habit? Tap the Habit tab '
+        'in the bottom navigation bar, then tap the + button. Enter a habit name '
+        '(e.g. "Read 30 minutes", "Morning exercise"), set the frequency '
+        '(daily, weekly), and optionally set a reminder time. Tap Save to start '
+        'tracking. Your new habit will appear in the daily checklist. '
         // TR
-        'Alışkanlık nasıl oluşturulur? Kenar çubuğu menüsünden Alışkanlık '
-        'Takipçisi sekmesine gidin, + simgesine dokunun, bir ad girin, sıklığı '
-        'ayarlayın ve isteğe bağlı olarak hatırlatma saati belirleyin, ardından Kaydet\'e basın.',
+        'Alışkanlık nasıl oluşturulur? Yeni alışkanlık nasıl eklenir? Alt '
+        'navigasyon çubuğundaki Alışkanlık sekmesine dokunun, ardından + '
+        'düğmesine basın. Alışkanlık adı girin (örn. "30 dakika oku", '
+        '"Sabah egzersizi"), sıklığı (günlük, haftalık) ayarlayın ve isteğe bağlı '
+        'olarak hatırlatma saati belirleyin, ardından Kaydet\'e basın.',
     'indexes': ['habit', 'create', 'add', 'new', 'tracker', 'how',
-                'alışkanlık', 'oluştur', 'ekle', 'nasıl'],
+                'alışkanlık', 'oluştur', 'ekle', 'nasıl', 'yeni'],
   },
   {
     'title_type': 'habit_streak',
     'doc_type': 'faq',
     'source_key': 'habit_tracker_streak',
     'content':
-        'How does the habit streak work? Each consecutive day you mark a habit '
-        'complete, your streak counter increases by one. Missing a day resets '
-        'the streak to zero. Your longest streak earns you XP points. '
+        'How does the habit streak work? What is a streak? Each consecutive day '
+        'you mark a habit as complete, your streak counter increases by 1. If you '
+        'miss a day, the streak resets to zero and you start over. Your longest '
+        'streak earns you XP points that count toward your level. The current streak '
+        'is shown as a flame icon next to each habit. You can view your best streak '
+        'on your profile. Maintaining long streaks is the key to leveling up fast. '
         // TR
-        'Alışkanlık serisi nasıl çalışır? Her ardışık günde alışkanlığı '
-        'tamamlandı işaretlerseniz seri sayacınız bir artar. Bir günü kaçırmanız '
-        'seriyi sıfırlar. En uzun seriniz XP puanı kazandırır.',
+        'Alışkanlık serisi nasıl çalışır? Seri nedir? Her ardışık günde '
+        'alışkanlığı tamamlandı işaretlediğinizde seri sayacınız 1 artar. '
+        'Bir günü kaçırdığınızda seri sıfırlanır ve baştan başlarsınız. '
+        'En uzun seriniz seviyenize katkıda bulunan XP puanı kazandırır. '
+        'Mevcut seri her alışkanlığın yanında alev simgesi olarak gösterilir. '
+        'En iyi serinizi profilinizde görebilirsiniz. Uzun seriler seviye '
+        'atlamanın en hızlı yoludur.',
     'indexes': ['habit', 'streak', 'consecutive', 'days', 'how', 'what',
-                'alışkanlık', 'seri', 'gün', 'nasıl', 'nedir'],
+                'flame', 'xp', 'level',
+                'alışkanlık', 'seri', 'gün', 'nasıl', 'nedir', 'alev', 'seviye'],
   },
   {
     'title_type': 'habit_complete',
     'doc_type': 'faq',
     'source_key': 'habit_tracker',
     'content':
-        'How do I mark a habit as complete? In the Habit Tracker, tap the circle '
-        'next to the habit name for today. It turns filled to show completion. '
-        'You can only mark a habit complete once per day. '
+        'How do I mark a habit as complete? In the Habit Tracker tab, tap the '
+        'circle next to the habit name for today. It turns filled/gold to show '
+        'completion. You can only mark a habit complete once per day. Completing '
+        'habits increases your streak and earns XP. '
         // TR
-        'Alışkanlık nasıl tamamlandı işaretlenir? Alışkanlık Takipçisinde '
-        'alışkanlık adının yanındaki daireye dokunun. Dolu olarak görünmesi '
-        'tamamlandığını gösterir. Günde yalnızca bir kez işaretlenebilir.',
+        'Alışkanlık nasıl tamamlandı işaretlenir? Alışkanlık sekmesinde '
+        'alışkanlık adının yanındaki daireye dokunun. Dolu/altın renk olması '
+        'tamamlandığını gösterir. Günde yalnızca bir kez işaretlenebilir. '
+        'Alışkanlıkları tamamlamak serinizi artırır ve XP kazandırır.',
     'indexes': ['habit', 'complete', 'mark', 'check', 'done', 'how',
                 'alışkanlık', 'tamamla', 'işaretle', 'nasıl'],
+  },
+  {
+    'title_type': 'habit_streak_reset',
+    'doc_type': 'faq',
+    'source_key': 'habit_tracker_streak',
+    'content':
+        'What happens if I miss a day of my habit? If you miss marking a habit '
+        'complete for one day, the streak resets to zero. You will need to start '
+        'building the streak from scratch the next day. To avoid losing your streak, '
+        'use the reminder notifications by setting a reminder time when creating '
+        'or editing the habit. You can also pause a habit temporarily to avoid '
+        'streak breaks during holidays. '
+        // TR
+        'Bir günü kaçırırsam ne olur? Bir alışkanlığı bir gün tamamlamazsanız '
+        'seri sıfırlanır. Ertesi gün sıfırdan başlamanız gerekir. Seriyi '
+        'kaybetmemek için alışkanlık oluştururken veya düzenlerken hatırlatma '
+        'saati ayarlayın. Tatil dönemlerinde seriyi korumak için alışkanlığı '
+        'geçici olarak duraklatabilirsiniz.',
+    'indexes': ['habit', 'streak', 'miss', 'reset', 'lose', 'break', 'what',
+                'alışkanlık', 'seri', 'kaçır', 'sıfırla', 'kaybet', 'nedir'],
   },
   {
     'title_type': 'habit_pause',
@@ -248,6 +309,24 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'indexes': ['habit', 'health', 'guardrail', 'limit', 'burnout', 'what',
                 'alışkanlık', 'sağlık', 'koruyucu', 'nedir'],
   },
+  {
+    'title_type': 'habit_xp_points',
+    'doc_type': 'faq',
+    'source_key': 'habit_tracker_streak',
+    'content':
+        'How do I earn XP from habits? Every day you mark a habit complete you '
+        'earn XP points. Maintaining a streak multiplies the XP you earn. The '
+        'longer your streak, the more XP per completion. XP fills your level bar '
+        'on your profile — accumulate enough to level up. '
+        // TR
+        'Alışkanlıklardan nasıl XP kazanırım? Her gün bir alışkanlığı '
+        'tamamladığınızda XP puanı kazanırsınız. Seri sürdürmek kazandığınız '
+        'XP\'yi çarpar. Seriniz ne kadar uzunsa, tamamlama başına o kadar çok XP. '
+        'XP profilinizdeki seviye çubuğunu doldurur — seviye atlamak için '
+        'yeterli puan toplayın.',
+    'indexes': ['habit', 'xp', 'points', 'earn', 'level', 'streak', 'how',
+                'alışkanlık', 'xp', 'puan', 'kazan', 'seviye', 'nasıl'],
+  },
 
   // ── TEAMS ────────────────────────────────────────────────────────────────
 
@@ -256,13 +335,16 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'team_management',
     'content':
-        'How do I create a team? Go to Teams via the Sidebar menu, tap Create '
-        'Team, enter a name, objective, and color. You become the team Owner. '
-        'A unique invite code is generated automatically. '
+        'How do I create a team? Go to the Team tab in the bottom navigation, '
+        'tap Create Team, enter a team name, objective, and color, then tap Save. '
+        'You automatically become the team Owner. A unique 6-character invite '
+        'code is generated that you can share with others to join. '
         // TR
-        'Takım nasıl oluşturulur? Kenar çubuğu menüsünden Takımlar\'a gidin, '
-        'Takım Oluştur\'a dokunun, isim, amaç ve renk girin. Takım Sahibi '
-        'olursunuz. Benzersiz bir davet kodu otomatik oluşturulur.',
+        'Takım nasıl oluşturulur? Alt navigasyon çubuğundaki Takım sekmesine '
+        'gidin, Takım Oluştur\'a dokunun, takım adı, amacı ve rengini girin, '
+        'ardından Kaydet\'e dokunun. Otomatik olarak Takım Sahibi olursunuz. '
+        'Başkalarının katılması için paylaşabileceğiniz benzersiz 6 karakterli '
+        'bir davet kodu oluşturulur.',
     'indexes': ['team', 'create', 'new', 'start', 'how',
                 'takım', 'oluştur', 'başlat', 'nasıl'],
   },
@@ -271,16 +353,19 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'team_management',
     'content':
-        'How do I join a team? Go to Teams and tap Join with Code. Enter the '
-        '6-character invite code shared by the team owner. Once joined, the '
-        "team's Kanban board and shared tasks become visible in your workspace. "
+        'How do I join a team? How do I enter a team invite code? Go to the '
+        'Team tab in the bottom navigation and tap "Join with Code". Enter the '
+        '6-character invite code shared by the team owner and tap Join. Once '
+        "joined, the team's Kanban board and shared tasks become visible. A "
+        'team mirror domain is automatically created in your workspace. '
         // TR
-        'Takıma nasıl katılırım? Takımlar\'a gidin ve Kodla Katıl\'a dokunun. '
-        'Takım sahibinin paylaştığı 6 karakterli davet kodunu girin. '
-        'Katıldıktan sonra takımın Kanban panosu ve paylaşılan görevler '
-        'çalışma alanınızda görünür.',
-    'indexes': ['team', 'join', 'invite', 'code', 'how',
-                'takım', 'katıl', 'davet', 'kod', 'nasıl'],
+        'Takıma nasıl katılırım? Davet kodu nasıl girerim? Alt navigasyondaki '
+        'Takım sekmesine gidin ve "Kodla Katıl"a dokunun. Takım sahibinin '
+        'paylaştığı 6 karakterli davet kodunu girip Katıl\'a basın. '
+        'Katıldıktan sonra takımın Kanban panosu ve paylaşılan görevler görünür. '
+        'Çalışma alanınızda otomatik olarak bir takım ayna alanı oluşturulur.',
+    'indexes': ['team', 'join', 'invite', 'code', 'enter', 'how',
+                'takım', 'katıl', 'davet', 'kod', 'gir', 'nasıl'],
   },
   {
     'title_type': 'team_invite_code',
@@ -289,7 +374,7 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'content':
         'How do I share the team invite code? Open Team Detail, tap the copy '
         'icon next to the invite code, then share it via any messaging app. '
-        'Owners and admins can regenerate the code if compromised. '
+        'Owners and admins can regenerate the code if it gets compromised. '
         // TR
         'Takım davet kodunu nasıl paylaşırım? Takım Detayı\'nı açın, davet '
         'kodunun yanındaki kopyala simgesine dokunun ve herhangi bir mesajlaşma '
@@ -350,15 +435,18 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'ai_assistant',
     'content':
-        'What can the AI assistant do? The AI assistant can create, edit, and '
-        'delete tasks and calendar events using natural language. It can also '
-        'find free time gaps in your schedule. You can access it from the '
-        'Sidebar menu under "AI Bot". '
+        'What can the AI assistant do? The AI assistant (LifeStable AI) can '
+        'create, edit, and delete tasks and calendar events using natural language. '
+        'It can find free time gaps in your schedule, summarize your day, and '
+        'show upcoming tasks. It also supports voice input and image upload for '
+        'reading class schedules with OCR. Access it from the Sidebar menu. '
         // TR
-        'Yapay zeka asistanı ne yapabilir? Görevler ve takvim etkinlikleri '
-        'oluşturabilir, düzenleyebilir ve silebilir. Takviminizde boş zaman '
-        'aralıkları da bulabilir. Kenar çubuğu menüsünden "AI Bot" ile erişebilirsiniz.',
-    'indexes': ['ai', 'assistant', 'can', 'do', 'what', 'help',
+        'Yapay zeka asistanı ne yapabilir? Yapay zeka asistanı (LifeStable AI) '
+        'doğal dil kullanarak görevler ve takvim etkinlikleri oluşturabilir, '
+        'düzenleyebilir ve silebilir. Takviminizde boş zamanları bulabilir, '
+        'gününüzü özetleyebilir ve yaklaşan görevleri gösterebilir. Sesli '
+        'komut ve fotoğraf yüklemeyi (OCR) de destekler.',
+    'indexes': ['ai', 'assistant', 'can', 'do', 'what', 'help', 'bot',
                 'yapay', 'zeka', 'asistan', 'yapabilir', 'nedir', 'neler'],
   },
   {
@@ -366,14 +454,15 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'ai_assistant',
     'content':
-        'How do I use text commands with the AI? Open the AI Assistant from the '
-        'Sidebar menu and type a command such as "Add task Study for exam by '
-        'Friday" or "Delete all done tasks". The AI understands English and '
-        'Turkish naturally. '
+        'How do I use text commands with the AI? Open the AI Assistant (LifeStable '
+        'AI) from the bottom navigation and type a command such as "Add task Study '
+        'for exam by Friday" or "Delete all done tasks" or "Summarize my day". '
+        'The AI understands both English and Turkish naturally. '
         // TR
-        'Yapay zeka ile metin komutları nasıl kullanılır? Kenar çubuğu menüsünden '
-        'AI Asistan\'ı açın ve "Sınava çalış görevi ekle Cumaya kadar" gibi '
-        'bir komut yazın. Yapay zeka Türkçe ve İngilizce komutları anlar.',
+        'Yapay zeka ile metin komutları nasıl kullanılır? Alt navigasyondan '
+        'LifeStable AI\'yı açın ve "Sınava çalış görevi ekle Cumaya kadar" veya '
+        '"Tüm tamamlanan görevleri sil" veya "Günümü özetle" gibi bir komut yazın. '
+        'Yapay zeka Türkçe ve İngilizce komutları anlar.',
     'indexes': ['ai', 'text', 'command', 'type', 'message', 'how',
                 'yapay', 'zeka', 'komut', 'yaz', 'nasıl'],
   },
@@ -383,12 +472,14 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'source_key': 'ai_assistant',
     'content':
         'How do I use voice input with the AI? Tap the microphone icon in the '
-        'assistant chat. Speak your command and the app converts it to text. '
-        'Make sure to grant microphone permission when prompted. '
+        'assistant chat bar. Speak your command and the app converts it to text '
+        'and fills the input field. Review the text and tap Send. Make sure to '
+        'grant microphone permission when prompted. '
         // TR
-        'Yapay zeka ile sesli giriş nasıl kullanılır? Asistan sohbetindeki '
-        'mikrofon simgesine dokunun. Komutunuzu söyleyin, uygulama metne '
-        'çevirir. İstendiğinde mikrofon iznini vermeyi unutmayın.',
+        'Yapay zeka ile sesli giriş nasıl kullanılır? Asistan sohbet çubuğundaki '
+        'mikrofon simgesine dokunun. Komutunuzu söyleyin, uygulama metne çevirerek '
+        'giriş alanını doldurur. Metni gözden geçirip Gönder\'e dokunun. '
+        'İstendiğinde mikrofon iznini vermeyi unutmayın.',
     'indexes': ['ai', 'voice', 'microphone', 'speak', 'how',
                 'yapay', 'zeka', 'ses', 'mikrofon', 'nasıl'],
   },
@@ -427,9 +518,9 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'ai_assistant',
     'content':
-        'How do I find free time in my schedule? Ask the AI "Find me a free '
-        'slot this week for 2 hours of studying". The assistant scans your '
-        'existing calendar events and suggests available time gaps. '
+        'How do I find free time in my schedule using the AI? Ask the AI "Find '
+        'me a free slot this week for 2 hours of studying". The assistant scans '
+        'your existing calendar events and suggests available time gaps. '
         // TR
         'Takvimimde boş zaman nasıl bulunur? Yapay zekaya "Bu hafta 2 saatlik '
         'boş bir zaman dilimi bul" deyin. Asistan mevcut etkinlikleri tarayarak '
@@ -443,14 +534,33 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'source_key': 'ai_assistant',
     'content':
         'Can I upload an image of my schedule to the AI? Yes — tap the image '
-        'icon in the chat bar and select a photo of a timetable. The app uses '
-        'OCR to read the text and imports the events automatically. '
+        'icon in the chat bar and select a photo of a timetable or class schedule. '
+        'The app uses OCR to read the text and imports the events automatically '
+        'into your Calendar after showing a preview. '
         // TR
         'Ders programımın fotoğrafını yapay zekaya yükleyebilir miyim? Evet — '
         'sohbet çubuğundaki resim simgesine dokunun ve ders programınızın '
-        'fotoğrafını seçin. Uygulama metni okuyarak etkinlikleri otomatik ekler.',
+        'fotoğrafını seçin. Uygulama metni okuyarak etkinlikleri önizleme '
+        'gösterdikten sonra Takviminize otomatik ekler.',
     'indexes': ['ai', 'image', 'upload', 'photo', 'schedule', 'ocr', 'how',
                 'yapay', 'zeka', 'resim', 'fotoğraf', 'yükle', 'nasıl'],
+  },
+  {
+    'title_type': 'ai_summarize_day',
+    'doc_type': 'faq',
+    'source_key': 'ai_assistant',
+    'content':
+        'How do I summarize my day with the AI? Open LifeStable AI and type '
+        '"Summarize my day" or tap the "Summarize my day" chip on the welcome '
+        'screen. The AI shows your pending tasks, habits due today, and upcoming '
+        'calendar events in one reply. '
+        // TR
+        'Yapay zeka ile günümü nasıl özetlerim? LifeStable AI\'yı açın ve '
+        '"Günümü özetle" yazın veya karşılama ekranındaki "Günümü özetle" '
+        'çipine dokunun. Yapay zeka bekleyen görevleri, bugünkü alışkanlıkları '
+        've yaklaşan takvim etkinliklerini tek yanıtta gösterir.',
+    'indexes': ['ai', 'summarize', 'day', 'overview', 'how',
+                'yapay', 'zeka', 'özetle', 'gün', 'nasıl'],
   },
 
   // ── CALENDAR ─────────────────────────────────────────────────────────────
@@ -460,12 +570,12 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'calendar',
     'content':
-        'How do I manually create a calendar event? Open the Calendar tab via '
-        'the Sidebar menu, tap a date, then tap the + button. Fill in the title, '
-        'start and end time, and event type. Tap Save to add it. '
+        'How do I manually create a calendar event? Open the Calendar tab from '
+        'the bottom navigation bar, tap a date on the calendar, then tap the + '
+        'button. Fill in the title, start and end time, and event type. Tap Save. '
         // TR
-        'Takvim etkinliği nasıl elle oluşturulur? Kenar çubuğu menüsünden '
-        'Takvim sekmesini açın, bir tarihe dokunun ve + düğmesine basın. '
+        'Takvim etkinliği nasıl elle oluşturulur? Alt navigasyondan Takvim '
+        'sekmesini açın, takvimde bir tarihe dokunun ve + düğmesine basın. '
         'Başlık, başlangıç-bitiş saati ve etkinlik türünü doldurup Kaydet\'e dokunun.',
     'indexes': ['calendar', 'event', 'create', 'add', 'how',
                 'takvim', 'etkinlik', 'oluştur', 'ekle', 'nasıl'],
@@ -475,14 +585,19 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'calendar',
     'content':
-        'How do I sync with Google Calendar? Go to Settings → Calendar Sync and '
-        'tap Connect. Find Settings in the Sidebar menu at the bottom. After '
-        'authorizing, your Google Calendar events appear in LifeStable. '
+        'How do I sync with Google Calendar? How do I connect Google Calendar? '
+        'Go to Settings from the Sidebar menu (bottom of sidebar), tap Calendar '
+        'Sync, then tap Connect Google Calendar. Follow the sign-in prompts to '
+        'authorize LifeStable. After connecting, all your Google Calendar events '
+        'will appear in LifeStable\'s Calendar view and your tasks with due dates '
+        'will sync back to Google Calendar. '
         // TR
-        'Google Takvim ile nasıl senkronize ederim? Kenar çubuğu menüsünün '
-        'altındaki Ayarlar\'a gidin ve Takvim Senkronizasyonu bölümünden '
-        'Bağlan\'a dokunun. Yetkilendirdikten sonra Google etkinlikleri '
-        'LifeStable\'da görünür.',
+        'Google Takvim ile nasıl senkronize ederim? Google Takvim nasıl bağlanır? '
+        'Kenar çubuğu menüsünün altından Ayarlar\'a gidin, Takvim Senkronizasyonu\'na '
+        'dokunun, ardından Google Takvim\'i Bağla\'ya basın. Yetkilendirme '
+        'adımlarını takip edin. Bağlandıktan sonra tüm Google Takvim etkinlikleri '
+        'LifeStable\'da görünür ve bitiş tarihli görevleriniz Google Takvim\'e '
+        'senkronize olur.',
     'indexes': ['calendar', 'google', 'sync', 'connect', 'import', 'how',
                 'takvim', 'google', 'senkron', 'bağlan', 'nasıl'],
   },
@@ -492,12 +607,14 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'source_key': 'calendar',
     'content':
         'How do I import a class schedule using a photo? In the AI Assistant '
-        'chat, tap the image icon and take or choose a photo of your timetable. '
-        'The app reads the text with OCR and shows a preview before adding events. '
+        'chat (LifeStable AI), tap the image icon in the input bar and take or '
+        'choose a photo of your timetable. The app reads the text with OCR and '
+        'shows a preview of detected events before adding them to Calendar. '
         // TR
         'Ders programını fotoğrafla nasıl içe aktarırım? Yapay Zeka Asistanı '
-        'sohbetinde resim simgesine dokunun ve ders programınızın fotoğrafını '
-        'seçin. Uygulama metni okur ve etkinlikleri eklemeden önce önizleme gösterir.',
+        'sohbetinde (LifeStable AI) giriş çubuğundaki resim simgesine dokunun '
+        've ders programınızın fotoğrafını seçin. Uygulama metni okur ve '
+        'etkinlikleri eklemeden önce önizleme gösterir.',
     'indexes': ['calendar', 'ocr', 'import', 'photo', 'class', 'schedule', 'how',
                 'takvim', 'içe', 'aktar', 'fotoğraf', 'ders', 'nasıl'],
   },
@@ -524,15 +641,17 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'location_alerts',
     'content':
-        'How do I create a location reminder? Open the Alerts tab via the '
-        'Sidebar menu under "Add Location", tap +, search for or pin a location '
-        'on the map, write your reminder message, and choose Arrival, Departure, '
-        'or both. Tap Save to activate the geofence. '
+        'How do I create a location reminder? Open the Alerts/Location section '
+        'from the Sidebar menu, tap +, search for or pin a location on the map, '
+        'write your reminder message, and choose Arrival, Departure, or both. '
+        'Tap Save to activate the geofence. You will get a notification when you '
+        'arrive at or leave the chosen location. '
         // TR
-        'Konum hatırlatıcısı nasıl oluşturulur? Kenar çubuğu menüsündeki '
-        '"Konum Ekle" sekmesini açın, + simgesine dokunun, haritada bir konum '
-        'arayın veya sabitleyip mesajınızı yazın, Varış veya Ayrılış seçeneğini '
-        'belirleyin ve Kaydet\'e dokunun.',
+        'Konum hatırlatıcısı nasıl oluşturulur? Kenar çubuğu menüsünden '
+        'Uyarılar/Konum bölümünü açın, + simgesine dokunun, haritada bir konum '
+        'arayın veya sabitleyin, mesajınızı yazın, Varış veya Ayrılış seçeneğini '
+        'belirleyin ve Kaydet\'e dokunun. Seçilen konuma geldiğinizde veya '
+        'ayrıldığınızda bildirim alırsınız.',
     'indexes': ['location', 'alert', 'reminder', 'geofence', 'create', 'how',
                 'konum', 'hatırlatıcı', 'oluştur', 'nasıl'],
   },
@@ -590,16 +709,19 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'dashboard',
     'content':
-        'What does the Dashboard show? The Home Dashboard displays all your '
-        'domains as cards. Tapping a domain opens its task Kanban board. The '
-        'top shows a quick summary of today\'s tasks and upcoming deadlines. '
-        'Access the Dashboard from the Sidebar home icon or the Home button. '
+        'What does the Dashboard show? How do I navigate the Home screen? '
+        'The Home Dashboard displays all your domains as cards. Tap the + button '
+        'at the top to create a new domain. Tap any domain card to open its '
+        'Kanban task board. The top area shows a quick summary of today\'s tasks '
+        'and upcoming deadlines. '
         // TR
-        'Ana Ekran ne gösterir? Tüm alanlarınızı kart olarak görüntüler. Bir '
-        'alana dokunmak Kanban panosunu açar. Üstte bugünkü görevler ve '
-        'yaklaşan son tarihler özetlenir. Kenar çubuğundaki ev simgesiyle erişebilirsiniz.',
-    'indexes': ['dashboard', 'home', 'overview', 'what', 'show',
-                'ana', 'ekran', 'anasayfa', 'nedir', 'gösterir'],
+        'Ana Ekran ne gösterir? Giriş ekranında nasıl gezinirim? Ana Ekran '
+        'tüm alanlarınızı kart olarak görüntüler. Yeni alan oluşturmak için '
+        'üstteki + düğmesine dokunun. Herhangi bir alan kartına dokunmak '
+        'Kanban görev panosunu açar. Üst kısımda bugünkü görevler ve '
+        'yaklaşan son tarihler özetlenir.',
+    'indexes': ['dashboard', 'home', 'overview', 'what', 'show', 'navigate',
+                'ana', 'ekran', 'anasayfa', 'nedir', 'gösterir', 'gezin'],
   },
   {
     'title_type': 'dashboard_deadlines',
@@ -624,13 +746,13 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'notifications',
     'content':
-        'How do I manage notification preferences? Go to Settings in the Sidebar '
-        'menu to toggle push notifications for task reminders, habit reminders, '
+        'How do I manage notification preferences? Go to Settings from the '
+        'Sidebar to toggle push notifications for task reminders, habit reminders, '
         'team updates, and location alerts independently. '
         // TR
-        'Bildirim tercihlerini nasıl yönetirim? Kenar çubuğu menüsündeki '
-        'Ayarlar\'a gidin. Görev hatırlatıcıları, alışkanlık hatırlatıcıları, '
-        'takım güncellemeleri ve konum uyarıları için bildirimleri ayrı ayrı '
+        'Bildirim tercihlerini nasıl yönetirim? Kenar çubuğundaki Ayarlar\'a '
+        'gidin. Görev hatırlatıcıları, alışkanlık hatırlatıcıları, takım '
+        'güncellemeleri ve konum uyarıları için bildirimleri ayrı ayrı '
         'açıp kapatabilirsiniz.',
     'indexes': ['notification', 'manage', 'settings', 'preference', 'how',
                 'bildirim', 'yönet', 'ayar', 'tercih', 'nasıl'],
@@ -658,17 +780,19 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'offline_mode',
     'content':
-        'How does LifeStable work offline? Tasks and domains are cached locally '
-        'so you can view and create them without internet. Changes sync '
-        'automatically when the connection is restored. Calendar events and team '
-        'data require a connection to load the latest updates. '
+        'How does LifeStable work offline? Does the app work without internet? '
+        'Yes — tasks and domains are cached locally so you can view and create '
+        'them without an internet connection. Changes sync automatically when the '
+        'connection is restored. However, calendar events, team data, and AI '
+        'features require an internet connection to load the latest updates. '
         // TR
-        'LifeStable çevrimdışı nasıl çalışır? Görevler ve alanlar yerel olarak '
-        'önbelleğe alınır; internet olmadan görüntüleyip oluşturabilirsiniz. '
-        'Değişiklikler bağlantı yeniden kurulduğunda otomatik senkronize olur. '
-        'Takvim etkinlikleri ve takım verileri için bağlantı gereklidir.',
+        'LifeStable çevrimdışı nasıl çalışır? Uygulama internetsiz çalışır mı? '
+        'Evet — görevler ve alanlar yerel olarak önbelleğe alınır; internet '
+        'olmadan görüntüleyip oluşturabilirsiniz. Bağlantı yeniden kurulduğunda '
+        'değişiklikler otomatik senkronize olur. Ancak takvim etkinlikleri, '
+        'takım verileri ve yapay zeka özellikleri için internet gereklidir.',
     'indexes': ['offline', 'no', 'internet', 'connection', 'cache', 'how', 'what',
-                'çevrimdışı', 'internet', 'yok', 'bağlantı', 'nasıl'],
+                'çevrimdışı', 'internet', 'yok', 'bağlantı', 'nasıl', 'çalışır'],
   },
 
   // ── SETTINGS ─────────────────────────────────────────────────────────────
@@ -678,11 +802,11 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'doc_type': 'faq',
     'source_key': 'settings',
     'content':
-        'How do I update my account details? Go to Settings in the Sidebar menu '
+        'How do I update my account details? Go to Settings from the Sidebar '
         'to change your display name and profile picture. Email changes require '
         're-authentication. You can also delete your account from this screen. '
         // TR
-        'Hesap bilgilerimi nasıl güncellerim? Kenar çubuğu menüsündeki Ayarlar\'a '
+        'Hesap bilgilerimi nasıl güncellerim? Kenar çubuğundaki Ayarlar\'a '
         'giderek görünen adınızı ve profil fotoğrafınızı değiştirebilirsiniz. '
         'E-posta değişiklikleri yeniden kimlik doğrulaması gerektirir.',
     'indexes': ['settings', 'account', 'profile', 'update', 'change', 'how',
@@ -704,24 +828,26 @@ const List<Map<String, dynamic>> kFaqChunks = [
                 'ayarlar', 'dil', 'türkçe', 'değiştir', 'nasıl'],
   },
 
-  // ── ONBOARDING ───────────────────────────────────────────────────────────
+  // ── ONBOARDING / GETTING STARTED ──────────────────────────────────────────
 
   {
     'title_type': 'onboarding_first_steps',
     'doc_type': 'onboarding',
     'source_key': 'onboarding',
     'content':
-        'Getting started with LifeStable: After signing up, create your first '
-        'domain for a life area (like "University" or "Work"), then add tasks '
-        'inside it. Use the AI assistant via the Sidebar menu to add tasks '
-        'quickly with voice or text. Enable the Habit Tracker to build routines. '
+        'How do I get started with LifeStable? After signing up, create your '
+        'first domain by tapping + at the top of the Home Dashboard. Name it '
+        'after a life area (like "University" or "Work"), then add tasks inside '
+        'it. Explore the AI assistant (LifeStable AI) via the bottom navigation '
+        'to add tasks with voice or text. Enable habits in the Habit tab. '
         // TR
-        'LifeStable\'a başlarken: Kaydolduktan sonra "Üniversite" veya "İş" '
-        'gibi bir yaşam alanı için ilk alanınızı oluşturun, ardından içine '
-        'görevler ekleyin. Kenar çubuğu menüsündeki Yapay Zeka Asistanını '
-        'sesli veya metin komutlarıyla kullanın.',
+        'LifeStable\'a nasıl başlarım? Kaydolduktan sonra Ana Ekranın üstündeki '
+        '+ düğmesine dokunarak ilk alanınızı oluşturun. "Üniversite" veya "İş" '
+        'gibi bir yaşam alanına adlandırın, ardından içine görevler ekleyin. '
+        'Alt navigasyondan LifeStable AI\'yı keşfedin. Alışkanlık sekmesinde '
+        'alışkanlıkları etkinleştirin.',
     'indexes': ['start', 'begin', 'first', 'setup', 'onboarding', 'how',
-                'başla', 'ilk', 'kurulum', 'nasıl'],
+                'başla', 'ilk', 'kurulum', 'nasıl', 'giriş'],
   },
   {
     'title_type': 'onboarding_points_levels',
@@ -730,12 +856,29 @@ const List<Map<String, dynamic>> kFaqChunks = [
     'content':
         'How do points and levels work? You earn XP points by completing tasks, '
         'maintaining habit streaks, and achieving milestones. Accumulate enough '
-        'points to level up. Your level and streak are displayed on your profile. '
+        'XP to level up. Your level and streak are displayed on your profile. '
         // TR
         'Puanlar ve seviyeler nasıl çalışır? Görevleri tamamlayarak, alışkanlık '
         'serilerini sürdürerek ve kilometre taşlarına ulaşarak XP puanı '
-        'kazanırsınız. Yeterince puan toplayarak seviye atlarsınız.',
+        'kazanırsınız. Yeterince XP toplayarak seviye atlarsınız.',
     'indexes': ['points', 'level', 'xp', 'earn', 'how', 'what',
                 'puan', 'seviye', 'xp', 'kazan', 'nasıl', 'nedir'],
+  },
+  {
+    'title_type': 'onboarding_navigation',
+    'doc_type': 'onboarding',
+    'source_key': 'onboarding',
+    'content':
+        'How do I navigate LifeStable? The bottom navigation bar has four main '
+        'tabs: Team (group collaboration), Calendar (events and schedules), '
+        'Dashboard (your domains and tasks), and Habit (habit tracker). '
+        'The AI assistant (LifeStable AI) is also accessible from the bottom nav. '
+        // TR
+        'LifeStable\'da nasıl gezinirim? Alt navigasyon çubuğunda dört ana sekme '
+        'var: Takım (grup işbirliği), Takvim (etkinlikler), Dashboard (alanlar '
+        've görevler), Alışkanlık (alışkanlık takipçisi). Yapay zeka asistanı '
+        '(LifeStable AI) da alt navigasyondan erişilebilir.',
+    'indexes': ['navigate', 'navigation', 'tabs', 'menu', 'how',
+                'gezin', 'navigasyon', 'sekmeler', 'menü', 'nasıl'],
   },
 ];
