@@ -36,10 +36,10 @@ dependencies:
   geolocator: ^11.0.0
   geocoding: ^3.0.0
   geofence_service: ^6.0.0+1
-  flutter_local_notifications: ^21.0.0
+  flutter_local_notifications: ^20.0.0
   share_plus: ^13.0.0
   firebase_messaging: ^15.2.1
-  home_widget: ^0.9.1
+  home_widget: ^0.7.0
 
 dependency_overrides:
   # record_linux 0.7.2 (pinned by `record`) is missing methods from
