@@ -238,11 +238,73 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
   // ── Chat list ─────────────────────────────────────────────────────────────
 
   Widget _buildChatList(AppAssistantState state) {
+    final msgs = state.messages;
+    final showFollowUps = state.followUpSuggestions.isNotEmpty &&
+        !state.isResponding;
+
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: state.messages.length,
-      itemBuilder: (_, i) => ChatBubble(message: state.messages[i]),
+      padding: const EdgeInsets.only(top: 12, bottom: 4),
+      itemCount: msgs.length + (showFollowUps ? 1 : 0),
+      itemBuilder: (context, i) {
+        if (i < msgs.length) return ChatBubble(message: msgs[i]);
+        // Follow-up suggestions row after last message
+        return _buildFollowUpRow(context, state.followUpSuggestions);
+      },
+    );
+  }
+
+  // ── Follow-up suggestions (shown after last assistant reply) ──────────────
+
+  Widget _buildFollowUpRow(BuildContext context, List<String> suggestions) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, top: 8, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Related questions',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.35),
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: suggestions
+                .map((s) => GestureDetector(
+                      onTap: () {
+                        _controller.text = s;
+                        _send(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: AppColors.gold.withOpacity(0.2)),
+                        ),
+                        child: Text(
+                          s,
+                          style: TextStyle(
+                            color: AppColors.gold.withOpacity(0.85),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 
