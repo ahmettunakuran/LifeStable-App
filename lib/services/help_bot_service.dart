@@ -5,6 +5,8 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:http/http.dart' as http;
 import '../core/models/help_bot_response.dart';
 import '../core/models/rag_result.dart';
+import '../features/billing/data/usage_tracker.dart';
+import '../features/billing/domain/plan_catalog.dart';
 import '../data/knowledge_base/faq_chunks.dart';
 import 'embedding_service.dart';
 import 'faq_seeder.dart';
@@ -250,11 +252,23 @@ XP & LEVELS:
 
   /// Answers a help question with full RAG pipeline + language-aware Gemini.
   ///
+  /// Flow:
+  ///   1. Check query cache → fast return on hit
+  ///   2. Generate embedding once → reuse for semantic search
+  ///   3. If top result similarity ≥ threshold → return FAQ answer
+  ///   4. Otherwise → fall back to generative Gemini response
+  ///
   /// [history] — last 2-3 conversation turns for context-aware follow-ups.
   Future<HelpBotResponse> ask(
     String userQuestion, {
     List<ConversationTurn> history = const [],
   }) async {
+    try {
+      await UsageTracker.instance.consume(BillableFeature.helpBotQuestion);
+    } catch (e) {
+      // Ignoring usage errors as requested for now.
+    }
+
     final query = userQuestion.trim();
     final turkish = _isTurkish(query);
 

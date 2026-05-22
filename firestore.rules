@@ -24,7 +24,8 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, create: if isOwner(userId);
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
       allow update: if isOwner(userId)
           && !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['role', 'points', 'createdAt', 'level', 'habitStreak']);

@@ -136,7 +136,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
   Future<void> createPersonalEvent(CalendarEventEntity event) async {
     final data = event.toFirestore();
     data['userId'] = _uid;
-    await _personalCol.add(data);
+    final docId = event.id.isNotEmpty ? event.id : _personalCol.doc().id;
+    await _personalCol.doc(docId).set(data);
   }
 
   @override
@@ -144,7 +145,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
     assert(event.teamId != null, 'teamId must be set for team events');
     final data = event.toFirestore();
     data['userId'] = _uid; // creator
-    await _teamCol(event.teamId!).add(data);
+    final docId = event.id.isNotEmpty ? event.id : _teamCol(event.teamId!).doc().id;
+    await _teamCol(event.teamId!).doc(docId).set(data);
   }
 
   @override

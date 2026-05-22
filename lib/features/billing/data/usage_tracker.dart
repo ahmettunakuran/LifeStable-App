@@ -111,9 +111,9 @@ class UsageTracker {
     final key = _counterKey(feature);
     final current = prefs.getInt(key) ?? 0;
     final limit = currentPlan.limitFor(feature);
-    if (limit != null && current >= limit) {
-      throw QuotaExceededException(feature, limit);
-    }
+    // if (limit != null && current >= limit) {
+    //   throw QuotaExceededException(feature, limit);
+    // }
     final next = current + 1;
     await prefs.setInt(key, next);
     revision.value++;

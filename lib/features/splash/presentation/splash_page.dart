@@ -34,7 +34,7 @@ class _SplashPageState extends State<SplashPage>
     super.initState();
 
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
+      SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         systemNavigationBarColor: AppColors.black,
@@ -222,7 +222,7 @@ class _LogoMark extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const RadialGradient(
+        gradient: RadialGradient(
           colors: [
             Color(0xFF1F1606),
             AppColors.black,
@@ -267,7 +267,7 @@ class _Wordmark extends StatelessWidget {
         end: Alignment.bottomRight,
       ).createShader(rect),
       blendMode: BlendMode.srcIn,
-      child: const Text(
+      child: Text(
         'LifeStable',
         textAlign: TextAlign.center,
         style: TextStyle(
@@ -326,7 +326,7 @@ class _GoldProgressBarState extends State<_GoldProgressBar>
                   alignment: Alignment(-1.0 + 2.0 * t, 0),
                   widthFactor: 0.35,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
                           Colors.transparent,

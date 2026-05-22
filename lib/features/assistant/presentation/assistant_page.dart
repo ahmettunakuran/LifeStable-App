@@ -9,7 +9,6 @@ import '../../../../app/router/app_routes.dart';
 
 import '../logic/assistant_cubit.dart';
 import 'widgets/chat_bubble.dart';
-import 'widgets/image_input_button.dart';
 import 'widgets/suggestion_chips.dart';
 import 'widgets/voice_input_button.dart';
 
@@ -47,7 +46,6 @@ class _AssistantViewState extends State<_AssistantView> {
   final FocusNode _focusNode = FocusNode();
   String? _lastShownUndoableToken;
   Timer? _undoableDismissTimer;
-  String? _attachedImagePath;
 
   @override
   void dispose() {
@@ -72,18 +70,8 @@ class _AssistantViewState extends State<_AssistantView> {
 
   void _sendMessage(BuildContext context, String text) {
     final trimmed = text.trim();
-    final imagePath = _attachedImagePath;
-
-    if (imagePath != null) {
-      context.read<AssistantCubit>().sendImage(
-            imagePath,
-            caption: trimmed.isEmpty ? null : trimmed,
-          );
-      setState(() => _attachedImagePath = null);
-    } else {
-      if (trimmed.isEmpty) return;
-      context.read<AssistantCubit>().sendMessage(trimmed);
-    }
+    if (trimmed.isEmpty) return;
+    context.read<AssistantCubit>().sendMessage(trimmed);
 
     _textController.clear();
     _focusNode.unfocus();
@@ -95,7 +83,7 @@ class _AssistantViewState extends State<_AssistantView> {
     return Scaffold(
       backgroundColor: AppColors.black,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -130,7 +118,7 @@ class _AssistantViewState extends State<_AssistantView> {
                   SnackBar(
                     content: Text(
                       undoable.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -206,7 +194,7 @@ class _AssistantViewState extends State<_AssistantView> {
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back, color: AppColors.gold),
+            child: Icon(Icons.arrow_back, color: AppColors.gold),
           ),
           const SizedBox(width: 12),
           Container(
@@ -216,7 +204,7 @@ class _AssistantViewState extends State<_AssistantView> {
               color: AppColors.gold.withOpacity(0.08),
               border: Border.all(color: AppColors.gold.withOpacity(0.2)),
             ),
-            child: const Icon(Icons.smart_toy_outlined,
+            child: Icon(Icons.smart_toy_outlined,
                 color: AppColors.gold, size: 18),
           ),
           const SizedBox(width: 10),
@@ -227,7 +215,7 @@ class _AssistantViewState extends State<_AssistantView> {
                 shaderCallback: (bounds) => const LinearGradient(
                   colors: [AppColors.goldLight, AppColors.gold],
                 ).createShader(bounds),
-                child: const Text(
+                child: Text(
                   'LifeStable AI',
                   style: TextStyle(
                     fontSize: 16,
@@ -260,11 +248,11 @@ class _AssistantViewState extends State<_AssistantView> {
           shaderCallback: (bounds) => const LinearGradient(
             colors: [AppColors.goldLight, AppColors.gold],
           ).createShader(bounds),
-          child: const Icon(Icons.auto_awesome,
+          child: Icon(Icons.auto_awesome,
               color: Colors.white, size: 56),
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'Hello!\nHow Can I Help You?',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -322,16 +310,9 @@ class _AssistantViewState extends State<_AssistantView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_attachedImagePath != null) _buildAttachmentPreview(),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              ImageInputButton(
-                onImageSelected: (path) {
-                  setState(() => _attachedImagePath = path);
-                  _focusNode.requestFocus();
-                },
-              ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -339,7 +320,7 @@ class _AssistantViewState extends State<_AssistantView> {
                 controller: _textController,
                 focusNode: _focusNode,
                 enabled: !isResponding,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
+                style: TextStyle(color: Colors.white, fontSize: 15),
                 maxLines: 5,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
@@ -401,41 +382,6 @@ class _AssistantViewState extends State<_AssistantView> {
     );
   }
 
-  Widget _buildAttachmentPreview() {
-    final path = _attachedImagePath;
-    if (path == null) return const SizedBox.shrink();
-    final fileName = path.split('/').last;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8, left: 4, right: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.gold.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.gold.withOpacity(0.25)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.image, color: AppColors.gold, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              fileName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => setState(() => _attachedImagePath = null),
-            child: Icon(Icons.close,
-                color: Colors.white.withOpacity(0.6), size: 18),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSendButton(BuildContext context, bool isResponding) {
     return GestureDetector(
       onTap: isResponding
@@ -467,7 +413,7 @@ class _AssistantViewState extends State<_AssistantView> {
             color: AppColors.gold.withOpacity(0.6),
           ),
         )
-            : const Icon(Icons.arrow_upward_rounded,
+            : Icon(Icons.arrow_upward_rounded,
             color: Colors.black, size: 20),
       ),
     );

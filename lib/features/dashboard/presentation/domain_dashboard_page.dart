@@ -38,7 +38,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
     return BlocBuilder<DomainCubit, DomainState>(
       builder: (context, state) {
         if (state is DomainLoading) {
-          return const Scaffold(
+          return Scaffold(
             backgroundColor: AppColors.black,
             body: Center(child: CircularProgressIndicator(color: AppColors.gold)),
           );
@@ -62,7 +62,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
             backgroundColor: AppColors.black,
             appBar: _buildAppBar(domains),
             body: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -88,7 +88,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
             bottomNavigationBar: _buildBottomNav(context),
           );
         }
-        return const Scaffold(backgroundColor: AppColors.black);
+        return Scaffold(backgroundColor: AppColors.black);
       },
     );
   }
@@ -102,7 +102,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.gold),
+        icon: Icon(Icons.arrow_back, color: AppColors.gold),
         onPressed: () => Navigator.pop(context),
       ),
       title: Row(
@@ -111,7 +111,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
         children: [
           if (_currentPage > 0)
             IconButton(
-              icon: const Icon(Icons.chevron_left, size: 28, color: AppColors.gold),
+              icon: Icon(Icons.chevron_left, size: 28, color: AppColors.gold),
               onPressed: () => _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
             )
           else
@@ -127,14 +127,14 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
                   ),
                 Flexible(
                   child: Text(title, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 16, color: Colors.white)),
+                      style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 16, color: Colors.white)),
                 ),
               ],
             ),
           ),
           if (_currentPage < domains.length)
             IconButton(
-              icon: const Icon(Icons.chevron_right, size: 28, color: AppColors.gold),
+              icon: Icon(Icons.chevron_right, size: 28, color: AppColors.gold),
               onPressed: () => _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
             )
           else

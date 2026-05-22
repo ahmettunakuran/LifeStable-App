@@ -58,14 +58,14 @@ class _DomainEditPageState extends State<DomainEditPage> {
         backgroundColor: Colors.transparent, elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.gold),
         title: isEditing
-            ? Text(S.of('edit_domain'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
+            ? Text(S.of('edit_domain'), style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
             : null,
         actions: isEditing
-            ? [IconButton(icon: const Icon(Icons.check, color: AppColors.gold), onPressed: _save)]
+            ? [IconButton(icon: Icon(Icons.check, color: AppColors.gold), onPressed: _save)]
             : null,
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
               colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)]),
         ),
@@ -79,7 +79,7 @@ class _DomainEditPageState extends State<DomainEditPage> {
                 if (!isEditing) ...[
                   ShaderMask(
                     shaderCallback: (b) => const LinearGradient(colors: [AppColors.goldLight, AppColors.gold]).createShader(b),
-                    child: Text(S.of('new_domain'), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
+                    child: Text(S.of('new_domain'), style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
                   ),
                   const SizedBox(height: 8),
                   Text(S.of('new_domain_subtitle'), style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14)),
@@ -116,7 +116,7 @@ class _DomainEditPageState extends State<DomainEditPage> {
                     child: Container(width: 42, height: 42,
                       decoration: BoxDecoration(color: c, shape: BoxShape.circle,
                           border: Border.all(color: sel ? AppColors.goldLight : Colors.transparent, width: 2.5)),
-                      child: sel ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
+                      child: sel ? Icon(Icons.check, color: Colors.white, size: 18) : null,
                     ),
                   );
                 }).toList()),
@@ -130,7 +130,7 @@ class _DomainEditPageState extends State<DomainEditPage> {
                       gradient: const LinearGradient(colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark]),
                       boxShadow: [BoxShadow(color: AppColors.gold.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))],
                     ),
-                    child: Center(child: Text(S.of('create_domain'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black))),
+                    child: Center(child: Text(S.of('create_domain'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black))),
                   ),
                 ),
               ],
@@ -148,7 +148,7 @@ class _DomainEditPageState extends State<DomainEditPage> {
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: Colors.white.withOpacity(0.05),
           border: Border.all(color: AppColors.gold.withOpacity(0.2), width: 1.2)),
       child: TextFormField(controller: c, maxLines: maxLines, validator: validator,
-          style: const TextStyle(color: Colors.white, fontSize: 15),
+          style: TextStyle(color: Colors.white, fontSize: 15),
           decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 15),
               border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16))),
     );

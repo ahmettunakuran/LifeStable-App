@@ -19,8 +19,8 @@ class CalendarEventEntity {
     required this.endAt,
     this.eventType = CalendarEventType.personal,
     this.domainId,
-    this.linkedTaskId,
-    this.linkedTaskTitle,
+    this.linkedTaskIds = const [],
+    this.linkedTaskTitles = const [],
     this.colorHex,
     this.isRecurring = false,
     this.externalEventId,
@@ -41,8 +41,8 @@ class CalendarEventEntity {
 
   // Personal / task link
   final String? domainId;
-  final String? linkedTaskId;
-  final String? linkedTaskTitle;
+  final List<String> linkedTaskIds;
+  final List<String> linkedTaskTitles;
   final String? colorHex;
   final bool isRecurring;
   final String? externalEventId;
@@ -62,7 +62,7 @@ class CalendarEventEntity {
 
   // ── Computed helpers ────────────────────────────────────────────────────
 
-  bool get hasLinkedTask => linkedTaskId != null && linkedTaskId!.isNotEmpty;
+  bool get hasLinkedTask => linkedTaskIds.isNotEmpty;
   bool get isTeamEvent => eventType == CalendarEventType.team && teamId != null;
 
   Duration get duration => endAt.difference(startAt);
@@ -82,8 +82,8 @@ class CalendarEventEntity {
     DateTime? endAt,
     CalendarEventType? eventType,
     String? domainId,
-    String? linkedTaskId,
-    String? linkedTaskTitle,
+    List<String>? linkedTaskIds,
+    List<String>? linkedTaskTitles,
     String? colorHex,
     bool? isRecurring,
     String? externalEventId,
@@ -101,8 +101,8 @@ class CalendarEventEntity {
         endAt: endAt ?? this.endAt,
         eventType: eventType ?? this.eventType,
         domainId: domainId ?? this.domainId,
-        linkedTaskId: linkedTaskId ?? this.linkedTaskId,
-        linkedTaskTitle: linkedTaskTitle ?? this.linkedTaskTitle,
+        linkedTaskIds: linkedTaskIds ?? this.linkedTaskIds,
+        linkedTaskTitles: linkedTaskTitles ?? this.linkedTaskTitles,
         colorHex: colorHex ?? this.colorHex,
         isRecurring: isRecurring ?? this.isRecurring,
         externalEventId: externalEventId ?? this.externalEventId,
@@ -120,8 +120,8 @@ class CalendarEventEntity {
     'endAt': endAt.toIso8601String(),
     'eventType': eventType.name,
     if (domainId != null) 'domainId': domainId,
-    if (linkedTaskId != null) 'linkedTaskId': linkedTaskId,
-    if (linkedTaskTitle != null) 'linkedTaskTitle': linkedTaskTitle,
+    'linkedTaskIds': linkedTaskIds,
+    'linkedTaskTitles': linkedTaskTitles,
     if (colorHex != null) 'colorHex': colorHex,
     'isRecurring': isRecurring,
     if (externalEventId != null) 'externalEventId': externalEventId,
@@ -147,8 +147,8 @@ class CalendarEventEntity {
           orElse: () => CalendarEventType.personal,
         ),
         domainId: data['domainId'] as String?,
-        linkedTaskId: data['linkedTaskId'] as String?,
-        linkedTaskTitle: data['linkedTaskTitle'] as String?,
+        linkedTaskIds: _parseList(data, 'linkedTaskIds', 'linkedTaskId'),
+        linkedTaskTitles: _parseList(data, 'linkedTaskTitles', 'linkedTaskTitle'),
         colorHex: data['colorHex'] as String?,
         isRecurring: data['isRecurring'] as bool? ?? false,
         externalEventId: data['externalEventId'] as String?,
@@ -160,6 +160,16 @@ class CalendarEventEntity {
             [],
         sourceCollection: source,
       );
+
+  static List<String> _parseList(Map<String, dynamic> data, String listKey, String singleKey) {
+    if (data[listKey] != null && data[listKey] is List) {
+      return (data[listKey] as List).map((e) => e.toString()).toList();
+    }
+    if (data[singleKey] != null) {
+      return [data[singleKey].toString()];
+    }
+    return [];
+  }
 }
 
 enum EventSourceCollection { personal, team }

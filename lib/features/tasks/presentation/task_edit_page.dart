@@ -72,7 +72,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
       lastDate: DateTime(2101),
       builder: (ctx, child) => Theme(
         data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
+          colorScheme: ColorScheme.dark(
             primary: AppColors.gold,
             surface: AppColors.cardBg,
           ),
@@ -91,11 +91,11 @@ class _TaskEditPageState extends State<TaskEditPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.gold),
-        title: const Text('Create Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.check, color: AppColors.gold), onPressed: _saveTask)],
+        title: Text('Create Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: Icon(Icons.check, color: AppColors.gold), onPressed: _saveTask)],
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -218,7 +218,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
         controller: c,
         maxLines: maxLines,
         validator: validator,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
+        style: TextStyle(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 15),
@@ -245,7 +245,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
           child: DropdownButtonFormField<String>(
             initialValue: docs.any((doc) => doc.id == _domainId) ? _domainId : null,
             dropdownColor: AppColors.cardBg,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: TextStyle(color: Colors.white, fontSize: 15),
             decoration: const InputDecoration(border: InputBorder.none),
             hint: Text('Select domain', style: TextStyle(color: Colors.white.withValues(alpha: 0.25))),
             items: docs.map((doc) {
@@ -303,7 +303,7 @@ class _TaskEditPageState extends State<TaskEditPage> {
       child: DropdownButtonFormField<T>(
         value: value,
         dropdownColor: AppColors.cardBg,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(color: Colors.white, fontSize: 14),
         decoration: const InputDecoration(border: InputBorder.none),
         items: items.map((i) => DropdownMenuItem(value: i, child: Text(labelOf(i)))).toList(),
         onChanged: onChanged,
