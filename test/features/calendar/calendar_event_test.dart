@@ -176,13 +176,13 @@ void main() {
     test('task-linked event hasLinkedTask returns true', () {
       final linked = Fixtures.calendarEvent(
         eventType: CalendarEventType.task,
-        linkedTaskId: 'task-abc',
+        linkedTaskIds: const ['task-abc'],
       );
       expect(linked.hasLinkedTask, isTrue);
     });
 
-    test('event without linkedTaskId hasLinkedTask returns false', () {
-      final unlinked = Fixtures.calendarEvent(linkedTaskId: null);
+    test('event without linkedTaskIds hasLinkedTask returns false', () {
+      final unlinked = Fixtures.calendarEvent(linkedTaskIds: const []);
       expect(unlinked.hasLinkedTask, isFalse);
     });
   });
