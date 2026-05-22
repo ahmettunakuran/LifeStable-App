@@ -238,11 +238,138 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
   // ── Chat list ─────────────────────────────────────────────────────────────
 
   Widget _buildChatList(AppAssistantState state) {
+    final msgs = state.messages;
+    final showFollowUps = state.followUpSuggestions.isNotEmpty &&
+        !state.isResponding;
+
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: state.messages.length,
-      itemBuilder: (_, i) => ChatBubble(message: state.messages[i]),
+      padding: const EdgeInsets.only(top: 12, bottom: 4),
+      itemCount: msgs.length + (showFollowUps ? 1 : 0),
+      itemBuilder: (context, i) {
+        if (i < msgs.length) return ChatBubble(message: msgs[i]);
+        // Follow-up suggestions row after last message
+        return _buildFollowUpRow(context, state.followUpSuggestions);
+      },
+    );
+  }
+
+  // ── Follow-up suggestions (shown after last assistant reply) ──────────────
+
+  Widget _buildFollowUpRow(BuildContext context, List<String> suggestions) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, top: 8, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Related questions',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.35),
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: suggestions
+                .map((s) => GestureDetector(
+                      onTap: () {
+                        _controller.text = s;
+                        _send(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: AppColors.gold.withOpacity(0.2)),
+                        ),
+                        child: Text(
+                          s,
+                          style: TextStyle(
+                            color: AppColors.gold.withOpacity(0.85),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  // ── Suggestion chip row (shown in chat view) ─────────────────────────────
+
+  static const _chipLabels = [
+    'How do I create a domain?',
+    'How does the habit streak work?',
+    'Nasıl görev oluşturabilirim?',
+    'How do I sync Google Calendar?',
+    'How do I join a team?',
+    'Uygulama çevrimdışı çalışır mı?',
+  ];
+
+  Widget _buildSuggestionRow(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 12, top: 6, bottom: 8),
+          child: Text(
+            'Ask about LifeStable',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.4),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            scrollDirection: Axis.horizontal,
+            itemCount: _chipLabels.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 6),
+            itemBuilder: (context, i) => GestureDetector(
+              onTap: () {
+                _controller.text = _chipLabels[i];
+                _send(context);
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(18),
+                  border:
+                      Border.all(color: AppColors.gold.withOpacity(0.22)),
+                ),
+                child: Text(
+                  _chipLabels[i],
+                  style: const TextStyle(
+                    color: AppColors.gold,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
@@ -257,55 +384,63 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
           top: BorderSide(color: AppColors.gold.withOpacity(0.1)),
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                enabled: !state.isResponding,
-                style: TextStyle(color: Colors.white, fontSize: 15),
-                maxLines: 4,
-                minLines: 1,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: state.isResponding
-                      ? 'Looking up answer…'
-                      : 'Ask about LifeStable…',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.3),
-                    fontSize: 14,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(22),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(22),
-                    borderSide: BorderSide(
-                      color: AppColors.gold.withOpacity(0.15),
+          if (!state.showWelcome && !state.isResponding)
+            _buildSuggestionRow(context),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    enabled: !state.isResponding,
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    maxLines: 4,
+                    minLines: 1,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: state.isResponding
+                          ? 'Looking up answer…'
+                          : 'Ask about LifeStable…',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.05),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide(
+                          color: AppColors.gold.withOpacity(0.15),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(22),
+                        borderSide: BorderSide(
+                          color: AppColors.gold.withOpacity(0.4),
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                     ),
+                    onSubmitted: (_) => _send(context),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(22),
-                    borderSide: BorderSide(
-                      color: AppColors.gold.withOpacity(0.4),
-                    ),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 ),
-                onSubmitted: (_) => _send(context),
               ),
-            ),
+              const SizedBox(width: 4),
+              _buildSendButton(context, state.isResponding),
+            ],
           ),
-          const SizedBox(width: 4),
-          _buildSendButton(context, state.isResponding),
         ],
       ),
     );
