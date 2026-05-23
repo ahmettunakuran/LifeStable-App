@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../app/router/app_routes.dart';
 import '../../../shared/constants/app_colors.dart';
@@ -55,21 +56,7 @@ class HomeDashboardPage extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.menu, color: AppColors.gold),
-                                    onPressed: () => scaffoldKey.currentState?.openDrawer(),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Text(
-                                    'LifeStable',
-                                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.gold, letterSpacing: -0.5),
-                                  ),
-                                ],
-                              ),
+                              _buildHeaderBar(context, scaffoldKey),
                               const SizedBox(height: 16),
                               _buildSkeletonBox(context, height: 110, radius: 27),
                               const SizedBox(height: 16),
@@ -108,65 +95,31 @@ class HomeDashboardPage extends StatelessWidget {
                   return Column(
                     children: [
                       Expanded(
-                        child: Padding(
+                        child: SingleChildScrollView(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.menu, color: AppColors.gold),
-                                    onPressed: () => scaffoldKey.currentState?.openDrawer(),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Text(
-                                    'LifeStable',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                      color: AppColors.gold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  _buildHabitStreakTrigger(context, state.habits),
-                                ],
+                              _buildHeaderBar(
+                                context,
+                                scaffoldKey,
+                                trailing: _buildHabitStreakTrigger(context, state.habits),
                               ),
-                              const SizedBox(height: 16),
-                              _buildSlidableDomainAccess(context, state.domains, state.tasks, state.habits),
-                              const SizedBox(height: 16),
-                              if (state.deadlineCount > 0) ...[
-                                _buildDeadlineAlert(context, state.deadlineCount),
-                                const SizedBox(height: 16),
-                              ],
-                              Expanded(
-                                flex: 4,
+                              const SizedBox(height: 20),
+                              _buildDomainsSection(context, state.domains, state.tasks),
+                              const SizedBox(height: 20),
+                              _buildTodayBrief(context, state),
+                              const SizedBox(height: 20),
+                              SizedBox(
+                                height: 260,
                                 child: Row(
                                   children: [
-                                    Expanded(
-                                      child: _buildSummaryCard(context, state.todayTasks),
-                                    ),
+                                    Expanded(child: _buildFocusCard(context, state.todayEvents)),
                                     const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          Expanded(child: _buildFocusCard(context, state.todayEvents)),
-                                          const SizedBox(height: 12),
-                                          Expanded(child: _buildCloseDeadlinesSection(context, state.tasks, state.domains)),
-                                        ],
-                                      ),
-                                    ),
+                                    Expanded(child: _buildCloseDeadlinesSection(context, state.tasks, state.domains)),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 12),
-                                Expanded(
-                                  flex: 1,
-                                  child: _buildAIRecommendations(context, state),
-                                ),
                               const SizedBox(height: 8),
                             ],
                           ),
@@ -195,48 +148,80 @@ class HomeDashboardPage extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      AppRoutes.homeDashboard,
-                      (route) => false,
-                    );
-                  },
-                  child: Icon(
-                    Icons.home_outlined,
-                    color: AppColors.gold,
-                    size: 28,
+              padding: const EdgeInsets.fromLTRB(20, 14, 16, 14),
+              child: Row(
+                children: [
+                  _brandTitle(),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        AppRoutes.homeDashboard,
+                        (route) => false,
+                      );
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.gold.withOpacity(0.18)),
+                      ),
+                      child: Icon(Icons.home_rounded, color: AppColors.gold, size: 20),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
-            const SizedBox(height: 10),
-            _buildDrawerButton(context, S.of('calendar'), AppRoutes.calendar),
-            _buildDrawerButton(context, S.of('tasks'), AppRoutes.tasksKanban),
-            _buildDrawerButton(context, S.of('team'), AppRoutes.teamDashboard),
-            _buildDrawerButton(context, S.of('ai_bot'), AppRoutes.aiAssistant),
-            _buildDrawerButton(context, S.of('habits'), AppRoutes.habitTracker),
-            _buildDrawerButton(context, S.of('add_location'), AppRoutes.map),
-            _buildDrawerButton(context, S.of('app_assistant'), AppRoutes.appAssistant),
-            const Spacer(),
-            _buildDrawerButton(context, S.of('settings'), AppRoutes.settings),
+            Divider(color: AppColors.gold.withOpacity(0.12), height: 1),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                children: [
+                  _buildDrawerItem(context, Icons.calendar_month_outlined,
+                      S.of('calendar'), AppRoutes.calendar),
+                  _buildDrawerItem(context, Icons.checklist_rounded,
+                      S.of('tasks'), AppRoutes.tasksKanban),
+                  _buildDrawerItem(context, Icons.groups_outlined,
+                      S.of('team'), AppRoutes.teamDashboard),
+                  _buildDrawerItem(context, Icons.auto_awesome,
+                      S.of('ai_bot'), AppRoutes.aiAssistant),
+                  _buildDrawerItem(context, Icons.local_fire_department_outlined,
+                      S.of('habits'), AppRoutes.habitTracker),
+                  _buildDrawerItem(context, Icons.location_on_outlined,
+                      S.of('add_location'), AppRoutes.map),
+                  _buildDrawerItem(context, Icons.support_agent_rounded,
+                      S.of('app_assistant'), AppRoutes.appAssistant),
+                ],
+              ),
+            ),
+            Divider(color: AppColors.gold.withOpacity(0.12), height: 1),
+            const SizedBox(height: 8),
+            _buildDrawerItem(context, Icons.settings_outlined,
+                S.of('settings'), AppRoutes.settings),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              padding: const EdgeInsets.fromLTRB(26, 12, 26, 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton.icon(
-                    onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
-                    icon: Icon(Icons.logout, color: Colors.white.withValues(alpha: 0.70), size: 18),
-                    label: Text(S.of('logout'), style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 14)),
+                    onPressed: () =>
+                        Navigator.pushReplacementNamed(context, AppRoutes.login),
+                    icon: Icon(Icons.logout_rounded,
+                        color: Colors.white.withValues(alpha: 0.70), size: 18),
+                    label: Text(S.of('logout'),
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.70),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   ),
-                  Icon(Icons.help_outline, color: Colors.white.withValues(alpha: 0.70), size: 28),
+                  Icon(Icons.help_outline_rounded,
+                      color: Colors.white.withValues(alpha: 0.50), size: 24),
                 ],
               ),
             ),
@@ -246,26 +231,51 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerButton(BuildContext context, String title, String route) {
+  Widget _buildDrawerItem(
+      BuildContext context, IconData icon, String title, String route) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: () {
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
             Navigator.pop(context);
             Navigator.pushNamed(context, route);
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.gold.withOpacity(0.8),
-            foregroundColor: AppColors.black,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-          child: Text(
-            title,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.gold.withOpacity(0.12)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: AppColors.gold, size: 18),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    color: Colors.white.withOpacity(0.25), size: 20),
+              ],
+            ),
           ),
         ),
       ),
@@ -273,7 +283,7 @@ class HomeDashboardPage extends StatelessWidget {
   }
 
   Widget _buildHabitStreakTrigger(BuildContext context, List<Habit> habits) {
-    final totalStreak = habits.fold<int>(0, (s, h) => s + h.streak);
+    final maxStreak = habits.fold<int>(0, (best, h) => h.streak > best ? h.streak : best);
     final activeCount = habits.where((h) => !h.isPaused).length;
 
     return GestureDetector(
@@ -295,7 +305,7 @@ class HomeDashboardPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '$totalStreak ${S.of('days')}',
+                  '$maxStreak ${S.of('days')}',
                   style: TextStyle(
                       color: AppColors.gold,
                       fontSize: 12,
@@ -452,73 +462,259 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDeadlineAlert(BuildContext context, int count) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.gold.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        S.of('deadlines_today').replaceFirst('{}', count == 2 ? "Two" : count.toString()),
-        textAlign: TextAlign.center,
-        style: TextStyle(color: AppColors.black, fontWeight: FontWeight.bold, fontSize: 13),
+  Widget _buildDomainsSection(BuildContext context, List<DomainEntity> domains, List<TaskEntity> tasks) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          S.of('domains_title').toUpperCase(),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.45),
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 104,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: domains.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) return _buildNewDomainCard(context);
+              final domain = domains[index - 1];
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+              var domainTasks = tasks.where((t) => t.domainId == domain.id);
+              // Team domains only surface tasks assigned to the current user,
+              // matching the kanban board (DomainKanbanView).
+              if (domain.isTeamMirror && uid != null) {
+                domainTasks = domainTasks.where((t) => t.assignedTo == uid);
+              }
+              final count =
+                  domainTasks.where((t) => t.status != TaskStatus.done).length;
+              return _buildDomainCard(context, domain, count, index - 1);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNewDomainCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.domainEdit),
+      child: Container(
+        width: 96,
+        margin: const EdgeInsets.only(right: 10),
+        decoration: BoxDecoration(
+          color: AppColors.gold.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add, color: AppColors.gold, size: 28),
+            const SizedBox(height: 6),
+            Text(
+              S.of('new_short').toUpperCase(),
+              style: TextStyle(
+                color: AppColors.gold,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context, List<TaskEntity> todayTasks) {
-    final count = todayTasks.length;
-    final nextTask = todayTasks.isNotEmpty ? todayTasks.first : null;
+  Widget _buildDomainCard(BuildContext context, DomainEntity domain, int taskCount, int index) {
+    Color domainColor;
+    try {
+      domainColor = Color(int.parse(domain.colorHex.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      domainColor = AppColors.gold;
+    }
+
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.domainDashboard, arguments: index),
+      child: Container(
+        width: 132,
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.gold.withOpacity(0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(color: domainColor, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    domain.name.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              '$taskCount',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Text(
+              S.of('summary_tasks').toLowerCase(),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodayBrief(BuildContext context, HomeDashboardLoaded state) {
+    final taskCount = state.deadlineCount;
+    final headline = taskCount == 0
+        ? S.of('all_clear_today')
+        : S.of('you_have_tasks_today').replaceAll('{n}', '$taskCount');
+
+    Widget insight;
+    if (state.isInsightLoading) {
+      insight = Row(
+        children: [
+          const SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(color: AppColors.gold, strokeWidth: 2),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '...',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.38), fontSize: 13),
+          ),
+        ],
+      );
+    } else {
+      final text = (state.aiInsight != null && state.aiInsight!.isNotEmpty)
+          ? state.aiInsight!
+          : S.of('no_summary');
+      insight = _ExpandableInsight(text: text);
+    }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gold.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.gold.withOpacity(0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCompactHeader(context, S.of('fast_summary')),
-          const SizedBox(height: 12),
-          if (count == 0)
-            Expanded(
-              child: Center(
-                child: Text(S.of('all_clear_today'),
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.24), fontSize: 12)),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.auto_awesome, color: AppColors.gold, size: 16),
               ),
-            )
-          else
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    S
-                        .of('you_have_tasks_today')
-                        .replaceAll('{n}', '$count'),
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 12),
-                  ),
-                  if (nextTask != null) ...[
-                    const SizedBox(height: 10),
-                    Text(S.of('next_up'),
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.38), fontSize: 10)),
-                    const SizedBox(height: 4),
-                    Text(
-                      nextTask.title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ],
-              ),
+              const SizedBox(width: 8),
+              _goldGradientText(S.of('todays_brief').toUpperCase(),
+                  fontSize: 11, letterSpacing: 1.4),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            headline,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              height: 1.2,
             ),
+          ),
+          const SizedBox(height: 8),
+          insight,
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _buildBriefStat(context, S.of('due_today_short'), '$taskCount')),
+              const SizedBox(width: 10),
+              Expanded(child: _buildBriefStat(context, S.of('summary_events'), '${state.todayEvents.length}')),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildBriefStat(
+                  context,
+                  S.of('summary_habits'),
+                  '${state.completedHabitsCount}/${state.habits.length}',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBriefStat(BuildContext context, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.gold.withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.45),
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ],
       ),
     );
@@ -670,20 +866,126 @@ class HomeDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactHeader(BuildContext context, String title, {double? height}) {
-    return Container(
-      width: double.infinity,
-      height: height,
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.gold.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(6),
+  Widget _buildCompactHeader(BuildContext context, String title) {
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 13,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.goldLight, AppColors.goldDark],
+            ),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: _goldGradientText(title.toUpperCase(), fontSize: 11, letterSpacing: 1.5)),
+      ],
+    );
+  }
+
+  /// Gradient-gold text, matching the calendar screen's luxury treatment.
+  Widget _goldGradientText(String text, {double fontSize = 11, double letterSpacing = 1.2}) {
+    return ShaderMask(
+      shaderCallback: (b) => const LinearGradient(
+        colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
+      ).createShader(b),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: fontSize,
+          letterSpacing: letterSpacing,
+        ),
       ),
-      child: title.isEmpty ? null : Text(
-        title.toUpperCase(),
-        textAlign: TextAlign.center,
-        style: TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1),
+    );
+  }
+
+  Widget _brandTitle() {
+    return ShaderMask(
+      shaderCallback: (b) => const LinearGradient(
+        colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
+      ).createShader(b),
+      child: const Text(
+        'LifeStable',
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+          letterSpacing: -0.5,
+        ),
       ),
+    );
+  }
+
+  Widget _buildHeaderBar(
+    BuildContext context,
+    GlobalKey<ScaffoldState> scaffoldKey, {
+    Widget? trailing,
+  }) {
+    final dateLine =
+        DateFormat('EEE · MMM d').format(DateTime.now()).toUpperCase();
+    final user = FirebaseAuth.instance.currentUser;
+    final rawName = user?.displayName?.trim() ?? '';
+    final firstName = rawName.isNotEmpty
+        ? rawName.split(' ').first
+        : (user?.email?.split('@').first ?? '');
+
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => scaffoldKey.currentState?.openDrawer(),
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.gold.withOpacity(0.18)),
+            ),
+            child: Icon(Icons.menu_rounded, color: AppColors.gold, size: 22),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                dateLine,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                firstName.isEmpty
+                    ? S.of('greeting_hey')
+                    : '${S.of('greeting_hey')}, $firstName',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (trailing != null) ...[const SizedBox(width: 10), trailing],
+      ],
     );
   }
 
@@ -697,7 +999,7 @@ class HomeDashboardPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildCompactHeader(context, S.of('todays_focus')),
+          _buildCompactHeader(context, S.of('todays_schedule')),
           const SizedBox(height: 12),
           if (events.isEmpty)
             Expanded(
@@ -719,129 +1021,6 @@ class HomeDashboardPage extends StatelessWidget {
                 },
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAIRecommendations(BuildContext context, HomeDashboardLoaded state) {
-    Widget content;
-
-    if (state.isInsightLoading) {
-      content = const Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(color: AppColors.gold, strokeWidth: 2),
-        ),
-      );
-    } else if (state.aiInsight != null && state.aiInsight!.isNotEmpty) {
-      content = SingleChildScrollView(
-        child: Text(
-          state.aiInsight!,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.70), fontSize: 13, height: 1.4),
-        ),
-      );
-    } else {
-      content = Center(
-        child: Text(
-          'Özet bulunamadı.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.38), fontSize: 12, fontStyle: FontStyle.italic),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gold.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildCompactHeader(context, S.of('recommendations_ai')),
-          const SizedBox(height: 8),
-          Expanded(child: content),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSlidableDomainAccess(BuildContext context, List<DomainEntity> domains, List<TaskEntity> tasks, List<Habit> habits) {
-    return Container(
-      height: 110,
-      decoration: BoxDecoration(
-        color: AppColors.gold.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(27),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRoutes.domainEdit),
-            child: Container(
-              width: 54,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.black.withOpacity(0.1),
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(27), bottomLeft: Radius.circular(27)),
-              ),
-              child: Icon(Icons.add, color: AppColors.black, size: 28),
-            ),
-          ),
-          VerticalDivider(width: 1, color: AppColors.black, indent: 14, endIndent: 14),
-          Expanded(
-            child: domains.isEmpty
-                ? Center(
-                    child: Text(S.of('no_domains_yet'),
-                        style: TextStyle(
-                            color: AppColors.black,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600)))
-                : ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: domains.length,
-              itemBuilder: (context, index) {
-                final domain = domains[index];
-                final incompleteTasks = tasks.where((t) => t.domainId == domain.id && t.status != TaskStatus.done).length;
-                final domainHabits = habits.where((h) => h.domainId == domain.id).toList();
-                final maxStreak = domainHabits.fold<int>(0, (best, h) => h.streak > best ? h.streak : best);
-
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.domainDashboard, arguments: index),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(color: AppColors.black.withOpacity(0.12), borderRadius: BorderRadius.circular(16)),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(domain.name.toUpperCase(), style: TextStyle(color: AppColors.black, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5)),
-                            const SizedBox(height: 4),
-                            Text('$incompleteTasks task${incompleteTasks == 1 ? '' : 's'}', style: TextStyle(color: AppColors.black, fontSize: 10, fontWeight: FontWeight.w600)),
-                            if (maxStreak > 0) ...[
-                              const SizedBox(height: 4),
-                              Row(children: [
-                                Icon(Icons.local_fire_department, color: AppColors.goldDark, size: 12),
-                                const SizedBox(width: 2),
-                                Text('$maxStreak day${maxStreak == 1 ? '' : 's'}', style: TextStyle(color: AppColors.black, fontSize: 10))
-                              ])
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(padding: EdgeInsets.only(right: 18), child: Icon(Icons.arrow_forward_ios, color: AppColors.black, size: 14)),
         ],
       ),
     );
@@ -887,6 +1066,81 @@ class HomeDashboardPage extends StatelessWidget {
           Text(label, style: TextStyle(color: active ? AppColors.gold : Colors.white.withOpacity(0.4), fontSize: 10, fontWeight: FontWeight.w600)),
         ],
       ),
+    );
+  }
+}
+
+/// AI insight text that shows a 3-line preview and expands on tap.
+/// The "show more / show less" toggle only appears when the text
+/// actually overflows the 3-line preview.
+class _ExpandableInsight extends StatefulWidget {
+  const _ExpandableInsight({required this.text});
+
+  final String text;
+
+  @override
+  State<_ExpandableInsight> createState() => _ExpandableInsightState();
+}
+
+class _ExpandableInsightState extends State<_ExpandableInsight> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = TextStyle(
+      color: Colors.white.withValues(alpha: 0.70),
+      fontSize: 13,
+      height: 1.4,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          maxLines: 3,
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final overflows = painter.didExceedMaxLines;
+
+        final textWidget = Text(
+          widget.text,
+          maxLines: _expanded ? null : 3,
+          overflow: _expanded ? TextOverflow.clip : TextOverflow.ellipsis,
+          style: style,
+        );
+
+        if (!overflows) return textWidget;
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              textWidget,
+              const SizedBox(height: 6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _expanded ? S.of('show_less') : S.of('show_more'),
+                    style: const TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Icon(
+                    _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: AppColors.gold,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
