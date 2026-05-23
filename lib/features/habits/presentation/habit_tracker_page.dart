@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../app/router/app_routes.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
 import 'habit.dart';
 
@@ -145,7 +146,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
         builder: (ctx, setStateDialog) => AlertDialog(
           backgroundColor: AppColors.cardBg,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('New Habit', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w900, fontSize: 16)),
+          title: Text(S.of('new_habit'), style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w900, fontSize: 16)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -153,22 +154,22 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                 controller: nameController,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  labelText: 'Habit Name',
+                  labelText: S.of('habit_name_label'),
                   labelStyle: const TextStyle(color: Colors.white54),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.gold.withOpacity(0.3))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppColors.gold.withValues(alpha: 0.3))),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.gold)),
                   suffixIcon: Tooltip(
-                    message: 'Enter a short, actionable habit name.',
+                    message: S.of('enter_habit_name_tooltip'),
                     triggerMode: TooltipTriggerMode.tap,
                     child: const Icon(Icons.info_outline, size: 18, color: Colors.white38),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              const Align(alignment: Alignment.centerLeft, child: Text('Link to Domain:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 13))),
+              Align(alignment: Alignment.centerLeft, child: Text(S.of('link_to_domain_label'), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white70, fontSize: 13))),
               const SizedBox(height: 8),
               Container(
-                decoration: BoxDecoration(border: Border.all(color: AppColors.gold.withOpacity(0.3)), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)), borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: DropdownButton<String>(
                   isExpanded: true,
@@ -189,7 +190,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.of('cancel'), style: const TextStyle(color: Colors.white54))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold, foregroundColor: AppColors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
               onPressed: () {
@@ -198,7 +199,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                   Navigator.pop(ctx);
                 }
               },
-              child: const Text('Add', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(S.of('create_btn'), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -212,17 +213,20 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Habit', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w900, fontSize: 16)),
-        content: Text('"${habit.name}" will be deleted. Are you sure?', style: const TextStyle(color: Colors.white70)),
+        title: Text(S.of('delete_habit_title'), style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w900, fontSize: 16)),
+        content: Text(
+          S.of('delete_habit_body').replaceAll('{name}', habit.name),
+          style: const TextStyle(color: Colors.white70),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.of('cancel'), style: const TextStyle(color: Colors.white54))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
             onPressed: () {
               _deleteHabit(habit.id);
               Navigator.pop(ctx);
             },
-            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(S.of('delete'), style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -239,10 +243,10 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text('⏸ Health Guardrail', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.gold)),
-            SizedBox(height: 12),
-            Text('Pausing a habit protects your streak during stressful periods.', style: TextStyle(fontSize: 14, color: Colors.white70)),
+          children: [
+            Text(S.of('health_guardrail'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.gold)),
+            const SizedBox(height: 12),
+            Text(S.of('pause_habit_instructions'), style: const TextStyle(fontSize: 14, color: Colors.white70)),
           ],
         ),
       ),
@@ -251,121 +255,126 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.gold),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, AppRoutes.homeDashboard);
-            }
-          },
-        ),
-        title: ShaderMask(
-          shaderCallback: (b) => const LinearGradient(
-            colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
-          ).createShader(b),
-          child: const Text(
-            'Habits',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: -0.5,
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: AppColors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.gold),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacementNamed(context, AppRoutes.homeDashboard);
+                }
+              },
             ),
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () => _showPauseInfo(context),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.gold.withOpacity(0.25)),
+            title: ShaderMask(
+              shaderCallback: (b) => const LinearGradient(
+                colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
+              ).createShader(b),
+              child: Text(
+                S.of('habits'),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
                 ),
-                child: const Icon(Icons.info_outline, color: AppColors.gold, size: 20),
               ),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNav(context),
-      body: Container(
-        decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)])),
-        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: _domainsStream,
-          builder: (context, domainsSnapshot) {
-            final domainDocs = domainsSnapshot.data?.docs ?? [];
-            final domainOptions = domainDocs
-                .map((doc) => <String, String>{
-                      'id': doc.id,
-                      'name': (doc.data()['name'] as String?) ?? 'Unnamed',
-                    })
-                .toList(growable: false);
-            final Map<String, Color> domainColors = {};
-            for (final doc in domainDocs) {
-              final hex = doc.data()['colorHex'] as String?;
-              if (hex != null) {
-                try {
-                  domainColors[doc.id] = Color(int.parse(hex.replaceFirst('#', '0xFF')));
-                } catch (_) {}
-              }
-            }
-            return Stack(
-              children: [
-                StreamBuilder<QuerySnapshot>(
-                  stream: _habitsRef.orderBy('created_at', descending: false).snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator(color: AppColors.gold));
-                    }
-                    final habits = (snapshot.data?.docs ?? [])
-                        .map((doc) => Habit.fromFirestore(doc))
-                        .toList();
-                    _checkAndResetStreaks(habits);
-                    final doneToday = habits.where((h) => h.isCompletedToday).length;
-                    final ordered = [
-                      ...habits.where((h) => !h.isPaused),
-                      ...habits.where((h) => h.isPaused),
-                    ];
-                    return ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
-                      children: [
-                        _buildStreakCard(habits, doneToday),
-                        const SizedBox(height: 22),
-                        if (habits.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 48),
-                            child: Center(
-                              child: Text('No habits yet.',
-                                  style: TextStyle(color: Colors.white24, fontSize: 14)),
-                            ),
-                          )
-                        else ...[
-                          _buildSectionHeader(doneToday, habits.length),
-                          const SizedBox(height: 14),
-                          ...ordered.map((h) => _buildHabitCard(h, domainColors[h.domainId])),
-                        ],
-                      ],
-                    );
-                  },
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: GestureDetector(
+                  onTap: () => _showPauseInfo(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
+                    ),
+                    child: const Icon(Icons.info_outline, color: AppColors.gold, size: 20),
+                  ),
                 ),
-                Positioned(right: 16, bottom: 16, child: FloatingActionButton(backgroundColor: AppColors.gold, foregroundColor: AppColors.black, elevation: 4, onPressed: domainOptions.isEmpty ? null : () => _showAddDialog(domainOptions), child: const Icon(Icons.add))),
-              ],
-            );
-          },
-        ),
-      ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: _buildBottomNav(context),
+          body: Container(
+            decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)])),
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: _domainsStream,
+              builder: (context, domainsSnapshot) {
+                final domainDocs = domainsSnapshot.data?.docs ?? [];
+                final domainOptions = domainDocs
+                    .map((doc) => <String, String>{
+                          'id': doc.id,
+                          'name': (doc.data()['name'] as String?) ?? 'Unnamed',
+                        })
+                    .toList(growable: false);
+                final Map<String, Color> domainColors = {};
+                for (final doc in domainDocs) {
+                  final hex = doc.data()['colorHex'] as String?;
+                  if (hex != null) {
+                    try {
+                      domainColors[doc.id] = Color(int.parse(hex.replaceFirst('#', '0xFF')));
+                    } catch (_) {}
+                  }
+                }
+                return Stack(
+                  children: [
+                    StreamBuilder<QuerySnapshot>(
+                      stream: _habitsRef.orderBy('created_at', descending: false).snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+                        }
+                        final habits = (snapshot.data?.docs ?? [])
+                            .map((doc) => Habit.fromFirestore(doc))
+                            .toList();
+                        _checkAndResetStreaks(habits);
+                        final doneToday = habits.where((h) => h.isCompletedToday).length;
+                        final ordered = [
+                          ...habits.where((h) => !h.isPaused),
+                          ...habits.where((h) => h.isPaused),
+                        ];
+                        return ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
+                          children: [
+                            _buildStreakCard(habits, doneToday),
+                            const SizedBox(height: 22),
+                            if (habits.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 48),
+                                child: Center(
+                                  child: Text(S.of('no_habits_yet'),
+                                      style: const TextStyle(color: Colors.white24, fontSize: 14)),
+                                ),
+                              )
+                            else ...[
+                              _buildSectionHeader(doneToday, habits.length),
+                              const SizedBox(height: 14),
+                              ...ordered.map((h) => _buildHabitCard(h, domainColors[h.domainId])),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                    Positioned(right: 16, bottom: 16, child: FloatingActionButton(backgroundColor: AppColors.gold, foregroundColor: AppColors.black, elevation: 4, onPressed: domainOptions.isEmpty ? null : () => _showAddDialog(domainOptions), child: const Icon(Icons.add))),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -374,9 +383,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
 
   Widget _buildSectionHeader(int done, int total) {
     return Text(
-      'TODAY · $done OF $total DONE',
+      S.of('today_habits_completed').replaceAll('{done}', '$done').replaceAll('{total}', '$total'),
       style: TextStyle(
-        color: Colors.white.withOpacity(0.45),
+        color: Colors.white.withValues(alpha: 0.45),
         fontSize: 11,
         fontWeight: FontWeight.w800,
         letterSpacing: 1.2,
@@ -391,9 +400,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.gold.withOpacity(0.15)),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,9 +418,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                       shaderCallback: (b) => const LinearGradient(
                         colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
                       ).createShader(b),
-                      child: const Text(
-                        'CURRENT STREAK',
-                        style: TextStyle(
+                      child: Text(
+                        S.of('current_streak_title'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
@@ -435,9 +444,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'days',
+                          S.of('days'),
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -446,8 +455,8 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '$doneToday of ${habits.length} habits done today',
-                      style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+                      S.of('done_today_streak_subtitle').replaceAll('{done}', '$doneToday').replaceAll('{total}', '${habits.length}'),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
                     ),
                   ],
                 ),
@@ -456,9 +465,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.gold.withOpacity(0.15),
+                  color: AppColors.gold.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
                 ),
                 child: const Icon(Icons.local_fire_department, color: AppColors.gold, size: 30),
               ),
@@ -466,9 +475,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
           ),
           const SizedBox(height: 18),
           Text(
-            'LAST 30 DAYS',
+            S.of('last_30_days'),
             style: TextStyle(
-              color: Colors.white.withOpacity(0.45),
+              color: Colors.white.withValues(alpha: 0.45),
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.2,
@@ -493,8 +502,8 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
           activeHabits.where((h) => h.completedDates.contains(key)).length;
       final ratio = total == 0 ? 0.0 : count / total;
       final Color c = ratio <= 0
-          ? Colors.white.withOpacity(0.05)
-          : AppColors.gold.withOpacity(0.25 + 0.7 * ratio.clamp(0.0, 1.0));
+          ? Colors.white.withValues(alpha: 0.05)
+          : AppColors.gold.withValues(alpha: 0.25 + 0.7 * ratio.clamp(0.0, 1.0));
       squares.add(
         Expanded(
           child: Padding(
@@ -536,10 +545,10 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(paused ? 0.03 : 0.05),
+          color: Colors.white.withValues(alpha: paused ? 0.03 : 0.05),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: paused ? Colors.white.withOpacity(0.07) : AppColors.gold.withOpacity(0.12),
+            color: paused ? Colors.white.withValues(alpha: 0.07) : AppColors.gold.withValues(alpha: 0.12),
           ),
         ),
         child: Column(
@@ -583,9 +592,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                       const SizedBox(height: 5),
                       Text(
                         paused
-                            ? '${habit.domainName} · Paused'
-                            : (habit.domainName.isEmpty ? 'Daily' : habit.domainName),
-                        style: TextStyle(color: Colors.white.withOpacity(0.45), fontSize: 12),
+                            ? '${habit.domainName} · ${S.of('paused_suffix')}'
+                            : (habit.domainName.isEmpty ? S.of('daily') : habit.domainName),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 12),
                       ),
                     ],
                   ),
@@ -597,7 +606,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(4),
                     child: Icon(Icons.more_vert,
-                        color: Colors.white.withOpacity(0.45), size: 20),
+                        color: Colors.white.withValues(alpha: 0.45), size: 20),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -611,7 +620,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                 child: LinearProgressIndicator(
                   value: weekDone / 7,
                   minHeight: 3,
-                  backgroundColor: Colors.white.withOpacity(0.07),
+                  backgroundColor: Colors.white.withValues(alpha: 0.07),
                   color: AppColors.gold,
                 ),
               ),
@@ -630,9 +639,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            color: paused ? Colors.white.withOpacity(0.04) : AppColors.gold.withOpacity(0.12),
+            color: paused ? Colors.white.withValues(alpha: 0.04) : AppColors.gold.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.gold.withOpacity(paused ? 0.08 : 0.25)),
+            border: Border.all(color: AppColors.gold.withValues(alpha: paused ? 0.08 : 0.25)),
           ),
           child: Icon(
             paused ? Icons.pause_rounded : Icons.local_fire_department,
@@ -682,9 +691,9 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
       width: 46,
       height: 46,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.16),
+        color: color.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.45)),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
       child: Icon(icon, color: color, size: 24),
     );
@@ -724,7 +733,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
                 color: AppColors.gold,
               ),
               title: Text(
-                habit.isPaused ? 'Resume' : 'Pause',
+                habit.isPaused ? S.of('resume') : S.of('pause'),
                 style: const TextStyle(color: Colors.white),
               ),
               onTap: () {
@@ -734,7 +743,7 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+              title: Text(S.of('delete'), style: const TextStyle(color: Colors.redAccent)),
               onTap: () {
                 Navigator.pop(ctx);
                 _confirmDelete(habit);
@@ -750,12 +759,12 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
   Widget _buildBottomNav(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      decoration: BoxDecoration(color: AppColors.cardBg, border: Border(top: BorderSide(color: AppColors.gold.withOpacity(0.1)))),
-      child: SafeArea(child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_navBtn(context, Icons.group_outlined, 'Team', AppRoutes.teamDashboard), _navBtn(context, Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar), _navBtn(context, Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard), _navBtn(context, Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker, active: true)])),
+      decoration: BoxDecoration(color: AppColors.cardBg, border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.1)))),
+      child: SafeArea(child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_navBtn(context, Icons.group_outlined, S.of('nav_team'), AppRoutes.teamDashboard), _navBtn(context, Icons.calendar_month_outlined, S.of('nav_calendar'), AppRoutes.calendar), _navBtn(context, Icons.dashboard_outlined, S.of('nav_dashboard'), AppRoutes.homeDashboard), _navBtn(context, Icons.local_fire_department_outlined, S.of('nav_habit'), AppRoutes.habitTracker, active: true)])),
     );
   }
 
   Widget _navBtn(BuildContext context, IconData icon, String label, String route, {bool active = false}) {
-    return GestureDetector(onTap: () => Navigator.pushReplacementNamed(context, route), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: active ? AppColors.gold : AppColors.gold.withOpacity(0.45), size: 22), const SizedBox(height: 4), Text(label, style: TextStyle(color: active ? AppColors.gold : Colors.white.withOpacity(0.4), fontSize: 10, fontWeight: FontWeight.w600))]));
+    return GestureDetector(onTap: () => Navigator.pushReplacementNamed(context, route), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: active ? AppColors.gold : AppColors.gold.withValues(alpha: 0.45), size: 22), const SizedBox(height: 4), Text(label, style: TextStyle(color: active ? AppColors.gold : Colors.white.withValues(alpha: 0.4), fontSize: 10, fontWeight: FontWeight.w600))]));
   }
 }

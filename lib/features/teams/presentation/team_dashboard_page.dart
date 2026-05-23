@@ -264,213 +264,218 @@ class _TeamDashboardPageState extends State<TeamDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.black,
-      appBar: AppBar(
-        backgroundColor: AppColors.black,
-        iconTheme: const IconThemeData(color: AppColors.gold),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.gold),
-          onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.homeDashboard),
-        ),
-        title: Text(
-          S.of('team_dashboard_title'),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.group_add, color: AppColors.gold),
-            tooltip: S.of('join_with_code'),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const JoinTeamScreen()),
-              );
-              _refresh();
-            },
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: AppColors.black,
+          appBar: AppBar(
+            backgroundColor: AppColors.black,
+            iconTheme: const IconThemeData(color: AppColors.gold),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.gold),
+              onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.homeDashboard),
+            ),
+            title: Text(
+              S.of('team_dashboard_title'),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.group_add, color: AppColors.gold),
+                tooltip: S.of('join_with_code'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const JoinTeamScreen()),
+                  );
+                  _refresh();
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
-          ),
-        ),
-        child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _teamsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.gold),
-              );
-            }
-            if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  '${S.of('error_label')}: ${snapshot.error}',
-                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
-                ),
-              );
-            }
-            final teams = snapshot.data ?? [];
-            if (teams.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.group_off,
-                        size: 64, color: AppColors.gold.withOpacity(0.3)),
-                    const SizedBox(height: 16),
-                    Text(
-                      S.of('no_teams_yet'),
-                      style: TextStyle(
-                          color: Colors.white.withOpacity(0.6), fontSize: 16),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
+              ),
+            ),
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _teamsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.gold),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      '${S.of('error_label')}: ${snapshot.error}',
+                      style: TextStyle(color: Colors.white.withOpacity(0.5)),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      S.of('no_teams_hint_dashboard'),
-                      style: TextStyle(
-                          color: Colors.white.withOpacity(0.35), fontSize: 13),
-                    ),
-                  ],
-                ),
-              );
-            }
-            return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: teams.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final team = teams[index];
-                final teamColor = _getTeamColor(team);
-                return GestureDetector(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TeamDetailScreen(
-                          teamId: team['team_id'],
-                          teamName: team['name'],
-                        ),
-                      ),
-                    );
-                    _refresh();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.white.withOpacity(0.04),
-                      border: Border.all(
-                        color: AppColors.gold.withOpacity(0.15),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
+                  );
+                }
+                final teams = snapshot.data ?? [];
+                if (teams.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: teamColor,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: teamColor.withOpacity(0.4),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              (team['name'] as String? ?? 'T')
-                                  .substring(0, 1)
-                                  .toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 20,
-                              ),
-                            ),
-                          ),
+                        Icon(Icons.group_off,
+                            size: 64, color: AppColors.gold.withOpacity(0.3)),
+                        const SizedBox(height: 16),
+                        Text(
+                          S.of('no_teams_yet'),
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.6), fontSize: 16),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                team['name'] ?? '',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              if (team['objective'] != null &&
-                                  (team['objective'] as String).isNotEmpty)
-                                Text(
-                                  team['objective'],
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.45),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: AppColors.gold.withOpacity(0.5),
+                        const SizedBox(height: 8),
+                        Text(
+                          S.of('no_teams_hint_dashboard'),
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.35), fontSize: 13),
                         ),
                       ],
                     ),
-                  ),
+                  );
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: teams.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final team = teams[index];
+                    final teamColor = _getTeamColor(team);
+                    return GestureDetector(
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TeamDetailScreen(
+                              teamId: team['team_id'],
+                              teamName: team['name'],
+                            ),
+                          ),
+                        );
+                        _refresh();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white.withOpacity(0.04),
+                          border: Border.all(
+                            color: AppColors.gold.withOpacity(0.15),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: teamColor,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: teamColor.withOpacity(0.4),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  (team['name'] as String? ?? 'T')
+                                      .substring(0, 1)
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    team['name'] ?? '',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  if (team['objective'] != null &&
+                                      (team['objective'] as String).isNotEmpty)
+                                    Text(
+                                      team['objective'],
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.45),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              color: AppColors.gold.withOpacity(0.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
-            );
-          },
-        ),
-      ),
-      floatingActionButton: GestureDetector(
-        onTap: _showCreateTeamDialog,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: const LinearGradient(
-              colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.gold.withOpacity(0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.add, color: Colors.black, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                S.of('create_team'),
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
+          floatingActionButton: GestureDetector(
+            onTap: _showCreateTeamDialog,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.gold.withOpacity(0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add, color: Colors.black, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    S.of('create_team'),
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
-      bottomNavigationBar: _buildBottomNav(),
+          bottomNavigationBar: _buildBottomNav(),
+        );
+      },
     );
   }
 

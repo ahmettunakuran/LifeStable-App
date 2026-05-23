@@ -50,7 +50,7 @@ class PremiumPlansPage extends StatelessWidget {
                 const SizedBox(height: 4),
                 _Header(),
                 const SizedBox(height: 20),
-                const UsageSummaryCard(showSeePlansButton: false),
+                UsageSummaryCard(showSeePlansButton: false),
                 const SizedBox(height: 28),
                 for (final plan in PlanCatalog.all) ...[
                   _PlanCard(

@@ -1045,10 +1045,10 @@ class HomeDashboardPage extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavButton(context, Icons.group_outlined, 'Team', AppRoutes.teamDashboard),
-            _buildNavButton(context, Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
-            _buildNavButton(context, Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard, active: true),
-            _buildNavButton(context, Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+            _buildNavButton(context, Icons.group_outlined, S.of('nav_team'), AppRoutes.teamDashboard),
+            _buildNavButton(context, Icons.calendar_month_outlined, S.of('nav_calendar'), AppRoutes.calendar),
+            _buildNavButton(context, Icons.dashboard_outlined, S.of('nav_dashboard'), AppRoutes.homeDashboard, active: true),
+            _buildNavButton(context, Icons.local_fire_department_outlined, S.of('nav_habit'), AppRoutes.habitTracker),
           ],
         ),
       ),

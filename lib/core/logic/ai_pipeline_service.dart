@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:http/http.dart' as http;
 
@@ -43,27 +42,20 @@ class AiPipelineService {
 
     final systemInstruction = _buildSystemInstruction(appData);
 
-    final groqKey = _remoteConfig.getString('groq_api_key');
-    if (groqKey.isNotEmpty) {
+    final groqKeys = [
+      _remoteConfig.getString('groq_api_key'),
+      _remoteConfig.getString('groq_api_key2'),
+      _remoteConfig.getString('groq_api_key3'),
+    ].where((key) => key.isNotEmpty).toList();
+
+    for (final groqKey in groqKeys) {
       for (var attempt = 0; attempt < 2; attempt++) {
         try {
           final result = await _callGroq(groqKey, systemInstruction, history, prompt);
           if (result != null) return result;
         } catch (e) {
-          print("Groq attempt $attempt failed: $e");
+          print("Groq attempt $attempt failed with key: ${groqKey.substring(0, 10.clamp(0, groqKey.length))}...: $e");
         }
-      }
-    } else {
-      print("groq_api_key Remote Config'de bulunamadı; Gemini fallback'e geçiliyor.");
-    }
-
-    final geminiKey = _remoteConfig.getString('gemini_api_key');
-    if (geminiKey.isNotEmpty) {
-      try {
-        final result = await _callGemini(geminiKey, systemInstruction, history, prompt);
-        if (result != null) return result;
-      } catch (e) {
-        print("Gemini fallback failed: $e");
       }
     }
 
@@ -122,64 +114,6 @@ class AiPipelineService {
     return _parseJsonContent(content, AiProvider.groq);
   }
 
-  Future<AiResult?> _callGemini(
-    String apiKey,
-    String systemInstruction,
-    List<Map<String, dynamic>> history,
-    String prompt,
-  ) async {
-    final url = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey',
-    );
-
-    final contents = [
-      ...history.map((m) => {
-            "role": m['role'] == 'model' ? 'model' : 'user',
-            "parts": [
-              {"text": m['text']}
-            ]
-          }),
-      {
-        "role": "user",
-        "parts": [
-          {"text": prompt}
-        ]
-      }
-    ];
-
-    final response = await http
-        .post(
-          url,
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode({
-            "systemInstruction": {
-              "parts": [
-                {"text": systemInstruction}
-              ]
-            },
-            "contents": contents,
-            "generationConfig": {
-              "temperature": 0.1,
-              "responseMimeType": "application/json",
-            }
-          }),
-        )
-        .timeout(_requestTimeout);
-
-    if (response.statusCode != 200) {
-      print("Gemini status ${response.statusCode}: ${response.body}");
-      return null;
-    }
-
-    final data = jsonDecode(response.body);
-    final candidates = data['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) return null;
-    final parts = candidates.first['content']?['parts'] as List?;
-    if (parts == null || parts.isEmpty) return null;
-    final content = parts.first['text']?.toString() ?? '';
-    if (content.isEmpty) return null;
-    return _parseJsonContent(content, AiProvider.gemini);
-  }
 
   AiResult? _parseJsonContent(String content, AiProvider provider) {
     try {
@@ -315,40 +249,49 @@ class AiPipelineService {
     String configKey = 'groq_api_key',
     String languageCode = 'tr',
   }) async {
-    try {
-      final apiKey = _remoteConfig.getString(configKey);
-      if (apiKey.isEmpty) return null;
+    final List<String> keys = [
+      _remoteConfig.getString(configKey),
+      _remoteConfig.getString('groq_api_key'),
+      _remoteConfig.getString('groq_api_key2'),
+      _remoteConfig.getString('groq_api_key3'),
+    ].where((k) => k.isNotEmpty).toSet().toList();
 
-      final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
+    for (final apiKey in keys) {
+      try {
+        final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
 
-      final systemPrompt = languageCode == 'tr'
-          ? "Sen bir verimlilik asistanısın. Kullanıcının bugünkü görevlerine ve alışkanlıklarına bakarak kısa, motive edici ve aksiyon odaklı bir günlük özet çıkar. Maksimum 2-3 cümle olsun."
-          : "You are a productivity assistant. Based on the user's tasks and habits for today, provide a short, motivating, and action-oriented daily insight. Maximum 2-3 sentences.";
+        final systemPrompt = languageCode == 'tr'
+            ? "Sen bir verimlilik asistanısın. Kullanıcının bugünkü görevlerine ve alışkanlıklarına bakarak kısa, motive edici ve aksiyon odaklı bir günlük özet çıkar. Maksimum 2-3 cümle olsun."
+            : "You are a productivity assistant. Based on the user's tasks and habits for today, provide a short, motivating, and action-oriented daily insight. Maximum 2-3 sentences.";
 
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $apiKey"
-        },
-        body: jsonEncode({
-          "model": "llama-3.3-70b-versatile",
-          "messages": [
-            {"role": "system", "content": systemPrompt},
-            {"role": "user", "content": data}
-          ],
-          "temperature": 0.7
-        }),
-      );
+        final response = await http.post(
+          url,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $apiKey"
+          },
+          body: jsonEncode({
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+              {"role": "system", "content": systemPrompt},
+              {"role": "user", "content": data}
+            ],
+            "temperature": 0.7
+          }),
+        );
 
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        return decoded['choices'][0]['message']['content'];
-      } else {
-        print("[fetchDailyInsights] Groq API HATA: ${response.statusCode} | key=$configKey | body=${response.body}");
+        if (response.statusCode == 200) {
+          final decoded = jsonDecode(response.body);
+          return decoded['choices'][0]['message']['content'];
+        } else if (response.statusCode == 429) {
+          print("[fetchDailyInsights] Groq API 429 (Rate Limit) on key ${apiKey.substring(0, 10.clamp(0, apiKey.length))}..., trying next...");
+          continue;
+        } else {
+          print("[fetchDailyInsights] Groq API HATA: ${response.statusCode} | body=${response.body}");
+        }
+      } catch (e) {
+        print("[fetchDailyInsights] Error: $e");
       }
-    } catch (e) {
-      print("[fetchDailyInsights] Error: $e");
     }
     return null;
   }

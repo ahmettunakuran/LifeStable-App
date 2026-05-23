@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../tasks/domain/entities/task_entity.dart';
 import '../../tasks/domain/repositories/task_repository.dart';
@@ -27,7 +28,7 @@ class TeamKanbanView extends StatelessWidget {
         } else if (state is TasksError) {
           return Center(child: Text(state.message, style: TextStyle(color: Colors.white.withValues(alpha: 0.5))));
         }
-        return Center(child: Text('No tasks found for this team.', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))));
+        return Center(child: Text(S.of('no_tasks_team'), style: TextStyle(color: Colors.white.withValues(alpha: 0.4))));
       },
     );
   }
@@ -38,9 +39,9 @@ class TeamKanbanView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildKanbanColumn(context, 'TO DO', TaskStatus.todo, tasks),
-          _buildKanbanColumn(context, 'DOING', TaskStatus.inProgress, tasks),
-          _buildKanbanColumn(context, 'DONE', TaskStatus.done, tasks),
+          _buildKanbanColumn(context, S.of('col_todo'), TaskStatus.todo, tasks),
+          _buildKanbanColumn(context, S.of('col_doing'), TaskStatus.inProgress, tasks),
+          _buildKanbanColumn(context, S.of('col_done'), TaskStatus.done, tasks),
         ],
       ),
     );
@@ -100,8 +101,8 @@ class TeamKanbanView extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         backgroundColor: Colors.orange.shade800,
-                        content: const Text(
-                          'Conflict detected — another member updated this task. Pull to refresh.',
+                        content: Text(
+                          S.of('task_conflict_msg'),
                         ),
                       ),
                     );
@@ -289,7 +290,7 @@ class _PriorityBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-      child: Text(priority.name.toUpperCase(), style: TextStyle(color: color, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 0.2)),
+      child: Text(S.of('priority_${priority.name}').toUpperCase(), style: TextStyle(color: color, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 0.2)),
     );
   }
 }
@@ -318,16 +319,16 @@ class _TaskActions extends StatelessWidget {
         color: AppColors.cardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         itemBuilder: (context) => [
-          _buildMenuItem(context, TaskStatus.todo, 'To-Do', Icons.radio_button_unchecked),
-          _buildMenuItem(context, TaskStatus.inProgress, 'Doing', Icons.sync),
-          _buildMenuItem(context, TaskStatus.done, 'Done', Icons.check_circle_outline),
+          _buildMenuItem(context, TaskStatus.todo, S.of('status_todo'), Icons.radio_button_unchecked),
+          _buildMenuItem(context, TaskStatus.inProgress, S.of('status_doing'), Icons.sync),
+          _buildMenuItem(context, TaskStatus.done, S.of('status_done'), Icons.check_circle_outline),
           const PopupMenuDivider(),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'delete',
             child: Row(children: [
-              Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
-              SizedBox(width: 8),
-              Text('Delete', style: TextStyle(color: Colors.redAccent, fontSize: 14)),
+              const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+              const SizedBox(width: 8),
+              Text(S.of('delete'), style: const TextStyle(color: Colors.redAccent, fontSize: 14)),
             ]),
           ),
         ],
