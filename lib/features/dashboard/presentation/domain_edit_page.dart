@@ -61,7 +61,14 @@ class _DomainEditPageState extends State<DomainEditPage> {
             ? Text(S.of('edit_domain'), style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
             : null,
         actions: isEditing
-            ? [IconButton(icon: Icon(Icons.check, color: AppColors.gold), onPressed: _save)]
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  tooltip: S.of('delete_domain'),
+                  onPressed: _confirmDelete,
+                ),
+                IconButton(icon: Icon(Icons.check, color: AppColors.gold), onPressed: _save),
+              ]
             : null,
       ),
       body: Container(
@@ -170,5 +177,41 @@ class _DomainEditPageState extends State<DomainEditPage> {
       }
       Navigator.pop(context);
     }
+  }
+
+  void _confirmDelete() {
+    final domain = widget.domain;
+    if (domain == null) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(S.of('delete_domain'),
+            style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w900, fontSize: 16)),
+        content: Text(S.of('delete_domain_confirm'),
+            style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(S.of('cancel'), style: const TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              context.read<DomainCubit>().deleteDomain(domain.id);
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            child: Text(S.of('delete'), style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 }

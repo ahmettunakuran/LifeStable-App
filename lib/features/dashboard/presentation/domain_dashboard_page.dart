@@ -18,6 +18,7 @@ class DomainDashboardPage extends StatefulWidget {
 class _DomainDashboardPageState extends State<DomainDashboardPage> {
   late PageController _pageController;
   late int _currentPage;
+  int _lastDomainCount = 0;
 
   @override
   void initState() {
@@ -52,10 +53,26 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
           final domains = state.domains;
           final totalPages = domains.length + 1;
 
-          // If initialIndex is out of bounds, reset (e.g. after a deletion)
-          if (_currentPage >= totalPages) {
-            _currentPage = 0;
-            _pageController = PageController(initialPage: 0);
+          // Keep the viewed page valid when the domain list changes
+          // (e.g. after a domain is deleted).
+          final domainsShrank = domains.length < _lastDomainCount;
+          _lastDomainCount = domains.length;
+
+          var desired = _currentPage;
+          if (desired >= totalPages) desired = totalPages - 1;
+          if (desired < 0) desired = 0;
+          // If the viewed domain was just deleted, land on the last
+          // remaining domain rather than the trailing "+ New" page.
+          if (domainsShrank && domains.isNotEmpty && desired >= domains.length) {
+            desired = domains.length - 1;
+          }
+          if (desired != _currentPage) {
+            _currentPage = desired;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _pageController.hasClients) {
+                _pageController.jumpToPage(desired);
+              }
+            });
           }
 
           return Scaffold(
