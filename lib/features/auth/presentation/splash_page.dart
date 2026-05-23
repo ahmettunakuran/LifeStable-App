@@ -31,12 +31,20 @@ class _SplashPageState extends State<SplashPage>
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     _controller.forward();
-    Future.delayed(const Duration(milliseconds: 2400), _navigate);
+    _navigate();
   }
 
-  void _navigate() {
+  Future<void> _navigate() async {
+    // Let the splash animation play.
+    await Future.delayed(const Duration(milliseconds: 2400));
     if (!mounted) return;
-    final user = FirebaseAuth.instance.currentUser;
+    // Wait for the real auth state. FirebaseAuth restores the persisted
+    // session asynchronously, so currentUser can still be null right after a
+    // cold start — reading it synchronously would wrongly send a signed-in
+    // user to the login page. The first authStateChanges event (subscribed
+    // after the delay, once the SDK has initialised) reflects the true state.
+    final user = await FirebaseAuth.instance.authStateChanges().first;
+    if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(
       user != null ? AppRoutes.homeDashboard : AppRoutes.login,
     );

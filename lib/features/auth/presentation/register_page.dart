@@ -80,26 +80,56 @@ class _RegisterPageState extends State<RegisterPage>
     try {
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
+      final user = credential.user;
 
-      if (name.isNotEmpty) {
-        await credential.user?.updateDisplayName(name);
+      // The account exists and the user is now signed in. Updating the
+      // display name and writing the profile document is best-effort — if
+      // it fails we still take the user into the app rather than stranding
+      // them on this page.
+      if (user != null) {
+        try {
+          // Ensure the freshly-minted auth token is available before the
+          // Firestore write. A not-yet-propagated token is the most common
+          // reason the profile write fails right after sign-up.
+          await user.getIdToken();
+
+          if (name.isNotEmpty) {
+            await user.updateDisplayName(name);
+          }
+
+          final profile = <String, dynamic>{
+            'uid': user.uid,
+            'displayName': name.isNotEmpty ? name : email.split('@').first,
+            'email': email,
+            'createdAt': FieldValue.serverTimestamp(),
+          };
+          final docRef =
+              FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+          try {
+            await docRef.set(profile);
+          } catch (e) {
+            // Retry once after a short delay — covers a transient
+            // auth-token propagation race on the first write.
+            debugPrint('Register: profile write failed, retrying once: $e');
+            await Future<void>.delayed(const Duration(milliseconds: 600));
+            await docRef.set(profile);
+          }
+        } catch (e) {
+          debugPrint('Register: profile setup failed: $e');
+        }
       }
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(credential.user!.uid)
-          .set({
-        'uid': credential.user!.uid,
-        'displayName': name.isNotEmpty ? name : email.split('@').first,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
+      // createUserWithEmailAndPassword already signs the user in, so take
+      // them straight into the app instead of back to the login page.
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+      Navigator.of(context).pushReplacementNamed(AppRoutes.homeDashboard);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       _showError(_mapAuthError(e));
+    } catch (e) {
+      if (!mounted) return;
+      _showError('Account creation failed. Please try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
