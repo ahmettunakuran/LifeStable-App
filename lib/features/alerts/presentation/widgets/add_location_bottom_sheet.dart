@@ -19,12 +19,12 @@ class AddLocationBottomSheet extends StatefulWidget {
     this.editingLocation,
   });
 
-  static Future<void> show(
+  static Future<String?> show(
     BuildContext context, {
     LatLng? initialPosition,
     LocationEntity? editingLocation,
   }) {
-    return showModalBottomSheet(
+    return showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -152,7 +152,7 @@ class _AddLocationBottomSheetState extends State<AddLocationBottomSheet> {
       await cubit.addLocation(entity);
     }
 
-    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context, entity.locationId);
   }
 
   @override

@@ -9,7 +9,8 @@ import 'domain_edit_page.dart';
 
 class DomainDashboardPage extends StatefulWidget {
   final int initialIndex;
-  const DomainDashboardPage({super.key, this.initialIndex = 0});
+  final String? targetDomainId;
+  const DomainDashboardPage({super.key, this.initialIndex = 0, this.targetDomainId});
 
   @override
   State<DomainDashboardPage> createState() => _DomainDashboardPageState();
@@ -19,19 +20,53 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
   late PageController _pageController;
   late int _currentPage;
   int _lastDomainCount = 0;
+  bool _navigatedToTarget = false;
 
   @override
   void initState() {
     super.initState();
-    _currentPage = widget.initialIndex;
-    _pageController = PageController(initialPage: _currentPage);
-    context.read<DomainCubit>().loadDomains();
+    // If a targetDomainId is provided, try to resolve it to a page index
+    // from the already-loaded DomainCubit state so we can set the PageController
+    // initial page directly — avoiding a visible jump after the first frame.
+    int startPage = widget.initialIndex;
+    if (widget.targetDomainId != null) {
+      final currentState = context.read<DomainCubit>().state;
+      if (currentState is DomainLoaded) {
+        final idx = currentState.domains
+            .indexWhere((d) => d.id == widget.targetDomainId);
+        if (idx >= 0) {
+          startPage = idx;
+          _navigatedToTarget = true;
+        }
+      }
+    }
+    _currentPage = startPage;
+    _pageController = PageController(initialPage: startPage);
+    // Only call loadDomains if not already loaded — avoids the DomainLoading
+    // flash that makes the kanban view disappear briefly.
+    final cubit = context.read<DomainCubit>();
+    if (cubit.state is! DomainLoaded) {
+      cubit.loadDomains();
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _maybeNavigateToTarget(List<DomainEntity> domains) {
+    if (_navigatedToTarget || widget.targetDomainId == null) return;
+    final idx = domains.indexWhere((d) => d.id == widget.targetDomainId);
+    if (idx < 0) return;
+    _navigatedToTarget = true;
+    _currentPage = idx;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients) {
+        _pageController.jumpToPage(idx);
+      }
+    });
   }
 
   @override
@@ -51,6 +86,7 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
           );
         } else if (state is DomainLoaded) {
           final domains = state.domains;
+          _maybeNavigateToTarget(domains);
           final totalPages = domains.length + 1;
 
           // Keep the viewed page valid when the domain list changes

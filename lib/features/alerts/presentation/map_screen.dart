@@ -13,7 +13,8 @@ import 'widgets/add_location_bottom_sheet.dart';
 import 'widgets/saved_locations_list.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  final bool pickMode;
+  const MapScreen({super.key, this.pickMode = false});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -100,10 +101,13 @@ class _MapScreenState extends State<MapScreen> {
     )).toSet();
   }
 
-  void _onMapTap(LatLng position) {
+  void _onMapTap(LatLng position) async {
     if (!_isPickingLocation) return;
     setState(() => _isPickingLocation = false);
-    AddLocationBottomSheet.show(context, initialPosition: position);
+    final locationId = await AddLocationBottomSheet.show(context, initialPosition: position);
+    if (widget.pickMode && locationId != null && mounted) {
+      Navigator.pop(context, locationId);
+    }
   }
 
   void _showLocationDetailSheet(LocationEntity location) {
@@ -126,9 +130,9 @@ class _MapScreenState extends State<MapScreen> {
       backgroundColor: AppColors.black,
       appBar: AppBar(
         backgroundColor: AppColors.black,
-        title: const Text(
-          'Locations',
-          style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
+        title: Text(
+          widget.pickMode ? 'Pick a Location' : 'Locations',
+          style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: AppColors.gold),
         actions: [
@@ -235,14 +239,19 @@ class _MapScreenState extends State<MapScreen> {
           FloatingActionButton.extended(
             heroTag: 'add_location',
             backgroundColor: AppColors.gold,
-            onPressed: () => AddLocationBottomSheet.show(
-              context,
-              initialPosition: _currentPosition,
-            ),
+            onPressed: () async {
+              final locationId = await AddLocationBottomSheet.show(
+                context,
+                initialPosition: _currentPosition,
+              );
+              if (widget.pickMode && locationId != null && mounted) {
+                Navigator.pop(context, locationId);
+              }
+            },
             icon: const Icon(Icons.add_location_alt, color: AppColors.black),
-            label: const Text(
-              'Add Location',
-              style: TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
+            label: Text(
+              widget.pickMode ? 'Save & Pick' : 'Add Location',
+              style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
             ),
           ),
         ],

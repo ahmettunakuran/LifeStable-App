@@ -49,8 +49,19 @@ class AppRouter {
       case AppRoutes.homeDashboard:
         return _buildRoute(const HomeDashboardPage(), settings);
       case AppRoutes.domainDashboard:
-        final initialIndex = settings.arguments as int? ?? 0;
-        return _buildRoute(DomainDashboardPage(initialIndex: initialIndex), settings);
+        final args = settings.arguments;
+        int initialIndex = 0;
+        String? targetDomainId;
+        if (args is int) {
+          initialIndex = args;
+        } else if (args is Map<String, dynamic>) {
+          initialIndex = args['initialIndex'] as int? ?? 0;
+          targetDomainId = args['domainId'] as String?;
+        }
+        return _buildRoute(
+          DomainDashboardPage(initialIndex: initialIndex, targetDomainId: targetDomainId),
+          settings,
+        );
       case AppRoutes.domainEdit:
         final domain = settings.arguments as DomainEntity?;
         return _buildRoute(DomainEditPage(domain: domain), settings);
@@ -59,7 +70,13 @@ class AppRouter {
       case AppRoutes.taskDetails:
         return _buildRoute(const TaskDetailPage(), settings);
       case AppRoutes.taskEdit:
-        return _buildRoute(const TaskEditPage(), settings);
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (context) => BlocProvider(
+            create: (_) => LocationCubit(context.read<LocationRepository>())..loadLocations(),
+            child: const TaskEditPage(),
+          ),
+        );
       case AppRoutes.notes:
         return _buildRoute(const NotesPage(), settings);
       case AppRoutes.habitTracker:
@@ -80,11 +97,12 @@ class AppRouter {
       case AppRoutes.alerts:
         return _buildRoute(const AlertsPage(), settings);
       case AppRoutes.map:
-        return MaterialPageRoute<void>(
+        final pickMode = settings.arguments as bool? ?? false;
+        return MaterialPageRoute<String?>(
           settings: settings,
           builder: (context) => BlocProvider(
-            create: (_) => LocationCubit(context.read<LocationRepository>()),
-            child: const MapScreen(),
+            create: (_) => LocationCubit(context.read<LocationRepository>())..loadLocations(),
+            child: MapScreen(pickMode: pickMode),
           ),
         );
       case AppRoutes.geofenceDebug:

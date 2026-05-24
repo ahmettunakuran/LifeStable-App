@@ -4,6 +4,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../features/alerts/data/location_model.dart';
+import '../navigation/navigation_key.dart';
+import '../../app/router/app_routes.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -44,9 +46,7 @@ class NotificationService {
 
     await _localNotifications.initialize(
       settings: initSettings,
-      onDidReceiveNotificationResponse: (details) {
-        // Handle notification tap
-      },
+      onDidReceiveNotificationResponse: _onNotificationTap,
     );
 
     FirebaseMessaging.onMessage.listen((message) {
@@ -114,9 +114,20 @@ class NotificationService {
     }
   }
 
+  void _onNotificationTap(NotificationResponse details) {
+    final payload = details.payload;
+    if (payload != null && payload.isNotEmpty) {
+      navigatorKey.currentState?.pushNamed(
+        AppRoutes.domainDashboard,
+        arguments: <String, dynamic>{'domainId': payload},
+      );
+    }
+  }
+
   Future<void> showLocationNotification({
     required String locationLabel,
     required bool isEntering,
+    String? domainId,
   }) async {
     final title = isEntering
         ? '📍 Arrived at $locationLabel'
@@ -129,6 +140,7 @@ class NotificationService {
       id: locationLabel.hashCode,
       title: title,
       body: body,
+      payload: domainId,
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _locationChannelId, _locationChannelName,

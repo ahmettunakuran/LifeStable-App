@@ -82,9 +82,11 @@ class GeofenceUseCase {
     }
 
     if (shouldNotify && model != null) {
+      final domainId = isEntering ? await _findDomainIdForLocation(locationId) : null;
       await NotificationService.instance.showLocationNotification(
         locationLabel: model.label,
         isEntering: isEntering,
+        domainId: domainId,
       );
 
       if (isEntering && model.remind30MinAfterEntry) {
@@ -102,6 +104,24 @@ class GeofenceUseCase {
       notificationSent: shouldNotify,
       skippedReason: skipReason,
     ));
+  }
+
+  Future<String?> _findDomainIdForLocation(String locationId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('tasks')
+          .where('locationId', isEqualTo: locationId)
+          .limit(1)
+          .get();
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.data()['domainId'] as String?;
+      }
+    } catch (_) {}
+    return null;
   }
 
   void _schedule30MinReminder(String label, String locationId) {
