@@ -206,7 +206,6 @@ class HomeDashboardPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(26, 12, 26, 16),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton.icon(
                     onPressed: () =>
@@ -220,8 +219,6 @@ class HomeDashboardPage extends StatelessWidget {
                             fontWeight: FontWeight.w600)),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   ),
-                  Icon(Icons.help_outline_rounded,
-                      color: Colors.white.withValues(alpha: 0.50), size: 24),
                 ],
               ),
             ),
