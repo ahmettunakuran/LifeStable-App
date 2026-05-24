@@ -101,11 +101,14 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
 
     setState(() => _phase = _Phase.transcribing);
 
-    final apiKey =
-        FirebaseRemoteConfig.instance.getString('groq_api_key');
-    debugPrint('[Whisper] file=$path size=${await File(path).length()} '
-        'keyLen=${apiKey.length}');
-    if (apiKey.isEmpty) {
+    final remoteConfig = FirebaseRemoteConfig.instance;
+    final apiKeys = [
+      remoteConfig.getString('groq_api_key'),
+      remoteConfig.getString('groq_api_key2'),
+      remoteConfig.getString('groq_api_key3'),
+    ].where((k) => k.isNotEmpty).toList();
+
+    if (apiKeys.isEmpty) {
       _snack('Voice transcription is unavailable: API key missing.');
       await _safeDelete(path);
       _resetState();
@@ -113,43 +116,49 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
       return;
     }
 
-    try {
-      final request = http.MultipartRequest('POST', Uri.parse(_whisperUrl))
-        ..headers['Authorization'] = 'Bearer $apiKey'
-        ..fields['model'] = _whisperModel
-        ..fields['response_format'] = 'json'
-        ..files.add(await http.MultipartFile.fromPath('file', path));
+    for (final apiKey in apiKeys) {
+      try {
+        final request = http.MultipartRequest('POST', Uri.parse(_whisperUrl))
+          ..headers['Authorization'] = 'Bearer $apiKey'
+          ..fields['model'] = _whisperModel
+          ..fields['response_format'] = 'json'
+          ..files.add(await http.MultipartFile.fromPath('file', path));
 
-      debugPrint('[Whisper] sending request to $_whisperUrl');
-      final streamed = await request.send().timeout(
-            const Duration(seconds: 30),
-          );
-      final response = await http.Response.fromStream(streamed);
-      debugPrint('[Whisper] status=${response.statusCode} '
-          'body=${response.body.substring(0, response.body.length.clamp(0, 300))}');
+        debugPrint('[Whisper] sending request to $_whisperUrl with key prefix ${apiKey.substring(0, 10.clamp(0, apiKey.length))}...');
+        final streamed = await request.send().timeout(
+              const Duration(seconds: 30),
+            );
+        final response = await http.Response.fromStream(streamed);
+        debugPrint('[Whisper] status=${response.statusCode}');
 
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        final text = (body['text'] as String?)?.trim() ?? '';
-        // Whisper returns punctuation-only strings (e.g. "." or "...") for
-        // silent input. Require at least one letter/digit before sending on.
-        final hasContent = RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(text);
-        if (hasContent) {
-          widget.onTranscriptionReady(text);
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          final text = (body['text'] as String?)?.trim() ?? '';
+          final hasContent = RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(text);
+          if (hasContent) {
+            widget.onTranscriptionReady(text);
+          } else {
+            _snack('No speech detected — check microphone.');
+          }
+          await _safeDelete(path);
+          _resetState();
+          widget.onListeningChanged(false);
+          return;
+        } else if (response.statusCode == 429) {
+          debugPrint('[Whisper] Key rate limited (429), trying next key...');
+          continue;
         } else {
-          _snack('No speech detected — check microphone.');
+          _snack('Transcription failed (${response.statusCode}).');
+          break;
         }
-      } else {
-        _snack('Transcription failed (${response.statusCode}).');
+      } catch (e) {
+        debugPrint('[Whisper] error with key: $e');
       }
-    } catch (e) {
-      debugPrint('[Whisper] error: $e');
-      _snack('Transcription error: $e');
-    } finally {
-      await _safeDelete(path);
-      _resetState();
-      widget.onListeningChanged(false);
     }
+
+    await _safeDelete(path);
+    _resetState();
+    widget.onListeningChanged(false);
   }
 
   Future<void> _safeDelete(String path) async {

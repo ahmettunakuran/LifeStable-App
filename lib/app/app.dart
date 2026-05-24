@@ -17,6 +17,7 @@ import '../features/tasks/presentation/bloc/tasks_bloc.dart';
 import '../features/tasks/presentation/bloc/tasks_event.dart';
 import 'router/app_router.dart';
 import 'router/app_routes.dart';
+import '../core/navigation/navigation_key.dart';
 import '../shared/constants/app_colors.dart';
 
 class LifeStableApp extends StatelessWidget {
@@ -60,6 +61,7 @@ class LifeStableApp extends StatelessWidget {
           builder: (context, locale, _) {
             return MaterialApp(
               title: 'LifeStable',
+              navigatorKey: navigatorKey,
               debugShowCheckedModeBanner: false,
               locale: locale,
               theme: ThemeData(

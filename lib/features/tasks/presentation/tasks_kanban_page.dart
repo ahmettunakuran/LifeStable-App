@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../app/router/app_routes.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
-import '../../calendar/domain/repositories/calendar_repository.dart';
-import '../../calendar/domain/entities/calendar_event_entity.dart';
 import '../domain/entities/task_entity.dart';
-import '../logic/prompt_to_action_service.dart';
 import 'bloc/tasks_bloc.dart';
 import 'bloc/tasks_event.dart';
 import 'bloc/tasks_state.dart';
@@ -25,45 +21,38 @@ class TasksKanbanPage extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
-      appBar: AppBar(
-        title: Text(
-          S.of('board_title'),
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            letterSpacing: 2,
-            fontSize: 22,
-            color: isDark ? goldColor : Colors.black87,
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+          appBar: AppBar(
+            title: Text(
+              S.of('board_title'),
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 2,
+                fontSize: 22,
+                color: isDark ? goldColor : Colors.black87,
+              ),
+            ),
+            centerTitle: true,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
           ),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: BlocBuilder<TasksBloc, TasksState>(
-        builder: (context, state) {
-          if (state is TasksLoading) {
-            return const Center(child: CircularProgressIndicator(color: goldColor));
-          } else if (state is TasksLoaded) {
-            return _buildKanbanBoard(context, state.tasks);
-          } else if (state is TasksError) {
-            return Center(child: Text(state.message));
-          }
-          return Center(child: Text(S.of('no_tasks_found')));
-        },
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'ai_fab',
-            onPressed: () => _showAiPromptDialog(context),
-            backgroundColor: Colors.black,
-            child: const Icon(Icons.auto_awesome, color: goldColor),
+          body: BlocBuilder<TasksBloc, TasksState>(
+            builder: (context, state) {
+              if (state is TasksLoading) {
+                return const Center(child: CircularProgressIndicator(color: goldColor));
+              } else if (state is TasksLoaded) {
+                return _buildKanbanBoard(context, state.tasks);
+              } else if (state is TasksError) {
+                return Center(child: Text(state.message));
+              }
+              return Center(child: Text(S.of('no_tasks_found')));
+            },
           ),
-          const SizedBox(height: 12),
-          FloatingActionButton.extended(
+          floatingActionButton: FloatingActionButton.extended(
             heroTag: 'add_fab',
             onPressed: () => Navigator.of(context).pushNamed(AppRoutes.taskEdit),
             backgroundColor: goldColor,
@@ -72,9 +61,9 @@ class TasksKanbanPage extends StatelessWidget {
                 style: const TextStyle(
                     color: Colors.white, fontWeight: FontWeight.bold)),
           ),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNav(context),
+          bottomNavigationBar: _buildBottomNav(context),
+        );
+      },
     );
   }
 
@@ -118,73 +107,6 @@ class TasksKanbanPage extends StatelessWidget {
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAiPromptDialog(BuildContext context) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(S.of('ai_magic_task')),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: S.of('ai_prompt_hint'),
-          ),
-          maxLines: 3,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(S.of('cancel'))),
-          ElevatedButton(
-            onPressed: () async {
-              final prompt = controller.text;
-              if (prompt.isEmpty) return;
-
-              Navigator.pop(context);
-
-              // Loading show
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(S.of('ai_thinking')), duration: const Duration(seconds: 2)),
-              );
-
-              final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-              final result = await PromptToActionService().processPrompt(prompt, userId);
-
-              if (result.type == AiActionType.createTask && result.entity is TaskEntity) {
-                if (context.mounted) {
-                  context.read<TasksBloc>().add(AddTask(result.entity as TaskEntity));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(S.of('ai_task_created'))),
-                  );
-                }
-              } else if (result.type == AiActionType.createEvent && result.entity is CalendarEventEntity) {
-                if (context.mounted) {
-                  try {
-                    final calendarRepo = context.read<CalendarRepository>();
-                    await calendarRepo.createPersonalEvent(result.entity as CalendarEventEntity);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(S.of('ai_event_created'))),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${S.of('ai_event_failed')}: $e')),
-                    );
-                  }
-                }
-              } else {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(S.of('ai_could_not_understand'))),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: goldColor),
-            child: Text(S.of('magic_btn')),
           ),
         ],
       ),

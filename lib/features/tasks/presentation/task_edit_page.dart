@@ -5,7 +5,10 @@ import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../../core/localization/app_localizations.dart';
+import '../../../app/router/app_routes.dart';
+import '../../../features/alerts/domain/entities/location_entity.dart';
+import '../../../features/alerts/logic/location_cubit.dart';
+import '../../../features/alerts/logic/location_state.dart';
 import '../domain/entities/task_entity.dart';
 import 'bloc/tasks_bloc.dart';
 import 'bloc/tasks_event.dart';
@@ -24,7 +27,9 @@ class _TaskEditPageState extends State<TaskEditPage> {
   TaskPriority _priority = TaskPriority.medium;
   DateTime? _dueDate;
   String? _domainId;
-  String? _teamId; // Track if the selected domain belongs to a team
+  String? _teamId;
+  String? _locationId;
+  String? _locationLabel;
   final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
@@ -51,6 +56,8 @@ class _TaskEditPageState extends State<TaskEditPage> {
         _dueDate = _editingTask!.dueDate;
         _domainId = _editingTask!.domainId;
         _teamId = _editingTask!.teamId;
+        _locationId = _editingTask!.locationId;
+        _locationLabel = _editingTask!.locationLabel;
       } else {
         _domainId = args['domainId'] as String?;
       }
@@ -181,7 +188,9 @@ class _TaskEditPageState extends State<TaskEditPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 20),
+                _buildLocationSection(),
+                const SizedBox(height: 24),
                 GestureDetector(
                   onTap: _saveTask,
                   child: Container(
@@ -311,6 +320,138 @@ class _TaskEditPageState extends State<TaskEditPage> {
     );
   }
 
+  Widget _buildLocationSection() {
+    if (_locationId != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: AppColors.gold.withValues(alpha: 0.08),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.4), width: 1.2),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.location_on, color: AppColors.gold, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Location Reminder', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  Text(
+                    _locationLabel ?? 'Saved location',
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => setState(() {
+                _locationId = null;
+                _locationLabel = null;
+              }),
+              child: const Icon(Icons.close, color: Colors.white38, size: 20),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _showLocationPickerSheet,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withValues(alpha: 0.03),
+          border: Border.all(
+            color: AppColors.gold.withValues(alpha: 0.25),
+            width: 1.2,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_location_alt_outlined, color: AppColors.gold.withValues(alpha: 0.7), size: 20),
+            const SizedBox(width: 10),
+            Text(
+              'Add location for reminders',
+              style: TextStyle(
+                color: AppColors.gold.withValues(alpha: 0.85),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLocationPickerSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _LocationPickerSheet(
+        onAddNew: _navigateToMapPicker,
+        onSelectSaved: _showSavedLocationsSheet,
+      ),
+    );
+  }
+
+  Future<void> _navigateToMapPicker() async {
+    Navigator.pop(context); // close picker sheet
+    final locationId = await Navigator.pushNamed<String?>(
+      context,
+      AppRoutes.map,
+      arguments: true,
+    );
+    if (locationId != null && mounted) {
+      String label = 'Location';
+      try {
+        final uid = _auth.currentUser?.uid;
+        if (uid != null) {
+          final doc = await _db
+              .collection('users')
+              .doc(uid)
+              .collection('locations')
+              .doc(locationId)
+              .get();
+          label = doc.data()?['label'] as String? ?? 'Location';
+        }
+      } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _locationId = locationId;
+          _locationLabel = label;
+        });
+      }
+    }
+  }
+
+  void _showSavedLocationsSheet() {
+    Navigator.pop(context); // close picker sheet
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => BlocProvider.value(
+        value: context.read<LocationCubit>(),
+        child: _SavedLocationsPickerSheet(
+          onSelect: (location) {
+            Navigator.pop(context);
+            setState(() {
+              _locationId = location.locationId;
+              _locationLabel = location.label;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
   void _saveTask() {
     if (_formKey.currentState!.validate()) {
       final task = TaskEntity(
@@ -323,10 +464,230 @@ class _TaskEditPageState extends State<TaskEditPage> {
         dueDate: _dueDate,
         teamId: _teamId,
         assignedTo: _editingTask?.assignedTo,
+        locationId: _locationId,
+        locationLabel: _locationLabel,
       );
-      
+
       context.read<TasksBloc>().add(AddTask(task));
       Navigator.pop(context);
     }
+  }
+}
+
+class _LocationPickerSheet extends StatelessWidget {
+  final VoidCallback onAddNew;
+  final VoidCallback onSelectSaved;
+
+  const _LocationPickerSheet({required this.onAddNew, required this.onSelectSaved});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 20),
+          const Row(
+            children: [
+              Icon(Icons.location_on, color: AppColors.gold, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Add Location for Reminders',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'You will be notified when you arrive at this location.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+          _OptionTile(
+            icon: Icons.add_location_alt,
+            title: 'Add new location',
+            subtitle: 'Open the map and pin a new location',
+            onTap: onAddNew,
+          ),
+          const SizedBox(height: 12),
+          _OptionTile(
+            icon: Icons.bookmark_outline,
+            title: 'Add from saved locations',
+            subtitle: 'Pick from your previously saved locations',
+            onTap: onSelectSaved,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OptionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _OptionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.2), width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.gold, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3), size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedLocationsPickerSheet extends StatelessWidget {
+  final void Function(LocationEntity) onSelect;
+
+  const _SavedLocationsPickerSheet({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 20),
+          const Row(
+            children: [
+              Icon(Icons.bookmark, color: AppColors.gold, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Saved Locations',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: BlocBuilder<LocationCubit, LocationState>(
+              builder: (context, state) {
+                if (state.status == LocationStatus.loading) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.gold));
+                }
+                if (state.locations.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'No saved locations yet.\nGo to the map to add one first.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
+                      ),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: state.locations.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final loc = state.locations[index];
+                    return GestureDetector(
+                      onTap: () => onSelect(loc),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.gold.withValues(alpha: 0.15)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36, height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.gold.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.location_on, color: AppColors.gold, size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    loc.label,
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                                  ),
+                                  Text(
+                                    '${loc.radiusM} m radius',
+                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.check_circle_outline, color: AppColors.gold.withValues(alpha: 0.5), size: 20),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

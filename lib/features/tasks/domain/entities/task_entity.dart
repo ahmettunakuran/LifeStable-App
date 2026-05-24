@@ -16,6 +16,8 @@ class TaskEntity {
     this.version = 0,
     this.updatedAt,
     this.lastModifiedBy,
+    this.locationId,
+    this.locationLabel,
   });
 
   final String id;
@@ -30,6 +32,8 @@ class TaskEntity {
   final int version;
   final DateTime? updatedAt;
   final String? lastModifiedBy;
+  final String? locationId;
+  final String? locationLabel;
 
   TaskEntity copyWith({
     String? id,
@@ -44,6 +48,8 @@ class TaskEntity {
     int? version,
     DateTime? updatedAt,
     String? lastModifiedBy,
+    Object? locationId = _sentinel,
+    Object? locationLabel = _sentinel,
   }) {
     return TaskEntity(
       id: id ?? this.id,
@@ -58,8 +64,12 @@ class TaskEntity {
       version: version ?? this.version,
       updatedAt: updatedAt ?? this.updatedAt,
       lastModifiedBy: lastModifiedBy ?? this.lastModifiedBy,
+      locationId: locationId == _sentinel ? this.locationId : locationId as String?,
+      locationLabel: locationLabel == _sentinel ? this.locationLabel : locationLabel as String?,
     );
   }
+
+  static const Object _sentinel = Object();
 
   Map<String, dynamic> toFirestore() {
     return {
@@ -71,6 +81,8 @@ class TaskEntity {
       'dueDate': dueDate?.toIso8601String(),
       if (teamId != null) 'teamId': teamId,
       if (assignedTo != null) 'assignedTo': assignedTo,
+      'locationId': locationId,
+      'locationLabel': locationLabel,
     };
   }
 
@@ -97,6 +109,8 @@ class TaskEntity {
           ? DateTime.tryParse(data['updatedAt'] as String)
           : null,
       lastModifiedBy: data['lastModifiedBy'] as String?,
+      locationId: data['locationId'] as String?,
+      locationLabel: data['locationLabel'] as String?,
     );
   }
 }

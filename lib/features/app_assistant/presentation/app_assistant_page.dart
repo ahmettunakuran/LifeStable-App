@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../../../app/router/app_routes.dart';
 import '../../../features/assistant/presentation/widgets/chat_bubble.dart';
@@ -60,60 +61,65 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0D0D0D),
-              Color(0xFF1A1200),
-              Color(0xFF0D0D0D),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: BlocConsumer<AppAssistantCubit, AppAssistantState>(
-            listenWhen: (prev, curr) => prev.status != curr.status,
-            listener: (context, state) {
-              if (!state.isResponding) _scrollToBottom();
-              if (state.status == AppAssistantStatus.error) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: AppColors.cardBg,
-                    content: Text(
-                      'Could not get an answer. Please try again.',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    action: SnackBarAction(
-                      label: 'OK',
-                      textColor: AppColors.gold,
-                      onPressed: () =>
-                          context.read<AppAssistantCubit>().clearError(),
-                    ),
-                  ),
-                );
-              }
-            },
-            builder: (context, state) {
-              return Column(
-                children: [
-                  _buildAppBar(context),
-                  Expanded(
-                    child: state.showWelcome
-                        ? _buildWelcome(context)
-                        : _buildChatList(state),
-                  ),
-                  _buildInputArea(context, state),
-                  _buildBottomNav(context),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: AppColors.backgroundDark,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0D0D0D),
+                  Color(0xFF1A1200),
+                  Color(0xFF0D0D0D),
                 ],
-              );
-            },
+              ),
+            ),
+            child: SafeArea(
+              child: BlocConsumer<AppAssistantCubit, AppAssistantState>(
+                listenWhen: (prev, curr) => prev.status != curr.status,
+                listener: (context, state) {
+                  if (!state.isResponding) _scrollToBottom();
+                  if (state.status == AppAssistantStatus.error) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppColors.cardBg,
+                        content: Text(
+                          'Could not get an answer. Please try again.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        action: SnackBarAction(
+                          label: 'OK',
+                          textColor: AppColors.gold,
+                          onPressed: () =>
+                              context.read<AppAssistantCubit>().clearError(),
+                        ),
+                      ),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  return Column(
+                    children: [
+                      _buildAppBar(context),
+                      Expanded(
+                        child: state.showWelcome
+                            ? _buildWelcome(context)
+                            : _buildChatList(state),
+                      ),
+                      _buildInputArea(context, state),
+                      _buildBottomNav(context),
+                    ],
+                  );
+                },
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -493,10 +499,10 @@ class _AppAssistantViewState extends State<_AppAssistantView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _navBtn(context, Icons.group_outlined, 'Team', AppRoutes.teamDashboard),
-          _navBtn(context, Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
-          _navBtn(context, Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard),
-          _navBtn(context, Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+          _navBtn(context, Icons.group_outlined, S.of('nav_team'), AppRoutes.teamDashboard),
+          _navBtn(context, Icons.calendar_month_outlined, S.of('nav_calendar'), AppRoutes.calendar),
+          _navBtn(context, Icons.dashboard_outlined, S.of('nav_dashboard'), AppRoutes.homeDashboard),
+          _navBtn(context, Icons.local_fire_department_outlined, S.of('nav_habit'), AppRoutes.habitTracker),
         ],
       ),
     );

@@ -80,108 +80,113 @@ class _AssistantViewState extends State<_AssistantView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.black,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0D0D0D),
-              Color(0xFF1A1200),
-              Color(0xFF0D0D0D),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: BlocConsumer<AssistantCubit, AssistantState>(
-            listenWhen: (prev, curr) =>
-                prev.status != curr.status ||
-                prev.errorMessage != curr.errorMessage ||
-                prev.undoable?.token != curr.undoable?.token,
-            listener: (context, state) {
-              if (state.status == AssistantStatus.responding ||
-                  state.status == AssistantStatus.idle ||
-                  state.status == AssistantStatus.navigate) {
-                _scrollToBottom();
-              }
-              if (state.undoable != null &&
-                  state.undoable!.token != _lastShownUndoableToken) {
-                final undoable = state.undoable!;
-                _lastShownUndoableToken = undoable.token;
-                final cubit = context.read<AssistantCubit>();
-                final messenger = ScaffoldMessenger.of(context);
-                _undoableDismissTimer?.cancel();
-                messenger.hideCurrentSnackBar();
-                final controller = messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      undoable.label,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    backgroundColor: const Color(0xFF2A1D08),
-                    behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 4),
-                    action: SnackBarAction(
-                      label: 'Geri al',
-                      textColor: AppColors.gold,
-                      onPressed: () => cubit.undoLast(undoable.token),
-                    ),
-                  ),
-                );
-                _undoableDismissTimer = Timer(const Duration(seconds: 4), () {
-                  messenger.hideCurrentSnackBar();
-                });
-                controller.closed.then((_) {
-                  _undoableDismissTimer?.cancel();
-                  if (mounted) cubit.clearUndoable();
-                });
-              }
-              if (state.status == AssistantStatus.navigate && state.redirectTo != null) {
-                Future.delayed(const Duration(milliseconds: 1500), () {
-                  if (context.mounted) {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      state.redirectTo!,
-                      arguments: state.redirectArgs,
-                    );
-                  }
-                });
-              }
-              if (state.status == AssistantStatus.error &&
-                  state.errorMessage != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.errorMessage!),
-                    backgroundColor: Colors.red.shade900,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                context.read<AssistantCubit>().clearError();
-              }
-            },
-            builder: (context, state) {
-              return Column(
-                children: [
-                  _buildAppBar(context),
-                  Expanded(
-                    child: state.showWelcome
-                        ? _buildWelcomeView(context)
-                        : _buildChatList(state),
-                  ),
-                  _buildInputArea(context, state),
-                  _buildBottomNav(context),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: AppColors.black,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0D0D0D),
+                  Color(0xFF1A1200),
+                  Color(0xFF0D0D0D),
                 ],
-              );
-            },
+              ),
+            ),
+            child: SafeArea(
+              child: BlocConsumer<AssistantCubit, AssistantState>(
+                listenWhen: (prev, curr) =>
+                    prev.status != curr.status ||
+                    prev.errorMessage != curr.errorMessage ||
+                    prev.undoable?.token != curr.undoable?.token,
+                listener: (context, state) {
+                  if (state.status == AssistantStatus.responding ||
+                      state.status == AssistantStatus.idle ||
+                      state.status == AssistantStatus.navigate) {
+                    _scrollToBottom();
+                  }
+                  if (state.undoable != null &&
+                      state.undoable!.token != _lastShownUndoableToken) {
+                    final undoable = state.undoable!;
+                    _lastShownUndoableToken = undoable.token;
+                    final cubit = context.read<AssistantCubit>();
+                    final messenger = ScaffoldMessenger.of(context);
+                    _undoableDismissTimer?.cancel();
+                    messenger.hideCurrentSnackBar();
+                    final controller = messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          undoable.label,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        backgroundColor: const Color(0xFF2A1D08),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 4),
+                        action: SnackBarAction(
+                          label: 'Geri al',
+                          textColor: AppColors.gold,
+                          onPressed: () => cubit.undoLast(undoable.token),
+                        ),
+                      ),
+                    );
+                    _undoableDismissTimer = Timer(const Duration(seconds: 4), () {
+                      messenger.hideCurrentSnackBar();
+                    });
+                    controller.closed.then((_) {
+                      _undoableDismissTimer?.cancel();
+                      if (mounted) cubit.clearUndoable();
+                    });
+                  }
+                  if (state.status == AssistantStatus.navigate && state.redirectTo != null) {
+                    Future.delayed(const Duration(milliseconds: 1500), () {
+                      if (context.mounted) {
+                        Navigator.pushReplacementNamed(
+                          context,
+                          state.redirectTo!,
+                          arguments: state.redirectArgs,
+                        );
+                      }
+                    });
+                  }
+                  if (state.status == AssistantStatus.error &&
+                      state.errorMessage != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.errorMessage!),
+                        backgroundColor: Colors.red.shade900,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    context.read<AssistantCubit>().clearError();
+                  }
+                },
+                builder: (context, state) {
+                  return Column(
+                    children: [
+                      _buildAppBar(context),
+                      Expanded(
+                        child: state.showWelcome
+                            ? _buildWelcomeView(context)
+                            : _buildChatList(state),
+                      ),
+                      _buildInputArea(context, state),
+                      _buildBottomNav(context),
+                    ],
+                  );
+                },
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -433,13 +438,13 @@ class _AssistantViewState extends State<_AssistantView> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _navBtn(context, Icons.group_outlined, 'Team',
+          _navBtn(context, Icons.group_outlined, S.of('nav_team'),
               AppRoutes.teamDashboard),
-          _navBtn(context, Icons.calendar_month_outlined, 'Calendar',
+          _navBtn(context, Icons.calendar_month_outlined, S.of('nav_calendar'),
               AppRoutes.calendar),
-          _navBtn(context, Icons.dashboard_outlined, 'Dashboard',
+          _navBtn(context, Icons.dashboard_outlined, S.of('nav_dashboard'),
               AppRoutes.homeDashboard),
-          _navBtn(context, Icons.local_fire_department_outlined, 'Habit',
+          _navBtn(context, Icons.local_fire_department_outlined, S.of('nav_habit'),
               AppRoutes.habitTracker),
         ],
       ),
