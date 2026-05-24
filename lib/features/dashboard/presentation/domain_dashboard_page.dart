@@ -90,24 +90,8 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
               );
             } else if (state is DomainLoaded) {
               final domains = state.domains;
+              _maybeNavigateToTarget(domains);
               final totalPages = domains.length + 1;
-    return BlocBuilder<DomainCubit, DomainState>(
-      builder: (context, state) {
-        if (state is DomainLoading) {
-          return Scaffold(
-            backgroundColor: AppColors.black,
-            body: Center(child: CircularProgressIndicator(color: AppColors.gold)),
-          );
-        } else if (state is DomainError) {
-          return Scaffold(
-            backgroundColor: AppColors.black,
-            appBar: _buildAppBar(const []),
-            body: Center(child: Text('Error: ${state.message}', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
-          );
-        } else if (state is DomainLoaded) {
-          final domains = state.domains;
-          _maybeNavigateToTarget(domains);
-          final totalPages = domains.length + 1;
 
               // Keep the viewed page valid when the domain list changes
               // (e.g. after a domain is deleted).

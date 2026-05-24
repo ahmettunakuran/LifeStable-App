@@ -135,7 +135,7 @@ class _MapScreenState extends State<MapScreen> {
           appBar: AppBar(
             backgroundColor: AppColors.black,
             title: Text(
-              S.of('locations_title'),
+              widget.pickMode ? 'Pick a Location' : S.of('locations_title'),
               style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
             ),
             iconTheme: const IconThemeData(color: AppColors.gold),
@@ -243,13 +243,18 @@ class _MapScreenState extends State<MapScreen> {
               FloatingActionButton.extended(
                 heroTag: 'add_location',
                 backgroundColor: AppColors.gold,
-                onPressed: () => AddLocationBottomSheet.show(
-                  context,
-                  initialPosition: _currentPosition,
-                ),
+                onPressed: () async {
+                  final locationId = await AddLocationBottomSheet.show(
+                    context,
+                    initialPosition: _currentPosition,
+                  );
+                  if (widget.pickMode && locationId != null && mounted) {
+                    Navigator.pop(context, locationId);
+                  }
+                },
                 icon: const Icon(Icons.add_location_alt, color: AppColors.black),
                 label: Text(
-                  S.of('add_location'),
+                  widget.pickMode ? 'Save & Pick' : S.of('add_location'),
                   style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -257,136 +262,6 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       },
-    return Scaffold(
-      backgroundColor: AppColors.black,
-      appBar: AppBar(
-        backgroundColor: AppColors.black,
-        title: Text(
-          widget.pickMode ? 'Pick a Location' : 'Locations',
-          style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
-        ),
-        iconTheme: const IconThemeData(color: AppColors.gold),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showSavedList ? Icons.map_outlined : Icons.list,
-              color: AppColors.gold,
-            ),
-            onPressed: () => setState(() => _showSavedList = !_showSavedList),
-            tooltip: _showSavedList ? 'Show Map' : 'Saved Locations',
-          ),
-        ],
-      ),
-      body: BlocBuilder<LocationCubit, LocationState>(
-        builder: (context, state) {
-          if (_showSavedList) {
-            return const SavedLocationsList();
-          }
-          return Stack(
-            children: [
-              GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: _currentPosition ?? _defaultPosition,
-                  zoom: 13,
-                ),
-                onMapCreated: (controller) {
-                  if (!_mapControllerCompleter.isCompleted) {
-                    _mapControllerCompleter.complete(controller);
-                  }
-                },
-                markers: _buildMarkers(state.locations),
-                circles: _buildCircles(state.locations),
-                onTap: _onMapTap,
-                myLocationEnabled: true,
-                myLocationButtonEnabled: false,
-                zoomControlsEnabled: false,
-              ),
-              if (_isPickingLocation)
-                Positioned(
-                  top: 16,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBg.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
-                      ),
-                      child: const Text(
-                        'Tap on the map to pin a location',
-                        style: TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                ),
-              Positioned(
-                bottom: 100,
-                right: 16,
-                child: FloatingActionButton.small(
-                  heroTag: 'my_location',
-                  backgroundColor: AppColors.cardBg,
-                  onPressed: () async {
-                    if (_currentPosition != null) {
-                      final controller = await _mapControllerCompleter.future;
-                      controller.animateCamera(
-                        CameraUpdate.newLatLngZoom(_currentPosition!, 15),
-                      );
-                    } else {
-                      await _initCurrentLocation();
-                    }
-                  },
-                  child: const Icon(Icons.my_location, color: AppColors.gold, size: 20),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!_showSavedList) ...[
-            FloatingActionButton.extended(
-              heroTag: 'pin_on_map',
-              backgroundColor: AppColors.cardBg,
-              onPressed: () => setState(() => _isPickingLocation = !_isPickingLocation),
-              icon: Icon(
-                _isPickingLocation ? Icons.close : Icons.pin_drop,
-                color: _isPickingLocation ? Colors.redAccent : AppColors.gold,
-              ),
-              label: Text(
-                _isPickingLocation ? 'Cancel' : 'Pin on Map',
-                style: TextStyle(
-                  color: _isPickingLocation ? Colors.redAccent : AppColors.gold,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          FloatingActionButton.extended(
-            heroTag: 'add_location',
-            backgroundColor: AppColors.gold,
-            onPressed: () async {
-              final locationId = await AddLocationBottomSheet.show(
-                context,
-                initialPosition: _currentPosition,
-              );
-              if (widget.pickMode && locationId != null && mounted) {
-                Navigator.pop(context, locationId);
-              }
-            },
-            icon: const Icon(Icons.add_location_alt, color: AppColors.black),
-            label: Text(
-              widget.pickMode ? 'Save & Pick' : 'Add Location',
-              style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
