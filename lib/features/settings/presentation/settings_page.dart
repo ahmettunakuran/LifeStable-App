@@ -153,95 +153,100 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundDark,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: AppColors.gold, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          S.of('settings'),
-          style: TextStyle(
-            color: AppColors.gold,
-            fontWeight: FontWeight.w800,
-            fontSize: 20,
-            letterSpacing: -0.3,
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: AppColors.backgroundDark,
+          appBar: AppBar(
+            backgroundColor: AppColors.backgroundDark,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new, color: AppColors.gold, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              S.of('settings'),
+              style: TextStyle(
+                color: AppColors.gold,
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+                letterSpacing: -0.3,
+              ),
+            ),
           ),
-        ),
-      ),
-      body: StreamBuilder<GoogleExternalAccountEntity?>(
-        stream: _syncService.watchGoogleConnection(),
-        builder: (context, snapshot) {
-          final account = snapshot.data;
-          return ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            children: [
-              _buildProfileCard(),
-              const SizedBox(height: 28),
-              _sectionHeader(S.of('language_section')),
-              const SizedBox(height: 4),
-              Text(
-                S.of('language_section_description'),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              _buildLanguageCard(),
-              const SizedBox(height: 28),
-              _sectionHeader(S.of('subscription')),
-              const SizedBox(height: 4),
-              Text(
-                S.of('premium_plans_subtitle'),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              const UsageSummaryCard(),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.of(context)
-                      .pushNamed(AppRoutes.premiumPlans),
-                  icon: Icon(Icons.workspace_premium, size: 18),
-                  label: Text(S.of('view_plans')),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+          body: StreamBuilder<GoogleExternalAccountEntity?>(
+            stream: _syncService.watchGoogleConnection(),
+            builder: (context, snapshot) {
+              final account = snapshot.data;
+              return ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                children: [
+                  _buildProfileCard(),
+                  const SizedBox(height: 28),
+                  _sectionHeader(S.of('language_section')),
+                  const SizedBox(height: 4),
+                  Text(
+                    S.of('language_section_description'),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildLanguageCard(),
+                  const SizedBox(height: 28),
+                  _sectionHeader(S.of('subscription')),
+                  const SizedBox(height: 4),
+                  Text(
+                    S.of('premium_plans_subtitle'),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  UsageSummaryCard(),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.of(context)
+                          .pushNamed(AppRoutes.premiumPlans),
+                      icon: Icon(Icons.workspace_premium, size: 18),
+                      label: Text(S.of('view_plans')),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 14),
+                      ),
                     ),
-                    textStyle: TextStyle(
-                        fontWeight: FontWeight.w800, fontSize: 14),
                   ),
-                ),
-              ),
-              const SizedBox(height: 28),
-              _sectionHeader(S.of('calendar_sync')),
-              const SizedBox(height: 4),
-              Text(
-                S.of('calendar_sync_description'),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              _buildGoogleCard(account),
-              if (_busy) ...[
-                const SizedBox(height: 24),
-                const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.gold,
-                    strokeWidth: 2.5,
+                  const SizedBox(height: 28),
+                  _sectionHeader(S.of('calendar_sync')),
+                  const SizedBox(height: 4),
+                  Text(
+                    S.of('calendar_sync_description'),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.54), fontSize: 13),
                   ),
-                ),
-              ],
-              const SizedBox(height: 32),
-            ],
-          );
-        },
-      ),
+                  const SizedBox(height: 12),
+                  _buildGoogleCard(account),
+                  if (_busy) ...[
+                    const SizedBox(height: 24),
+                    const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.gold,
+                        strokeWidth: 2.5,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 32),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

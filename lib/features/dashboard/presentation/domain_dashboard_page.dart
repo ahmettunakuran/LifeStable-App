@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app/router/app_routes.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../domain/entities/domain_entity.dart';
 import '../logic/domain_cubit.dart';
@@ -71,6 +72,25 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return BlocBuilder<DomainCubit, DomainState>(
+          builder: (context, state) {
+            if (state is DomainLoading) {
+              return Scaffold(
+                backgroundColor: AppColors.black,
+                body: Center(child: CircularProgressIndicator(color: AppColors.gold)),
+              );
+            } else if (state is DomainError) {
+              return Scaffold(
+                backgroundColor: AppColors.black,
+                appBar: _buildAppBar(const []),
+                body: Center(child: Text('${S.of('generic_error')}: ${state.message}', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
+              );
+            } else if (state is DomainLoaded) {
+              final domains = state.domains;
+              final totalPages = domains.length + 1;
     return BlocBuilder<DomainCubit, DomainState>(
       builder: (context, state) {
         if (state is DomainLoading) {
@@ -89,59 +109,61 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
           _maybeNavigateToTarget(domains);
           final totalPages = domains.length + 1;
 
-          // Keep the viewed page valid when the domain list changes
-          // (e.g. after a domain is deleted).
-          final domainsShrank = domains.length < _lastDomainCount;
-          _lastDomainCount = domains.length;
+              // Keep the viewed page valid when the domain list changes
+              // (e.g. after a domain is deleted).
+              final domainsShrank = domains.length < _lastDomainCount;
+              _lastDomainCount = domains.length;
 
-          var desired = _currentPage;
-          if (desired >= totalPages) desired = totalPages - 1;
-          if (desired < 0) desired = 0;
-          // If the viewed domain was just deleted, land on the last
-          // remaining domain rather than the trailing "+ New" page.
-          if (domainsShrank && domains.isNotEmpty && desired >= domains.length) {
-            desired = domains.length - 1;
-          }
-          if (desired != _currentPage) {
-            _currentPage = desired;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted && _pageController.hasClients) {
-                _pageController.jumpToPage(desired);
+              var desired = _currentPage;
+              if (desired >= totalPages) desired = totalPages - 1;
+              if (desired < 0) desired = 0;
+              // If the viewed domain was just deleted, land on the last
+              // remaining domain rather than the trailing "+ New" page.
+              if (domainsShrank && domains.isNotEmpty && desired >= domains.length) {
+                desired = domains.length - 1;
               }
-            });
-          }
-
-          return Scaffold(
-            backgroundColor: AppColors.black,
-            appBar: _buildAppBar(domains),
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
-                ),
-              ),
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) => setState(() => _currentPage = index),
-                itemCount: totalPages,
-                itemBuilder: (context, index) {
-                  if (index < domains.length) {
-                    return DomainKanbanView(domain: domains[index]);
-                  } else {
-                    return const DomainEditPage();
+              if (desired != _currentPage) {
+                _currentPage = desired;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && _pageController.hasClients) {
+                    _pageController.jumpToPage(desired);
                   }
-                },
-              ),
-            ),
-            floatingActionButton: _currentPage < domains.length
-                ? _buildFab(domains[_currentPage])
-                : null,
-            bottomNavigationBar: _buildBottomNav(context),
-          );
-        }
-        return Scaffold(backgroundColor: AppColors.black);
+                });
+              }
+
+              return Scaffold(
+                backgroundColor: AppColors.black,
+                appBar: _buildAppBar(domains),
+                body: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)],
+                    ),
+                  ),
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) => setState(() => _currentPage = index),
+                    itemCount: totalPages,
+                    itemBuilder: (context, index) {
+                      if (index < domains.length) {
+                        return DomainKanbanView(domain: domains[index]);
+                      } else {
+                        return const DomainEditPage();
+                      }
+                    },
+                  ),
+                ),
+                floatingActionButton: _currentPage < domains.length
+                    ? _buildFab(domains[_currentPage])
+                    : null,
+                bottomNavigationBar: _buildBottomNav(context),
+              );
+            }
+            return Scaffold(backgroundColor: AppColors.black);
+          },
+        );
       },
     );
   }
@@ -243,10 +265,10 @@ class _DomainDashboardPageState extends State<DomainDashboardPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navBtn(Icons.group_outlined, 'Team', AppRoutes.teamDashboard),
-            _navBtn(Icons.calendar_month_outlined, 'Calendar', AppRoutes.calendar),
-            _navBtn(Icons.dashboard_outlined, 'Dashboard', AppRoutes.homeDashboard),
-            _navBtn(Icons.local_fire_department_outlined, 'Habit', AppRoutes.habitTracker),
+            _navBtn(Icons.group_outlined, S.of('nav_team'), AppRoutes.teamDashboard),
+            _navBtn(Icons.calendar_month_outlined, S.of('nav_calendar'), AppRoutes.calendar),
+            _navBtn(Icons.dashboard_outlined, S.of('nav_dashboard'), AppRoutes.homeDashboard),
+            _navBtn(Icons.local_fire_department_outlined, S.of('nav_habit'), AppRoutes.habitTracker),
           ],
         ),
       ),

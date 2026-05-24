@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../shared/constants/app_colors.dart';
 import '../domain/entities/location_entity.dart';
 import '../logic/location_cubit.dart';
@@ -69,7 +70,7 @@ class _MapScreenState extends State<MapScreen> {
         markerId: const MarkerId('current_location'),
         position: _currentPosition!,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: 'You are here'),
+        infoWindow: InfoWindow(title: S.of('you_are_here')),
       ));
     }
 
@@ -81,7 +82,7 @@ class _MapScreenState extends State<MapScreen> {
         icon: BitmapDescriptor.defaultMarkerWithHue(45.0),
         infoWindow: InfoWindow(
           title: loc.label,
-          snippet: '${loc.radiusM} m radius',
+          snippet: S.of('radius_meters').replaceAll('{radius}', '${loc.radiusM}'),
         ),
         onTap: () => _showLocationDetailSheet(loc),
       ));
@@ -126,6 +127,136 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return Scaffold(
+          backgroundColor: AppColors.black,
+          appBar: AppBar(
+            backgroundColor: AppColors.black,
+            title: Text(
+              S.of('locations_title'),
+              style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
+            ),
+            iconTheme: const IconThemeData(color: AppColors.gold),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  _showSavedList ? Icons.map_outlined : Icons.list,
+                  color: AppColors.gold,
+                ),
+                onPressed: () => setState(() => _showSavedList = !_showSavedList),
+                tooltip: _showSavedList ? S.of('show_map') : S.of('saved_locations'),
+              ),
+            ],
+          ),
+          body: BlocBuilder<LocationCubit, LocationState>(
+            builder: (context, state) {
+              if (_showSavedList) {
+                return const SavedLocationsList();
+              }
+              return Stack(
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: _currentPosition ?? _defaultPosition,
+                      zoom: 13,
+                    ),
+                    onMapCreated: (controller) {
+                      if (!_mapControllerCompleter.isCompleted) {
+                        _mapControllerCompleter.complete(controller);
+                      }
+                    },
+                    markers: _buildMarkers(state.locations),
+                    circles: _buildCircles(state.locations),
+                    onTap: _onMapTap,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                  ),
+                  if (_isPickingLocation)
+                    Positioned(
+                      top: 16,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBg.withValues(alpha: 0.95),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            S.of('tap_map_to_pin'),
+                            style: const TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    bottom: 100,
+                    right: 16,
+                    child: FloatingActionButton.small(
+                      heroTag: 'my_location',
+                      backgroundColor: AppColors.cardBg,
+                      onPressed: () async {
+                        if (_currentPosition != null) {
+                          final controller = await _mapControllerCompleter.future;
+                          controller.animateCamera(
+                            CameraUpdate.newLatLngZoom(_currentPosition!, 15),
+                          );
+                        } else {
+                          await _initCurrentLocation();
+                        }
+                      },
+                      child: const Icon(Icons.my_location, color: AppColors.gold, size: 20),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          floatingActionButton: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (!_showSavedList) ...[
+                FloatingActionButton.extended(
+                  heroTag: 'pin_on_map',
+                  backgroundColor: AppColors.cardBg,
+                  onPressed: () => setState(() => _isPickingLocation = !_isPickingLocation),
+                  icon: Icon(
+                    _isPickingLocation ? Icons.close : Icons.pin_drop,
+                    color: _isPickingLocation ? Colors.redAccent : AppColors.gold,
+                  ),
+                  label: Text(
+                    _isPickingLocation ? S.of('cancel') : S.of('pin_on_map'),
+                    style: TextStyle(
+                      color: _isPickingLocation ? Colors.redAccent : AppColors.gold,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              FloatingActionButton.extended(
+                heroTag: 'add_location',
+                backgroundColor: AppColors.gold,
+                onPressed: () => AddLocationBottomSheet.show(
+                  context,
+                  initialPosition: _currentPosition,
+                ),
+                icon: const Icon(Icons.add_location_alt, color: AppColors.black),
+                label: Text(
+                  S.of('add_location'),
+                  style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     return Scaffold(
       backgroundColor: AppColors.black,
       appBar: AppBar(
@@ -305,13 +436,13 @@ class _LocationDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Radius: ${location.radiusM} m',
+            '${S.of('radius_label')}: ${location.radiusM} m',
             style: const TextStyle(color: Colors.white54, fontSize: 13),
           ),
           const SizedBox(height: 16),
           _buildToggle(
             context,
-            label: 'On Arrival',
+            label: S.of('on_arrival'),
             value: location.geofenceOnEnter,
             onChanged: (v) => context.read<LocationCubit>().updateLocation(
               location.copyWith(geofenceOnEnter: v),
@@ -320,7 +451,7 @@ class _LocationDetailSheet extends StatelessWidget {
           const SizedBox(height: 8),
           _buildToggle(
             context,
-            label: 'On Leave',
+            label: S.of('on_leave'),
             value: location.geofenceOnExit,
             onChanged: (v) => context.read<LocationCubit>().updateLocation(
               location.copyWith(geofenceOnExit: v),
@@ -336,7 +467,7 @@ class _LocationDetailSheet extends StatelessWidget {
                     AddLocationBottomSheet.show(context, editingLocation: location);
                   },
                   icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text('Edit'),
+                  label: Text(S.of('edit')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.gold,
                     side: const BorderSide(color: AppColors.gold),
@@ -351,7 +482,7 @@ class _LocationDetailSheet extends StatelessWidget {
                     context.read<LocationCubit>().deleteLocation(location.locationId);
                   },
                   icon: const Icon(Icons.delete_outline, size: 16),
-                  label: const Text('Delete'),
+                  label: Text(S.of('delete')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.redAccent,
                     side: const BorderSide(color: Colors.redAccent),

@@ -30,70 +30,75 @@ class UsageSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: UsageTracker.instance.revision,
-      builder: (context, _, __) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.gold.withOpacity(0.18),
-              width: 1,
-            ),
-          ),
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (showHeader) ...[
-                Row(
-                  children: [
-                    const Icon(Icons.bar_chart_rounded,
-                        color: AppColors.gold, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        S.of('usage_this_month'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return ValueListenableBuilder<int>(
+          valueListenable: UsageTracker.instance.revision,
+          builder: (context, _, __) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardBg,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.gold.withOpacity(0.18),
+                  width: 1,
+                ),
+              ),
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showHeader) ...[
+                    Row(
+                      children: [
+                        const Icon(Icons.bar_chart_rounded,
+                            color: AppColors.gold, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            S.of('usage_this_month'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
+                        _PlanBadge(plan: UsageTracker.instance.currentPlan),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  for (final entry in _features) ...[
+                    _UsageRow(
+                      feature: entry.$1,
+                      labelKey: entry.$2,
+                      icon: entry.$3,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (showSeePlansButton) ...[
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.gold,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                        ),
+                        onPressed: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.premiumPlans),
+                        icon: const Icon(Icons.workspace_premium, size: 16),
+                        label: Text(S.of('view_plans')),
                       ),
                     ),
-                    _PlanBadge(plan: UsageTracker.instance.currentPlan),
                   ],
-                ),
-                const SizedBox(height: 14),
-              ],
-              for (final entry in _features) ...[
-                _UsageRow(
-                  feature: entry.$1,
-                  labelKey: entry.$2,
-                  icon: entry.$3,
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (showSeePlansButton) ...[
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.gold,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                    ),
-                    onPressed: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.premiumPlans),
-                    icon: const Icon(Icons.workspace_premium, size: 16),
-                    label: Text(S.of('view_plans')),
-                  ),
-                ),
-              ],
-            ],
-          ),
+                ],
+              ),
+            );
+          },
         );
       },
     );

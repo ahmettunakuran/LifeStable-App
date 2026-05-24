@@ -538,20 +538,20 @@ class _CalendarViewState extends State<_CalendarView>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navBtn(context, Icons.group_outlined, S.of('team'),
+            _navBtn(context, Icons.group_outlined, S.of('nav_team'),
                 AppRoutes.teamDashboard),
             _navBtn(
                 context,
                 Icons.calendar_month_outlined,
-                S.of('calendar'),
+                S.of('nav_calendar'),
                 AppRoutes.calendar,
                 active: true),
-            _navBtn(context, Icons.dashboard_outlined, S.of('dashboard'),
+            _navBtn(context, Icons.dashboard_outlined, S.of('nav_dashboard'),
                 AppRoutes.homeDashboard),
             _navBtn(
                 context,
                 Icons.local_fire_department_outlined,
-                S.of('habits'),
+                S.of('nav_habit'),
                 AppRoutes.habitTracker),
           ],
         ),

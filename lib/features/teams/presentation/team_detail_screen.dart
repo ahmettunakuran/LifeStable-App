@@ -101,9 +101,9 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
 
   String _roleLabel(String role) {
     switch (role) {
-      case 'owner': return 'Kurucu';
-      case 'admin': return 'Yönetici';
-      default: return 'Üye';
+      case 'owner': return S.of('role_owner');
+      case 'admin': return S.of('role_admin');
+      default: return S.of('role_member');
     }
   }
 
@@ -120,7 +120,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
     Clipboard.setData(ClipboardData(text: _inviteCode!));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Invite code copied!'),
+        content: Text(S.of('invite_code_copied')),
         backgroundColor: AppColors.goldDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -134,7 +134,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       setState(() => _inviteCode = newCode);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('New invite code generated!'),
+          content: Text(S.of('new_invite_code_generated')),
           backgroundColor: AppColors.goldDark,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -146,7 +146,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
   }
 
   Future<void> _leaveTeam() async {
-    final confirm = await _showConfirmDialog(title: 'Leave Team', message: 'Are you sure you want to leave this team?', confirmLabel: 'Leave', confirmColor: Colors.redAccent);
+    final confirm = await _showConfirmDialog(
+      title: S.of('leave_team_confirm_title'),
+      message: S.of('leave_team_confirm_body'),
+      confirmLabel: S.of('leave'),
+      confirmColor: Colors.redAccent,
+    );
     if (!confirm) return;
     try {
       await _teamService.leaveTeam(widget.teamId);
@@ -157,7 +162,12 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
   }
 
   Future<void> _deleteTeam() async {
-    final confirm = await _showConfirmDialog(title: 'Delete Team', message: 'This will permanently delete the team and remove all members. Are you sure?', confirmLabel: 'Delete', confirmColor: Colors.redAccent);
+    final confirm = await _showConfirmDialog(
+      title: S.of('delete_team_confirm_title'),
+      message: S.of('delete_team_confirm_body'),
+      confirmLabel: S.of('delete'),
+      confirmColor: Colors.redAccent,
+    );
     if (!confirm) return;
     try {
       await _teamService.deleteTeam(widget.teamId);
@@ -176,7 +186,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
         title: Text(title, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         content: Text(message, style: TextStyle(color: Colors.white.withValues(alpha: 0.65))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(S.of('cancel'), style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(confirmLabel, style: TextStyle(color: confirmColor, fontWeight: FontWeight.w700))),
         ],
       ),
@@ -196,39 +206,39 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1500),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('New Team Task', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          title: Text(S.of('new_team_task'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _dialogField(titleController, 'Task Title', Icons.title),
+                _dialogField(titleController, S.of('task_title'), Icons.title),
                 const SizedBox(height: 12),
-                _dialogField(descController, 'Description', Icons.description, maxLines: 3),
+                _dialogField(descController, S.of('description_label'), Icons.description, maxLines: 3),
                 const SizedBox(height: 16),
                 _dialogDropdown<String>(
-                  label: 'Assign To',
+                  label: S.of('assign_to'),
                   value: selectedAssigneeId,
                   items: members.map((m) {
                     final data = m.data() as Map<String, dynamic>;
                     return DropdownMenuItem(value: data['user_id'] as String, child: FutureBuilder<String>(
                       future: _getUsernameForId(data['user_id']),
-                      builder: (context, snap) => Text(snap.data ?? '...', style: TextStyle(color: Colors.white, fontSize: 14)),
+                      builder: (context, snap) => Text(snap.data ?? '...', style: const TextStyle(color: Colors.white, fontSize: 14)),
                     ));
                   }).toList(),
                   onChanged: (v) => setDialogState(() => selectedAssigneeId = v),
                 ),
                 const SizedBox(height: 12),
                 _dialogDropdown<TaskPriority>(
-                  label: 'Priority',
+                  label: S.of('priority_label'),
                   value: selectedPriority,
-                  items: TaskPriority.values.map((p) => DropdownMenuItem(value: p, child: Text(p.name.toUpperCase(), style: TextStyle(color: Colors.white, fontSize: 14)))).toList(),
+                  items: TaskPriority.values.map((p) => DropdownMenuItem(value: p, child: Text(S.of('priority_${p.name}').toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
                   onChanged: (v) => setDialogState(() => selectedPriority = v!),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(S.of('cancel'), style: TextStyle(color: Colors.white.withValues(alpha: 0.5)))),
             GestureDetector(
               onTap: () {
                 if (titleController.text.isEmpty) return;
@@ -248,7 +258,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), gradient: const LinearGradient(colors: [AppColors.goldLight, AppColors.goldDark])),
-                child: const Text('Add Task', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                child: Text(S.of('add_task'), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
               ),
             ),
           ],
@@ -262,7 +272,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.white.withValues(alpha: 0.05), border: Border.all(color: AppColors.gold.withValues(alpha: 0.2))),
       child: TextField(
         controller: ctrl, maxLines: maxLines,
-        style: TextStyle(color: Colors.white, fontSize: 14),
+        style: const TextStyle(color: Colors.white, fontSize: 14),
         decoration: InputDecoration(
           hintText: hint, hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
           prefixIcon: Icon(icon, color: AppColors.gold.withValues(alpha: 0.5), size: 18),
@@ -299,14 +309,14 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const SizedBox(height: 8),
           Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.24), borderRadius: BorderRadius.circular(2))),
-          Padding(padding: EdgeInsets.all(16), child: Text('Member Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))),
-          if (canMakeAdmin) _bottomSheetTile(ctx, icon: Icons.shield, color: Colors.blueAccent, label: 'Make Admin', onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'admin')),
-          if (canDemote) _bottomSheetTile(ctx, icon: Icons.person, color: Colors.white.withValues(alpha: 0.54), label: 'Remove Admin', onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'member')),
-          if (canTransfer) _bottomSheetTile(ctx, icon: Icons.star, color: AppColors.gold, label: 'Transfer Ownership', onTap: () async {
-            final confirm = await _showConfirmDialog(title: 'Transfer Ownership', message: 'You will become an admin. The selected user will become the new owner.', confirmLabel: 'Transfer', confirmColor: AppColors.gold);
+          Padding(padding: const EdgeInsets.all(16), child: Text(S.of('member_actions'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))),
+          if (canMakeAdmin) _bottomSheetTile(ctx, icon: Icons.shield, color: Colors.blueAccent, label: S.of('make_admin'), onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'admin')),
+          if (canDemote) _bottomSheetTile(ctx, icon: Icons.person, color: Colors.white.withValues(alpha: 0.54), label: S.of('remove_admin'), onTap: () async => await _teamService.updateMemberRole(widget.teamId, targetUserId, 'member')),
+          if (canTransfer) _bottomSheetTile(ctx, icon: Icons.star, color: AppColors.gold, label: S.of('transfer_ownership'), onTap: () async {
+            final confirm = await _showConfirmDialog(title: S.of('transfer_ownership_confirm_title'), message: S.of('transfer_ownership_confirm_body'), confirmLabel: S.of('transfer_btn'), confirmColor: AppColors.gold);
             if (confirm) await _teamService.updateMemberRole(widget.teamId, targetUserId, 'owner');
           }),
-          if (canRemove) _bottomSheetTile(ctx, icon: Icons.person_remove, color: Colors.redAccent, label: 'Remove from Team', onTap: () async => await _teamService.removeMember(widget.teamId, targetUserId)),
+          if (canRemove) _bottomSheetTile(ctx, icon: Icons.person_remove, color: Colors.redAccent, label: S.of('remove_from_team'), onTap: () async => await _teamService.removeMember(widget.teamId, targetUserId)),
           const SizedBox(height: 8),
         ]),
       ),
@@ -325,42 +335,50 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _membersStream,
-      builder: (context, snapshot) {
-        final docs = snapshot.data?.docs ?? [];
-        final myDoc = docs.where((d) => (d.data() as Map<String, dynamic>)['user_id'] == _currentUser?.uid).firstOrNull;
-        final myRole = myDoc != null ? (myDoc.data() as Map<String, dynamic>)['role'] as String? ?? 'member' : 'member';
-        final canManage = myRole == 'owner' || myRole == 'admin';
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return StreamBuilder<QuerySnapshot>(
+          stream: _membersStream,
+          builder: (context, snapshot) {
+            final docs = snapshot.data?.docs ?? [];
+            final myDoc = docs.where((d) => (d.data() as Map<String, dynamic>)['user_id'] == _currentUser?.uid).firstOrNull;
+            final myRole = myDoc != null ? (myDoc.data() as Map<String, dynamic>)['role'] as String? ?? 'member' : 'member';
+            final canManage = myRole == 'owner' || myRole == 'admin';
 
-        return Scaffold(
-          backgroundColor: AppColors.black,
-          appBar: AppBar(
-            backgroundColor: AppColors.black, iconTheme: const IconThemeData(color: AppColors.gold),
-            title: Text(widget.teamName, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: AppColors.gold, labelColor: AppColors.gold, unselectedLabelColor: Colors.white.withValues(alpha: 0.38),
-              tabs: const [Tab(text: 'KANBAN'), Tab(text: 'MEMBERS')],
-            ),
-          ),
-          body: Container(
-            decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)])),
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                TeamKanbanView(teamId: widget.teamId),
-                _buildMembersList(docs, myRole, canManage),
-              ],
-            ),
-          ),
-          floatingActionButton: _tabController.index == 0
-              ? FloatingActionButton(
-                  onPressed: () => _showAddTaskDialog(context, docs),
-                  backgroundColor: AppColors.gold,
-                  child: Icon(Icons.add, color: Colors.black),
-                )
-              : null,
+            return Scaffold(
+              backgroundColor: AppColors.black,
+              appBar: AppBar(
+                backgroundColor: AppColors.black, iconTheme: const IconThemeData(color: AppColors.gold),
+                title: Text(widget.teamName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                bottom: TabBar(
+                  controller: _tabController,
+                  indicatorColor: AppColors.gold, labelColor: AppColors.gold, unselectedLabelColor: Colors.white.withValues(alpha: 0.38),
+                  tabs: [
+                    Tab(text: S.of('tab_kanban')),
+                    Tab(text: S.of('tab_members')),
+                  ],
+                ),
+              ),
+              body: Container(
+                decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0D0D0D), Color(0xFF1A1200), Color(0xFF0D0D0D)])),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    TeamKanbanView(teamId: widget.teamId),
+                    _buildMembersList(docs, myRole, canManage),
+                  ],
+                ),
+              ),
+              floatingActionButton: _tabController.index == 0
+                  ? FloatingActionButton(
+                      onPressed: () => _showAddTaskDialog(context, docs),
+                      backgroundColor: AppColors.gold,
+                      child: const Icon(Icons.add, color: Colors.black),
+                    )
+                  : null,
+            );
+          },
         );
       },
     );
@@ -380,13 +398,13 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
                 Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.gold.withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(Icons.key_rounded, color: AppColors.gold, size: 18)),
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Invite Code', style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 11)),
-                  Text(_inviteCode!, style: TextStyle(color: AppColors.goldLight, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: 5)),
+                  Text(S.of('invite_code'), style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 11)),
+                  Text(_inviteCode!, style: const TextStyle(color: AppColors.goldLight, fontWeight: FontWeight.w800, fontSize: 20, letterSpacing: 5)),
                 ]),
                 const Spacer(),
                 if (canManage) IconButton(icon: Icon(Icons.refresh, color: AppColors.gold.withValues(alpha: 0.6), size: 18), tooltip: 'New Code', onPressed: _regenerateCode),
                 Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: AppColors.gold.withValues(alpha: 0.1), border: Border.all(color: AppColors.gold.withValues(alpha: 0.3))),
-                    child: const Row(children: [Icon(Icons.copy, color: AppColors.gold, size: 14), SizedBox(width: 4), Text('Copy', style: TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w600))])),
+                    child: Row(children: [const Icon(Icons.copy, color: AppColors.gold, size: 14), const SizedBox(width: 4), Text(S.of('copy'), style: const TextStyle(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.w600))])),
               ]),
             ),
           ),
@@ -407,7 +425,7 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
                   final displayName = nameSnapshot.data ?? '...';
                   return ListTile(
                     leading: CircleAvatar(backgroundColor: _roleColor(role).withValues(alpha: 0.15), child: Text(displayName.substring(0, 1).toUpperCase(), style: TextStyle(color: _roleColor(role), fontWeight: FontWeight.w700, fontSize: 16))),
-                    title: Text(isMe ? '$displayName (You)' : displayName, style: TextStyle(color: Colors.white, fontWeight: isMe ? FontWeight.bold : FontWeight.normal)),
+                    title: Text(isMe ? '$displayName ${S.of('you_suffix')}' : displayName, style: TextStyle(color: Colors.white, fontWeight: isMe ? FontWeight.bold : FontWeight.normal)),
                     trailing: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: _roleColor(role).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: _roleColor(role).withValues(alpha: 0.3), width: 1)),
                         child: Text(_roleLabel(role), style: TextStyle(color: _roleColor(role), fontWeight: FontWeight.w600, fontSize: 12))),
                     onTap: !isMe && canManage ? () => _showMemberOptions(context, userId, role, myRole) : null,
@@ -427,11 +445,11 @@ class _TeamDetailScreenState extends State<TeamDetailScreen> with SingleTickerPr
       padding: const EdgeInsets.all(16),
       child: Column(children: [
         GestureDetector(onTap: _leaveTeam, child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.red.withValues(alpha: 0.08), border: Border.all(color: Colors.red.withValues(alpha: 0.3))),
-            child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.exit_to_app, color: Colors.redAccent, size: 18), SizedBox(width: 8), Text('Leave Team', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600))]))),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.exit_to_app, color: Colors.redAccent, size: 18), const SizedBox(width: 8), Text(S.of('leave_team'), style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600))]))),
         if (canManage) ...[
           const SizedBox(height: 10),
           GestureDetector(onTap: _deleteTeam, child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.red.withValues(alpha: 0.15), border: Border.all(color: Colors.red.withValues(alpha: 0.5))),
-              child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_forever, color: Colors.red, size: 18), SizedBox(width: 8), Text('Delete Team', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700))]))),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.delete_forever, color: Colors.red, size: 18), const SizedBox(width: 8), Text(S.of('delete_team'), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700))]))),
         ],
         const SizedBox(height: 8),
       ]),
