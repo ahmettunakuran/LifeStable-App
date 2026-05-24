@@ -194,6 +194,8 @@ class HomeDashboardPage extends StatelessWidget {
                       S.of('habits'), AppRoutes.habitTracker),
                   _buildDrawerItem(context, Icons.location_on_outlined,
                       S.of('add_location'), AppRoutes.map),
+                  _buildDrawerItem(context, Icons.notifications_outlined,
+                      S.of('alerts'), AppRoutes.alerts),
                   _buildDrawerItem(context, Icons.support_agent_rounded,
                       S.of('app_assistant'), AppRoutes.appAssistant),
                 ],

@@ -29,10 +29,14 @@ void main() async {
 
   final remoteConfig = FirebaseRemoteConfig.instance;
   await remoteConfig.setConfigSettings(RemoteConfigSettings(
-    fetchTimeout: const Duration(minutes: 1),
+    fetchTimeout: const Duration(seconds: 10),
     minimumFetchInterval: const Duration(hours: 1),
   ));
-  await remoteConfig.fetchAndActivate();
+  try {
+    await remoteConfig.fetchAndActivate();
+  } catch (_) {
+    // Offline or timeout — continue with cached/default values.
+  }
 
   // Initialize geofencing for already-logged-in users.
   // For new sign-ins, GeofenceUseCase is called from AuthCubit/SplashPage.
