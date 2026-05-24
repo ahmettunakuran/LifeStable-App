@@ -42,6 +42,22 @@ class AiPipelineService {
 
     final systemInstruction = _buildSystemInstruction(appData);
 
+    // Prioritize Gemini: try gemini_api_key first
+    final geminiKey = _remoteConfig.getString('gemini_api_key');
+    if (geminiKey.isNotEmpty) {
+      for (var attempt = 0; attempt < 2; attempt++) {
+        try {
+          final result = await _callGemini(geminiKey, systemInstruction, history, prompt);
+          if (result != null) return result;
+        } catch (e) {
+          print("Gemini attempt $attempt failed: $e");
+        }
+      }
+    } else {
+      print("gemini_api_key Remote Config'de bulunamadı; Groq fallback'e geçiliyor.");
+    }
+
+    // Fallback to Groq keys
     final groqKeys = [
       _remoteConfig.getString('groq_api_key'),
       _remoteConfig.getString('groq_api_key2'),
@@ -114,6 +130,65 @@ class AiPipelineService {
     return _parseJsonContent(content, AiProvider.groq);
   }
 
+  Future<AiResult?> _callGemini(
+    String apiKey,
+    String systemInstruction,
+    List<Map<String, dynamic>> history,
+    String prompt,
+  ) async {
+    final url = Uri.parse(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey',
+    );
+
+    final contents = [
+      ...history.map((m) => {
+            "role": m['role'] == 'model' ? 'model' : 'user',
+            "parts": [
+              {"text": m['text']}
+            ]
+          }),
+      {
+        "role": "user",
+        "parts": [
+          {"text": prompt}
+        ]
+      }
+    ];
+
+    final response = await http
+        .post(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            "systemInstruction": {
+              "parts": [
+                {"text": systemInstruction}
+              ]
+            },
+            "contents": contents,
+            "generationConfig": {
+              "temperature": 0.1,
+              "responseMimeType": "application/json",
+            }
+          }),
+        )
+        .timeout(_requestTimeout);
+
+    if (response.statusCode != 200) {
+      print("Gemini status ${response.statusCode}: ${response.body}");
+      return null;
+    }
+
+    final data = jsonDecode(response.body);
+    final candidates = data['candidates'] as List?;
+    if (candidates == null || candidates.isEmpty) return null;
+    final parts = candidates.first['content']?['parts'] as List?;
+    if (parts == null || parts.isEmpty) return null;
+    final content = parts.first['text']?.toString() ?? '';
+    if (content.isEmpty) return null;
+    return _parseJsonContent(content, AiProvider.gemini);
+  }
+
 
   AiResult? _parseJsonContent(String content, AiProvider provider) {
     try {
@@ -132,7 +207,7 @@ class AiPipelineService {
         payload: (result['payload'] as Map?)?.cast<String, dynamic>() ?? {},
         responseText: result['responseText'] ?? 'İşlem tamam.',
         provider: provider,
-        degraded: provider != AiProvider.groq,
+        degraded: provider != AiProvider.gemini,
       );
     } catch (e) {
       print('JSON parse failed for $provider: $e — raw: $content');
